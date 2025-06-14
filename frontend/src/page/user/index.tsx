@@ -1,6 +1,7 @@
 import React from 'react'
 import { Avatar, Button, Card, Col, Divider, message, Modal, Row, Space, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
+import  Hero  from "../../component/hero/hero"
 
 
 const index = () => {
@@ -19,8 +20,8 @@ const index = () => {
     };
 
     return (<>
-        <div>User Page</div>
-        <button onClick={handleLogout}>logout</button></>
+        <Hero/>
+       </>
     )
 }
 
