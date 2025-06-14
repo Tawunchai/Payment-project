@@ -1,0 +1,224 @@
+:root {
+  --yellowColor: #e1f296;
+  --lightGreenColor: #5aba8a;
+  --darkGreenColor: #01565b;
+  --textColor: #044561;
+  --h1Color: #012e33;
+  --cardColor: #4c9fa7;
+  --whiteColor: hsl(0, 0%, 100%);
+  --greyText: rgb(190, 190, 190);
+  --inputColor: hsl(224, 35%, 57%);
+  /* Font ang Typography */
+  --h1FontSize: 2.5rem;
+  --h2FontSize: 1.25rem;
+  --h3FontSize: 1rem;
+  --normalFontSize: .938rem;
+  --smallFontSize: .813rem;
+  --smallestFontSize: .75rem;
+}
+
+.top {
+  width: 100%;
+}
+.top .topDiv {
+  margin-bottom: 2rem;
+  justify-content: space-between;
+}
+.top .topDiv .titleText .title {
+  font-size: 2rem;
+  color: var(--h1Color);
+  padding-bottom: 0.5rem;
+  font-weight: 700;
+}
+.top .topDiv .titleText p {
+  color: var(--h1Color);
+  font-weight: 600;
+  font-size: var(--h3FontSize);
+  opacity: 0.7;
+}
+.top .topDiv .searchInput {
+  background: hsl(217deg, 50%, 97%);
+  padding: 0.8rem 1.5rem;
+  border-radius: 3rem;
+}
+.top .topDiv .searchInput .icon {
+  color: var(--darkGreenColor);
+}
+.top .topDiv .searchInput input {
+  background: none;
+  outline: none;
+  border: none;
+  margin-left: 0.5rem;
+}
+.top .topDiv .searchInput input::-moz-placeholder {
+  color: var(--textColor);
+  font-weight: 500;
+  opacity: 0.7;
+}
+.top .topDiv .searchInput input:-ms-input-placeholder {
+  color: var(--textColor);
+  font-weight: 500;
+  opacity: 0.7;
+}
+.top .topDiv .searchInput input::placeholder {
+  color: var(--textColor);
+  font-weight: 500;
+  opacity: 0.7;
+}
+.top .cardsDiv {
+  align-items: flex-start;
+  gap: 2rem;
+  justify-content: space-between;
+}
+.top .cardsDiv .cards {
+  display: grid;
+  gap: 1rem;
+}
+.top .cardsDiv .cards .card {
+  padding: 0.8rem;
+  border-radius: 1rem;
+  gap: 1rem;
+}
+.top .cardsDiv .cards .card .date {
+  background: white;
+  padding: 0.7rem 1rem 0.7rem 0.7rem;
+  border-radius: 0.5rem 1rem 2.5rem 0.5rem;
+  text-align: center;
+  box-shadow: 2px 2px 2px rgba(196, 201, 203, 0.431);
+}
+.top .cardsDiv .cards .card .date span {
+  color: var(--textColor);
+  font-weight: 500;
+  font-size: var(--smallestFontSize);
+}
+.top .cardsDiv .cards .card .date h3 {
+  color: var(--textColor);
+  font-weight: 700;
+  font-size: var(--h2FontSize);
+}
+.top .cardsDiv .cards .text {
+  font-size: var(--smallFontSize);
+  font-weight: 600;
+  color: var(--textColor);
+  padding-bottom: 0.5rem;
+  display: block;
+}
+.top .cardsDiv .cards .percentage {
+  position: relative;
+  padding-right: 1rem;
+}
+.top .cardsDiv .cards .percentage::after {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 1px;
+  background: var(--whiteColor);
+  opacity: 0.5;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.top .cardsDiv .cards .percentage .flex {
+  gap: 0.5rem;
+}
+.top .cardsDiv .cards .percentage .flex .line {
+  content: "";
+  height: 4px;
+  width: 50px;
+  background: linear-gradient(to right, rgb(1, 86, 91), rgb(225, 242, 150));
+  border-radius: 1rem;
+}
+.top .cardsDiv .cards .percentage .flex .pctg {
+  padding: 0.2rem 0.5rem;
+  font-size: var(--smallestFontSize);
+  background: var(--whiteColor);
+  border-radius: 1rem;
+  font-weight: 600;
+  color: var(--textColor);
+}
+.top .cardsDiv .cards .time, .top .cardsDiv .cards .workTime {
+  padding: 0 0.5rem;
+}
+.top .cardsDiv .cards .time h2, .top .cardsDiv .cards .workTime h2 {
+  font-size: var(--h3FontSize);
+  color: var(--textColor);
+  font-family: "Montserrat";
+  font-weight: bold;
+}
+.top .cardsDiv .cards .yellowCard {
+  background: var(--yellowColor);
+}
+.top .cardsDiv .cards .lightGreenCard {
+  background: var(--lightGreenColor);
+}
+.top .cardsDiv .cards .lightGreenCard .text {
+  color: white;
+}
+.top .cardsDiv .cards .lightGreenCard h2 {
+  color: var(--whiteColor) !important;
+}
+.top .cardsDiv .cards .lightGreenCard .flex .line {
+  background: linear-gradient(to right, rgb(255, 255, 255), rgb(90, 186, 138));
+}
+.top .cardsDiv .cards .darkGreenCard {
+  background: var(--darkGreenColor);
+}
+.top .cardsDiv .cards .darkGreenCard .text {
+  color: white;
+}
+.top .cardsDiv .cards .darkGreenCard h2 {
+  color: var(--whiteColor) !important;
+}
+.top .cardsDiv .cards .darkGreenCard .flex .line {
+  background: linear-gradient(to right, rgb(225, 242, 150), rgb(1, 86, 91));
+}
+.top .cardsDiv .statDiv {
+  flex: 1;
+}
+.top .cardsDiv .statDiv .title {
+  text-align: center;
+  font-weight: 600;
+  color: var(--textColor);
+}
+.top .cardsDiv .statDiv .stat .singleStat {
+  margin: 0.5rem 0;
+}
+.top .cardsDiv .statDiv .stat .singleStat .statInfo {
+  justify-content: space-between;
+}
+.top .cardsDiv .statDiv .stat .singleStat .statInfo .status {
+  padding: 1rem 0;
+  color: var(--darkGreenColor);
+  opacity: 0.7;
+  font-weight: 700;
+}
+.top .cardsDiv .statDiv .stat .singleStat .statInfo .percentage {
+  color: var(--textColor);
+  font-weight: 700;
+}
+.top .cardsDiv .statDiv .stat .singleStat .line {
+  width: 100%;
+  height: 5px;
+  background: rgb(232, 230, 230);
+  border-radius: 3rem;
+  overflow: hidden;
+}
+.top .cardsDiv .statDiv .stat .singleStat .line .range {
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: var(--lightGreenColor);
+  border-radius: 3rem;
+}
+.top .cardsDiv .statDiv .stat .singleStat:nth-child(2) .line .range {
+  width: 80%;
+  background: var(--darkGreenColor);
+}
+.top .cardsDiv .statDiv .stat .singleStat:nth-child(3) .line .range {
+  width: 25%;
+  background: var(--cardColor);
+}
+.top .cardsDiv .statDiv .stat .singleStat:nth-child(4) .line .range {
+  width: 63%;
+  background: var(--yellowColor);
+}/*# sourceMappingURL=top.css.map */
