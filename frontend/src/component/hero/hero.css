@@ -1,184 +1,77 @@
-.hero{
-    display: flex;
+.hero-wrapper{
+    color: white;
+    position: relative;
+    padding-bottom: 2rem;
+    background-color: var(--black);
+}
+
+.hero-container{
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.image-container{
+    width: 30rem;
+    height: 35rem;
+    overflow: hidden;
+    border-radius: 15rem 15rem 0 0;
+    border: 8px solid rgba(255, 255, 255, 0.12);
+}
+
+.image-container>img{
+    width: 100%;
+    height: 100%;
+}
+
+.hero-left{
+    gap: 3rem;
+}
+
+.hero-title{
+    position: relative;
+    z-index: 1;
+}
+
+.hero-title>h1{
+    font-weight: 600;
+    font-size: 3.8rem;
+    line-height: 4rem;
+}
+
+.orange-circle{
+    height: 4rem;
+    width: 4rem;
+    background: var(--orange-gradient);
+    border-radius: 999px;
+    position: absolute;
+    right: 28%;
+    top: -10%;
+    z-index: -1;
+}
+
+.search-bar{
+    background-color: white;
+    border-radius: 5px;
+    border: 3px solid rgba(120, 120, 120, 0.374);
+    padding: 0.5rem 1rem;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.search-bar>input{
+    border: none;
+    outline: none;
+}
+
+.stats{
+    width: 100%;
     justify-content: space-between;
 }
 
-.left-h{
-    padding: 2rem;
-    padding-top: 1.5rem;
-    flex: 3;
-    display: flex;
-    gap: 2rem;
-    flex-direction: column;
-}
-
-.right-h{
-    flex: 1;
-    position: relative;
-    background-color: var(--orange);
-}
-
-.the-best-ad{
-    margin-top: 3.45rem;
-    border-radius: 4rem;
-    width: fit-content;
-    padding: 10px 33px;
-    text-transform: uppercase;
-    color: white;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: start;
-}
-
-.the-best-ad>span{
-    z-index: 2;
-
-}
-
-.the-best-ad>div{
-    position: absolute;
-    background-color: var(--orange);
-    width: 5.4rem;
-    height: 80%;
-    left: 8px;
-    border-radius: 3rem;
-}
-
-.hero-text{
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    text-transform: uppercase;
-    font-size: 4.5rem;
-    font-weight: bold;
-    color: white;
-    text-overflow: inherit;
-}
-
-.hero-text>div:nth-of-type(3){
-    font-size: 1rem;
-    font-weight: 200;
-    text-transform: none;
-    letter-spacing: 1px;
-    width: 80%;
-}
-
-.figures{
-    display: flex;
-    gap: 2rem;
-}
-
-.figures>div{
-    display: flex;
-    flex-direction: column;
-}
-
-.figures>div>span:nth-of-type(1){
-    color: white;
+.stat>:nth-child(1){
     font-size: 2rem;
 }
 
-.figures>div>span:nth-of-type(2){
-    color: var(--gray);
-    text-transform: uppercase;
-}
-
-.hero-buttons{
-    display: flex;
-    gap: 1rem;
-    font-weight: normal;
-}
-
-.hero-buttons>:nth-child(1){
-    color: white;
-    background-color: var(--orange);
-    width: 8rem;
-}
-
-.hero-buttons>:nth-child(2){
-    color: white;
-    background-color: transparent;
-    width: 8rem;
-    border: 2px solid var(--orange);
-}
-
-.right-h>.btn{
-    position: absolute;
-    right: 3rem;
-    top: 2rem;
-    color: black;
-}
-
-.heart-rate{
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    background-color: var(--darkGrey);
-    width: fit-content;
-    padding: 1rem;
-    align-items: start;
-    border-radius: 5px;
-    position: absolute;
-    right: 4rem;
-    top: 7rem;
-}
-
-.heart-rate>img{
-    width: 2rem;
-}
-
-.heart-rate>:nth-child(2){
-    color: var(--gray);
-}
-
-.heart-rate>:nth-child(3){
-    color: white;
-    font-size: 1.5rem;
-}
-
-.hero-img{
-    position: absolute;
-    top: 10rem;
-    right: 8rem;
-    width: 23rem;
-}
-
-.hero-img-back{
-    position: absolute;
-    top: 4rem;
-    right: 20rem;
-    z-index: -1;
-    width: 15rem;
-}
-
-.calories{
-    display: flex;
-    gap: 2rem;
-    background-color: var(--caloryCard);
-    border-radius: 5px;
-    padding: 1rem;
-    width: fit-content;
-    position: absolute;
-    top: 32rem;
-    right: 28rem;
-}
-
-.calories>img{
-    width: 4rem;
-}
-
-.calories>div{
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; 
-}
-
-.calories>div>:nth-child(1){
-    color: var(--gray);
-}
-
-.calories>div>:nth-child(2){
-    color: white;
-    font-size: 1.5rem;
+.stat>:nth-child(1)>:last-child{
+    color: orange;
 }

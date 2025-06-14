@@ -1,20 +1,22 @@
-
+import Logo from "../../assets/Real/logo.png"
 import "./header.css"
-import Logo from "../../assets/picture/Logo EV.png"
-const herder = () => {
+const header = () => {
   return (
-    <div className='header'>
-      <img src={Logo} alt="" className="logo" />
+    <section className='h-wrapper'>
+      <div className='flexCenter paddings innerWidth h-container'>
+        <img src={Logo} alt="logo" width={100} />
 
-      <ul className="header-menu">
-        <li>Home</li>
-        <li>Program</li>
-        <li>Why us</li>
-        <li>Plans</li>
-        <li>Testimonials</li>
-      </ul>
-    </div>
+        <div className="flexCenter h-menu">
+          <a href="">Residencies</a>
+          <a href="">Our Value</a>
+          <a href="">Contact Us</a>
+          <a href="">Get Started</a>
+          <button className="button">            
+            <a href="">Contact</a></button>
+        </div>
+      </div>
+    </section>
   )
 }
 
-export default herder
+export default header

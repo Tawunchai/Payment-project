@@ -1,67 +1,66 @@
 import "./hero.css"
-import Header from "../header/header"
-import hero_img from "../../assets/picture/EV.jpg"
-import hero_img_back from "../../assets/picture/hero_image_back.png"
-import Calories from "../../assets/picture/calories.png"
-
+import Hero_Image from "../../assets/Real/hero-image.png"
+import { HiLocationMarker } from "react-icons/hi"
+import CountUp from "react-countup"
 const hero = () => {
   return (
-    <div className='hero'>
-      <div className="left-h">
-        <Header />
-        <div className="the-best-ad">
+    <section className="hero-wrapper">
+      <div className="flexCenter paddings innerWidth hero-container">
+        <div className="flexColStart hero-left">
+          <div className="hero-title">
+            <div className="orange-circle"/>
+            <h1>
+              Discover <br />
+              Most Suitable <br />
+              Property
+            </h1>
+          </div>
+
+          <div className="flexColStart hero-des">
+            <span className="secondaryText">Find a variety of properties that suit you very easilty</span>
+            <span className="secondaryText">Forget all difficulties in finding a residence for you</span>
+          </div>
+
+          <div className="flexCenter search-bar">
+            <HiLocationMarker color="var(--blue)" size={25}/>
+            <input type="text" />
+            <button className="button">Search</button>
+          </div>
+
+          <div className="flexCenter stats">
+            <div className="flexColCenter stat">
+              <span>
+                <CountUp start={8800} end={9000} duration={4}/>
+                <span>+</span>
+              </span>
+              <span className="secondaryText">Premium Products</span>
+            </div>
+
+            <div className="flexColCenter stat">
+              <span>
+                <CountUp start={1950} end={2000} duration={4}/>
+                <span>+</span>
+              </span>
+              <span className="secondaryText">Happy Customers</span>
+            </div>
+
+            <div className="flexColCenter stat">
+              <span>
+                <CountUp end={28}/>
+                <span>+</span>
+              </span>
+              <span className="secondaryText">Award Winning</span>
+            </div>
+          </div>
         </div>
 
-        <div className="hero-text">
-          <div>
-            <span className="stroke-text">Shape </span>
-            <span>Your</span>
+        <div className="flexCenter hero-right">
+          <div className="image-container">
+            <img src={Hero_Image} alt="" />
           </div>
-          <div>
-            <span>Ideal body</span>
-          </div>
-          <div>
-            <span>
-              In here we will help you to shape and build your ideal body and live up your life to fullest
-            </span>
-          </div>
-        </div>
-
-        <div className="figures">
-          <div>
-            <span>250$</span>
-            <span>DC Charging</span>
-          </div>
-          <div>
-            <span>100$</span>
-            <span>AC Charging</span>
-          </div>
-          <div>
-            <span>+978</span>
-            <span>Members joined</span>
-          </div>
-        </div>
-
-        <div className="hero-buttons">
-          <button className="btn">Charge now</button>
-          <button className="btn">Learn More</button>
         </div>
       </div>
-      <div className="right-h">
-        <button className="btn">Join Now</button>
-
-        <img src={hero_img} alt="" className="hero-img" />
-        <img src={hero_img_back} alt="" className="hero-img-back" />
-
-        <div className="calories">
-          <img src={Calories} alt="" />
-          <div>
-            <span>Calories Burned</span>
-            <span>200 kcal</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    </section>
   )
 }
 
