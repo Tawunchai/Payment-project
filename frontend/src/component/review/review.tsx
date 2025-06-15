@@ -59,7 +59,7 @@ const Review = () => {
   };
 
   return (
-    <div className="py-14 mb-10">
+    <div className="min-h-screen flex flex-col items-center justify-center py-14 px-4 bg-gray-50">
       <div className="container">
         <div className="space-y-4 p-6 text-center max-w-[600px] mx-auto mb-6">
           <h1 className="uppercase font-semibold text-orange-600">OUR Reviews</h1>
@@ -68,18 +68,17 @@ const Review = () => {
 
         <Slider {...settings}>
           {ReviewsData.map((item) => (
-            <div key={item.id} className="px-2">
-              <div className="flex flex-col gap-4 p-8 shadow-lg rounded-xl bg-slate-200 h-full">
-                <div className="flex justify-start items-center gap-5">
-                  <img src={item.img} className="w-16 h-16 rounded-full" />
+            <div key={item.id} className="px-2 my-6">
+              <div className="flex flex-col p-6 rounded-2xl bg-white h-full shadow-[0_4px_20px_rgba(0,0,0,0.1)]">
+                <div className="flex justify-start items-center gap-4">
+                  <img src={item.img} className="w-12 h-12 rounded-full" />
                   <div>
                     <p className="text-xl font-bold text-black/80">{item.name}</p>
-                    <p>{item.name}</p>
+                    <p>⭐⭐⭐⭐⭐</p>
                   </div>
                 </div>
-                <div className="py-6 space-y-4">
+                <div className="py-3 space-y-4">
                   <p className="text-sm text-gray-500">{item.text}</p>
-                  <p>⭐⭐⭐⭐⭐</p>
                 </div>
               </div>
             </div>
