@@ -22,26 +22,25 @@ const hero = () => {
           </div>
 
           <div className="flexCenter search-bar">
-            <HiLocationMarker color="var(--blue)" size={25}/>
-            <input type="text" />
-            <button className="button">Search</button>
+            <button className="button">Power Charg</button>
+            <button className="button">Learn More</button>
           </div>
 
           <div className="flexCenter stats">
             <div className="flexColCenter stat">
               <span>
                 <CountUp start={8800} end={9000} duration={4}/>
-                <span>+</span>
+                <span>$</span>
               </span>
-              <span className="secondaryText">Premium Products</span>
+              <span className="secondaryText">AC Charging</span>
             </div>
 
             <div className="flexColCenter stat">
               <span>
                 <CountUp start={1950} end={2000} duration={4}/>
-                <span>+</span>
+                <span>$</span>
               </span>
-              <span className="secondaryText">Happy Customers</span>
+              <span className="secondaryText">DC Charging</span>
             </div>
 
             <div className="flexColCenter stat">
@@ -49,7 +48,7 @@ const hero = () => {
                 <CountUp end={28}/>
                 <span>+</span>
               </span>
-              <span className="secondaryText">Award Winning</span>
+              <span className="secondaryText">Members</span>
             </div>
           </div>
         </div>

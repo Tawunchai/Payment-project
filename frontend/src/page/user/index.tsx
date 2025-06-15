@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import Hero from "../../component/hero/hero"
 import Header from "../../component/header/header"
 import Review from "../../component/review/review"
+import Type from "../../component/type/type"
+import Footer from "../../component/footer/footer"
 
 
 const index = () => {
@@ -28,7 +30,9 @@ const index = () => {
                 <Hero />
                 <div className='white-gradient'/>
             </div>
+            <Type/>
             <Review/>
+            <Footer/>
         </div>
     )
 }

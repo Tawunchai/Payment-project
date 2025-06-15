@@ -59,10 +59,10 @@ const Review = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-14 px-4 bg-gray-50">
+    <div className="flex flex-col items-center pt-10 px-4 bg-white">
       <div className="container">
         <div className="space-y-4 p-6 text-center max-w-[600px] mx-auto mb-6">
-          <h1 className="uppercase font-semibold text-orange-600">OUR Reviews</h1>
+          <h1 className="uppercase font-semibold text-yellow-400 text-3xl">OUR Reviews</h1>
           <p className="font-semibold text-3xl">What Our Customer Say About Us</p>
         </div>
 
