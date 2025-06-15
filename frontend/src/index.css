@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 :root {
   --primary: #1f3e72;
   --secondary: rgba(255, 255, 255, 0.78);

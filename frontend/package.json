@@ -13,6 +13,7 @@
     "antd": "^5.25.4",
     "antd-img-crop": "^4.25.0",
     "axios": "^1.9.0",
+    "framer-motion": "^12.18.1",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",
     "react-countup": "^6.5.3",

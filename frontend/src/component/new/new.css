@@ -1,0 +1,18 @@
+.primary-btn{
+    @apply bg-yellow-400 font-semibold px-6 py-3 rounded-full hover:!scale-110 hover:!shadow-xl duration-300;
+}
+
+@media (max-width: 640px) {
+  .image {
+    width: 70%;
+    margin: auto;
+    display: block;
+  }
+
+  .tag,
+  .title,
+  .subtitle {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
