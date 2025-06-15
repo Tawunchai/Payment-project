@@ -1,11 +1,11 @@
-import React from 'react'
-import { Avatar, Button, Card, Col, Divider, message, Modal, Row, Space, Typography } from "antd";
+import { message, } from "antd";
 import { useNavigate } from "react-router-dom";
 import Hero from "../../component/hero/hero"
 import Header from "../../component/header/header"
 import Review from "../../component/review/review"
 import Type from "../../component/type/type"
 import Footer from "../../component/footer/footer"
+import"../../App.css"
 
 
 const index = () => {
@@ -24,7 +24,7 @@ const index = () => {
     };
 
     return (
-        <div className='App'>
+        <div className='user'>
             <div>
                 <Header />
                 <Hero />
