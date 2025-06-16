@@ -1,12 +1,17 @@
 import { BiMenuAltRight } from "react-icons/bi"
 import { useNavigate } from "react-router-dom";
 import { message, } from "antd";
-import Logo from "../../assets/Real/logo.png"
+import Logo from "../../assets/picture/Direct_Energy_logo.svg.png"
 import "./header.css"
 import { useState, CSSProperties } from "react"
 import OutsideClickHandler from "react-outside-click-handler";
 
-const Header = () => {
+type HeaderProps = {
+  scrollToValue: () => void;
+  scrollToNew: () => void;
+};
+
+const Header = ({ scrollToValue, scrollToNew }: HeaderProps) => {
   const [menuOpened, setMenuOpened] = useState(false)
 
   const getMenuStyles = (menuOpened: boolean): CSSProperties | undefined => {
@@ -35,15 +40,15 @@ const Header = () => {
   return (
     <section className='h-wrapper'>
       <div className='flexCenter paddings innerWidth h-container'>
-        <img src={Logo} alt="logo" width={135} />
+        <img src={Logo} alt="logo" width={180} />
 
         <OutsideClickHandler onOutsideClick={() => {
           setMenuOpened(false)
         }}>
 
           <div className="flexCenter h-menu" style={getMenuStyles(menuOpened)}>
-            <a href="">Getting Started</a>
-            <a href="">Announcement</a>
+             <a onClick={scrollToValue}>Getting Started</a>
+            <a onClick={scrollToNew}>Announcement</a>
             <a href="">Report</a>
             <button className="button" onClick={handleLogout}>
               <a href="">Logout</a></button>

@@ -15,4 +15,9 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
+
+  /* เพิ่มบรรทัดนี้เพื่อให้ข้อความ tag ทั้งหมดชิดกึ่งกลาง */
+  .tag {
+    text-align: center !important;
+  }
 }

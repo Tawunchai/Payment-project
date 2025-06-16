@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { message } from "antd";
 import { LoginInterface } from "../../interface/Login";
 import { AddLogin, GetEmployeeByUserID } from "../../services/httpLogin";
-import Logo_Login from "../../assets/log.svg";
-import Logo_Regis from "../../assets/register.svg";
+import Logo_Login from "../../assets/car_login.svg";
+import Logo_Regis from "../../assets/signup.svg";
 import "./login.css";
 
 function Login() {

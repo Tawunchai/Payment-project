@@ -28,15 +28,15 @@ const New = () => {
         <>      <h1 className="text-xl lg:text-2xl font-semibold capitalize flex justify-center pb-8">
             Announcement
         </h1>
-            <div className="bg-white flex justify-center">
-                <div className="container space-y-10">
+            <div className="bg-white flex justify-center ml-8 mr-8">
+                <div className="container space-y-6">
                     {NewData.map((item, index) => (
                         <div
                             key={index}
-                            className="grid grid-cols-1 md:grid-cols-2 space-y-6 md:space-y-0"
+                            className="grid grid-cols-1 md:grid-cols-2 gap-10 justify-items-center"
                         >
                             <div
-                                className={`flex justify-start items-center ${index % 2 !== 0 && "md:order-last md:justify-end"
+                                className={`flex justify-center items-center w-full ${index % 2 !== 0 ? "md:order-last" : ""
                                     }`}
                             >
                                 <motion.img
@@ -45,10 +45,14 @@ const New = () => {
                                     transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
                                     src={item.image}
                                     alt=""
-                                    className="image w-[400px] h-full object-cover"
+                                    className={`image h-full object-cover w-[400px]`}
                                 />
                             </div>
-                            <div className="tag flex flex-col justify-center text-center md:text-left space-y-4 lg:max-w-[500px]">
+
+                            <div
+                                className={`tag flex flex-col justify-center space-y-4 lg:max-w-[500px] ${index % 2 !== 0 ? "text-right md:text-right" : "text-left md:text-left"
+                                    }`}
+                            >
                                 <motion.p
                                     variants={SlideUp(0.5)}
                                     initial="hidden"
