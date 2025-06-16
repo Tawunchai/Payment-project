@@ -1,4 +1,6 @@
 import { BiMenuAltRight } from "react-icons/bi"
+import { useNavigate } from "react-router-dom";
+import { message, } from "antd";
 import Logo from "../../assets/Real/logo.png"
 import "./header.css"
 import { useState, CSSProperties } from "react"
@@ -16,6 +18,20 @@ const Header = () => {
     return undefined
   }
 
+  const navigate = useNavigate();
+  
+      const handleLogout = () => {
+          localStorage.removeItem("isLogin");
+          localStorage.removeItem("userRole");
+          localStorage.clear();
+  
+          message.success("ออกจากระบบ");
+  
+          setTimeout(() => {
+              navigate("/login");
+          }, 3500);
+      };
+
   return (
     <section className='h-wrapper'>
       <div className='flexCenter paddings innerWidth h-container'>
@@ -29,8 +45,8 @@ const Header = () => {
             <a href="">Getting Started</a>
             <a href="">Announcement</a>
             <a href="">Report</a>
-            <button className="button">
-              <a href="">Contact</a></button>
+            <button className="button" onClick={handleLogout}>
+              <a href="">Logout</a></button>
           </div>
 
         </OutsideClickHandler>

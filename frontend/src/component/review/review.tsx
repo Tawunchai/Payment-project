@@ -3,7 +3,6 @@ import Profile from "../../assets/profile/people1.png";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-
 const ReviewsData = [
   {
     id: 1,

@@ -2,7 +2,7 @@ import { lazy } from "react";
 import { useRoutes, RouteObject} from "react-router-dom";
 import Loadable from "../component/third-patry/Loadable";
 
-const Login = Loadable(lazy(() => import("../page/login/Login")));
+const Login = Loadable(lazy(() => import("../page/login/index")));
 const Register = Loadable(lazy(() => import("../page/signup/signup")));
 
 // User Role
