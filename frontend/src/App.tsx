@@ -4,7 +4,7 @@ import ConfigRoutes from './routes/mainroutes';
 
 const App: React.FC = () => {
   return (
-    <div className="main">
+    <div className="App">
       <ConfigRoutes />
     </div>
   );
