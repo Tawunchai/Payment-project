@@ -1,10 +1,10 @@
-import Hero from "../../component/hero/hero"
-import Value from "../../component/value/value"
-import Header from "../../component/header/header"
-import New from "../../component/new/new"
-import Review from "../../component/review/review"
-import Type from "../../component/type/type"
-import Footer from "../../component/footer/footer"
+import Hero from "../../component/user/hero/hero"
+import Value from "../../component/user/value/value"
+import Header from "../../component/user/header/header"
+import New from "../../component/user/new/new"
+import Review from "../../component/user/review/review"
+import Type from "../../component/user/type/type"
+import Footer from "../../component/user/footer/footer"
 import { useRef } from "react";
 import "../../App.css"
 

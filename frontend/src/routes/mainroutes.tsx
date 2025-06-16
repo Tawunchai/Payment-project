@@ -9,10 +9,9 @@ const Register = Loadable(lazy(() => import("../page/signup/signup")));
 const User = Loadable(lazy(() => import("../page/user/index")));
 
 // Admin Role 
-const Admin = Loadable(lazy(() => import("../page/admin/index")));
+const Admin = Loadable(lazy(() => import("../page/admin/admin")));
+const MainLayout = Loadable(lazy(() => import("../component/admin/MainLayout")));
 
-//Test
-const Test = Loadable(lazy(() => import("../page/test")));
 
 
 const UserRoutes = (): RouteObject[] => [
@@ -29,16 +28,12 @@ const UserRoutes = (): RouteObject[] => [
 
 const AdminRoutes = (): RouteObject[] => [
   {
-    path: "/", element: <Admin />, 
-  },                                          
-  {
     path: "/admin",
+    element: <MainLayout />,
     children: [
-      { index: true, element: <Admin /> },
+      { index: true, element: <Admin /> },    // /admin
+      //{ path: "customer", element: <Customer /> },
     ],
-  },
-  {
-    path: "/testing", element: <Test />, 
   },
 ];
 
