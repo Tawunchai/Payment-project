@@ -9,6 +9,8 @@ import { HiOutlineRefresh } from 'react-icons/hi';
 import { TiTick } from 'react-icons/ti';
 import { GiLouvrePyramid } from 'react-icons/gi';
 import { GrLocation } from 'react-icons/gr';
+import { AxisModel } from '@syncfusion/ej2-react-charts';
+import type { EdgeLabelPlacement } from '@syncfusion/ej2-react-charts';
 import avatar from './avatar.jpg';
 import avatar2 from './avatar2.jpg';
 import avatar3 from './avatar3.png';
@@ -371,17 +373,17 @@ export const FinancialPrimaryYAxis = {
 };
 
 export const LinePrimaryXAxis = {
-  valueType: 'DateTime',
+  valueType: 'DateTime' as 'DateTime',   
   labelFormat: 'y',
-  intervalType: 'Years',
-  edgeLabelPlacement: 'Shift',
+  intervalType: 'Years' as 'Years', 
+  edgeLabelPlacement: 'Shift' as EdgeLabelPlacement,
   majorGridLines: { width: 0 },
   background: 'white',
 };
 
 export const LinePrimaryYAxis = {
   labelFormat: '{value}%',
-  rangePadding: 'None',
+  rangePadding: 'None' as 'None',  // ใช้ string literal type assertion
   minimum: 0,
   maximum: 100,
   interval: 20,
@@ -3196,7 +3198,7 @@ export const stackedCustomSeries = [
 
 ];
 
-export const stackedPrimaryXAxis = {
+export const stackedPrimaryXAxis: AxisModel = {
   majorGridLines: { width: 0 },
   minorGridLines: { width: 0 },
   majorTickLines: { width: 0 },
@@ -3204,7 +3206,7 @@ export const stackedPrimaryXAxis = {
   interval: 1,
   lineStyle: { width: 0 },
   labelIntersectAction: 'Rotate45',
-  valueType: 'Category',
+  valueType: 'Category', 
 };
 
 export const stackedPrimaryYAxis = {
