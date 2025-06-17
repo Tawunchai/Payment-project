@@ -1,8 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
-import { SiShopware } from 'react-icons/si';
 import { MdOutlineCancel } from 'react-icons/md';
 import { TooltipComponent } from '@syncfusion/ej2-react-popups';
-
+import Logo from "../../assets/picture/Direct_Energy_logo.svg.png"
 import { links } from '../../assets/admin/dummy';
 import { useStateContext } from '../../contexts/ContextProvider';
 
@@ -23,8 +22,8 @@ const Sidebar = () => {
       {activeMenu && (
         <>
           <div className="flex justify-between items-center">
-            <Link to="/" onClick={handleCloseSideBar} className="items-center gap-3 ml-3 mt-4 flex text-xl font-extrabold tracking-tight dark:text-white text-slate-900">
-              <SiShopware /> <span>Shoppy</span>
+            <Link to="/admin" onClick={handleCloseSideBar} className="items-center gap-3 ml-3 mt-4 flex text-xl font-extrabold tracking-tight dark:text-white text-slate-900">
+              <span><img src={Logo} alt="" width={200} /></span>
             </Link>
             <TooltipComponent content="Menu" position="BottomCenter">
               <button
@@ -45,7 +44,7 @@ const Sidebar = () => {
                 </p>
                 {item.links.map((link) => (
                   <NavLink
-                    to={`/${link.name}`}
+                    to={`/admin/${link.name}`}
                     key={link.name}
                     onClick={handleCloseSideBar}
                     style={({ isActive }) => ({

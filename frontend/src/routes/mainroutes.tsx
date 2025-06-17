@@ -11,6 +11,21 @@ const User = Loadable(lazy(() => import("../page/user/index")));
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/Ecommerce")));
 const MainLayout = Loadable(lazy(() => import("../component/admin/MainLayout")));
+const Orders = Loadable(lazy(() => import("../page/admin/Orders")));
+const Employees = Loadable(lazy(() => import("../page/admin/Employees")));
+const Customers = Loadable(lazy(() => import("../page/admin/Customers")));
+const Calendar = Loadable(lazy(() => import("../page/admin/Calendar")));
+const Editor = Loadable(lazy(() => import("../page/admin/Editor")));
+
+{/* charts  */}
+const Area = Loadable(lazy(() => import("../page/admin/Charts/Area")));
+const Bar = Loadable(lazy(() => import("../page/admin/Charts/Bar")));
+const ColorMapping = Loadable(lazy(() => import("../page/admin/Charts/ColorMapping")));
+const Financial = Loadable(lazy(() => import("../page/admin/Charts/Financial")));
+const Line = Loadable(lazy(() => import("../page/admin/Charts/Line")));
+const Pie = Loadable(lazy(() => import("../page/admin/Charts/Pie")));
+const Pyramid = Loadable(lazy(() => import("../page/admin/Charts/Pyramid")));
+const Stacked = Loadable(lazy(() => import("../page/admin/Charts/Stacked")));
 
 
 
@@ -31,12 +46,25 @@ const AdminRoutes = (): RouteObject[] => [
     path: "/admin",
     element: <MainLayout />,
     children: [
-      { index: true, element: <Admin /> },    // /admin
-      //{ path: "customer", element: <Customer /> },
+      { index: true, element: <Admin /> },
+      { path: "Dashboard", element: <Admin /> },
+      { path: "Orders", element: <Orders /> },
+      { path: "Employees", element: <Employees /> },
+      { path: "Customers", element: <Customers /> },
+      { path: "Calendar", element: <Calendar /> },
+      { path: "Editor", element: <Editor /> },
+      {/* charts  */},
+      { path: "Area", element: <Area /> },
+      { path: "Bar", element: <Bar /> },
+      { path: "ColorMapping", element: <ColorMapping /> },
+      { path: "Financial", element: <Financial /> },
+      { path: "Line", element: <Line /> },
+      { path: "Pie", element: <Pie /> },
+      { path: "Pyramid", element: <Pyramid /> },
+      { path: "Stacked", element: <Stacked /> },
     ],
   },
 ];
-
 
 
 const MainRoutes = (): RouteObject[] => [

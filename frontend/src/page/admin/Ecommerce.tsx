@@ -2,7 +2,6 @@ import { BsCurrencyDollar } from 'react-icons/bs';
 import { BsDot } from 'react-icons/bs';
 import { IoIosMore } from 'react-icons/io';
 import { DropDownListComponent } from '@syncfusion/ej2-react-dropdowns';
-
 import { Stacked, Pie, Button, LineChart, SparkLine } from '../../component/admin';
 import { earningData, medicalproBranding, recentTransactions, weeklyStats, dropdownData, SparklineAreaData, ecomPieChartData } from '../../assets/admin/dummy';
 import { useStateContext } from '../../contexts/ContextProvider';

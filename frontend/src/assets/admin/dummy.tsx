@@ -1,7 +1,6 @@
 import { AiOutlineCalendar, AiOutlineShoppingCart, AiOutlineAreaChart, AiOutlineBarChart, AiOutlineStock } from 'react-icons/ai';
 import { FiShoppingBag, FiEdit, FiPieChart, FiBarChart, FiCreditCard, FiStar, FiShoppingCart } from 'react-icons/fi';
-import { BsKanban, BsBarChart, BsBoxSeam, BsCurrencyDollar, BsShield, BsChatLeft } from 'react-icons/bs';
-import { BiColorFill } from 'react-icons/bi';
+import { BsBarChart, BsBoxSeam, BsCurrencyDollar, BsShield, BsChatLeft } from 'react-icons/bs';
 import { IoMdContacts } from 'react-icons/io';
 import { RiContactsLine, RiStockLine } from 'react-icons/ri';
 import { MdOutlineSupervisorAccount } from 'react-icons/md';
@@ -11,6 +10,7 @@ import { GiLouvrePyramid } from 'react-icons/gi';
 import { GrLocation } from 'react-icons/gr';
 import { AxisModel } from '@syncfusion/ej2-react-charts';
 import type { EdgeLabelPlacement } from '@syncfusion/ej2-react-charts';
+import { ContextMenuItem } from '@syncfusion/ej2-react-grids';
 import avatar from './avatar.jpg';
 import avatar2 from './avatar2.jpg';
 import avatar3 from './avatar3.png';
@@ -141,7 +141,7 @@ const customerGridStatus = (props : any) => (
   </div>
 );
 
-export const areaPrimaryXAxis = {
+export const areaPrimaryXAxis: AxisModel = {
   valueType: 'DateTime',
   labelFormat: 'y',
   majorGridLines: { width: 0 },
@@ -160,7 +160,7 @@ export const areaPrimaryYAxis = {
   labelStyle: { color: 'gray' },
 
 };
-export const barPrimaryXAxis = {
+export const barPrimaryXAxis : AxisModel = {
   valueType: 'Category',
   interval: 1,
   majorGridLines: { width: 0 },
@@ -341,7 +341,7 @@ export const rangeColorMapping = [
 
 ];
 
-export const ColorMappingPrimaryXAxis = {
+export const ColorMappingPrimaryXAxis: AxisModel = {
   valueType: 'Category',
   majorGridLines: { width: 0 },
   title: 'Months',
@@ -355,7 +355,7 @@ export const ColorMappingPrimaryYAxis = {
   title: 'Temperature',
 };
 
-export const FinancialPrimaryXAxis = {
+export const FinancialPrimaryXAxis: AxisModel = {
   valueType: 'DateTime',
   minimum: new Date('2016, 12, 31'),
   maximum: new Date('2017, 9, 30'),
@@ -475,7 +475,7 @@ export const links = [
     title: 'Dashboard',
     links: [
       {
-        name: 'ecommerce',
+        name: 'Dashboard',
         icon: <FiShoppingBag />,
       },
     ],
@@ -485,15 +485,15 @@ export const links = [
     title: 'Pages',
     links: [
       {
-        name: 'orders',
+        name: 'Orders',
         icon: <AiOutlineShoppingCart />,
       },
       {
-        name: 'employees',
+        name: 'Employees',
         icon: <IoMdContacts />,
       },
       {
-        name: 'customers',
+        name: 'Customers',
         icon: <RiContactsLine />,
       },
     ],
@@ -502,20 +502,12 @@ export const links = [
     title: 'Apps',
     links: [
       {
-        name: 'calendar',
+        name: 'Calendar',
         icon: <AiOutlineCalendar />,
       },
       {
-        name: 'kanban',
-        icon: <BsKanban />,
-      },
-      {
-        name: 'editor',
+        name: 'Editor',
         icon: <FiEdit />,
-      },
-      {
-        name: 'color-picker',
-        icon: <BiColorFill />,
       },
     ],
   },
@@ -523,36 +515,36 @@ export const links = [
     title: 'Charts',
     links: [
       {
-        name: 'line',
+        name: 'Line',
         icon: <AiOutlineStock />,
       },
       {
-        name: 'area',
+        name: 'Area',
         icon: <AiOutlineAreaChart />,
       },
 
       {
-        name: 'bar',
+        name: 'Bar',
         icon: <AiOutlineBarChart />,
       },
       {
-        name: 'pie',
+        name: 'Pie',
         icon: <FiPieChart />,
       },
       {
-        name: 'financial',
+        name: 'Financial',
         icon: <RiStockLine />,
       },
       {
-        name: 'color-mapping',
+        name: 'ColorMapping',
         icon: <BsBarChart />,
       },
       {
-        name: 'pyramid',
+        name: 'Pyramid',
         icon: <GiLouvrePyramid />,
       },
       {
-        name: 'stacked',
+        name: 'Stacked',
         icon: <AiOutlineBarChart />,
       },
     ],
@@ -3129,7 +3121,7 @@ export const pieChartData = [
   { x: 'Insurance', y: 16, text: '16%' },
 ];
 
-export const contextMenuItems = [
+export const contextMenuItems: ContextMenuItem[] = [
   'AutoFit',
   'AutoFitAll',
   'SortAscending',

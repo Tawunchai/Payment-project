@@ -6,7 +6,7 @@ import Review from "../../component/user/review/review"
 import Type from "../../component/user/type/type"
 import Footer from "../../component/user/footer/footer"
 import { useRef } from "react";
-import "../../App.css"
+import "./user.css"
 
 
 const index = () => {

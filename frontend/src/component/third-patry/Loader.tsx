@@ -7,7 +7,7 @@ const Loader: React.FC = () => (
       position: "fixed",
       top: "50%",
       left: "50%",
-      transform: "translate(-50%, -50%)", // เพิ่มการแปลตำแหน่งเพื่อให้ loader อยู่ตรงกลางอย่างสมบูรณ์
+      transform: "translate(-50%, -50%)", 
       zIndex: 2000,
       width: "100%",
       height: "100%",

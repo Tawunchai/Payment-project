@@ -7,7 +7,7 @@ import Logo_Regis from "../../assets/signup.svg";
 import "./login.css";
 
 function Login() {
-  const [messageApi, contextHolder] = message.useMessage();
+  const [messageApi, contextHolder] = message.useMessage(); // @ts-ignore
   const [Slide, SetSlide] = useState(false);
 
   // State สำหรับเก็บข้อมูลฟอร์ม Sign In
@@ -52,12 +52,12 @@ function Login() {
       if (RoleName === "Admin") {
         messageApi.success("ท่านได้ทำการ เข้าสู่ระบบ " + RoleName + " สำเร็จ");
         setTimeout(() => {
-           window.location.href = "/admin";
+          window.location.href = "/admin";
         }, 100);
       } else if (RoleName === "User") {
         messageApi.success("ท่านได้ทำการ เข้าสู่ระบบ " + RoleName + " สำเร็จ");
         setTimeout(() => {
-           window.location.href = "/user";
+          window.location.href = "/user";
         }, 100);
       }
     } else {
@@ -138,21 +138,7 @@ function Login() {
               />
             </div>
             <input type="submit" value="Login" className="btn solid" />
-            <p className="social-text">Or Sign in with social platforms</p>
-            <div className="social-media">
-              <a href="#" className="social-icon">
-                <i className="fab fa-facebook-f"></i>
-              </a>
-              <a href="#" className="social-icon">
-                <i className="fab fa-twitter"></i>
-              </a>
-              <a href="#" className="social-icon">
-                <i className="fab fa-google"></i>
-              </a>
-              <a href="#" className="social-icon">
-                <i className="fab fa-linkedin-in"></i>
-              </a>
-            </div>
+            <p className="social-text">Welcome To My Website</p>
           </form>
 
           {/* ฟอร์ม Sign Up (ยังไม่ทำงานจริง) */}
@@ -171,21 +157,7 @@ function Login() {
               <input type="password" placeholder="Password" />
             </div>
             <input type="submit" className="btn" value="Sign up" />
-            <p className="social-text">Or Sign up with social platforms</p>
-            <div className="social-media">
-              <a href="#" className="social-icon">
-                <i className="fab fa-facebook-f"></i>
-              </a>
-              <a href="#" className="social-icon">
-                <i className="fab fa-twitter"></i>
-              </a>
-              <a href="#" className="social-icon">
-                <i className="fab fa-google"></i>
-              </a>
-              <a href="#" className="social-icon">
-                <i className="fab fa-linkedin-in"></i>
-              </a>
-            </div>
+            <p className="social-text">Welcome To My Website</p>
           </form>
         </div>
       </div>
