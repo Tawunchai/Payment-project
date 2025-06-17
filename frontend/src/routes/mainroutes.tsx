@@ -9,7 +9,7 @@ const Register = Loadable(lazy(() => import("../page/signup/signup")));
 const User = Loadable(lazy(() => import("../page/user/index")));
 
 // Admin Role 
-const Admin = Loadable(lazy(() => import("../page/admin/Ecommerce")));
+const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
 const MainLayout = Loadable(lazy(() => import("../component/admin/MainLayout")));
 const Orders = Loadable(lazy(() => import("../page/admin/Orders")));
 const Employees = Loadable(lazy(() => import("../page/admin/Employees")));

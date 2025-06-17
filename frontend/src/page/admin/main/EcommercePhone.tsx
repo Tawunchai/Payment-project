@@ -2,10 +2,10 @@ import { BsCurrencyDollar } from 'react-icons/bs';
 import { BsDot } from 'react-icons/bs';
 import { IoIosMore } from 'react-icons/io';
 import { DropDownListComponent } from '@syncfusion/ej2-react-dropdowns';
-import { Stacked, Pie, Button, LineChart, SparkLine } from '../../component/admin';
-import { earningData, medicalproBranding, recentTransactions, weeklyStats, dropdownData, SparklineAreaData, ecomPieChartData } from '../../assets/admin/dummy';
-import { useStateContext } from '../../contexts/ContextProvider';
-import product9 from '../../assets/admin/product9.jpg';
+import { Stacked, Pie, Button, LineChart, SparkLine } from '../../../component/admin';
+import { earningData, medicalproBranding, recentTransactions, weeklyStats, dropdownData, SparklineAreaData, ecomPieChartData } from '../../../assets/admin/dummy';
+import { useStateContext } from '../../../contexts/ContextProvider';
+import product9 from '../../../assets/admin/product9.jpg';
 
 const DropDown = ({ currentMode }: any) => (
   <div className="w-28 border-1 border-color px-2 py-1 rounded-md">
