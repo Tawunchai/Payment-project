@@ -5,8 +5,10 @@ import (
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/controller/gender"
+	"github.com/Tawunchai/work-project/controller/getstarted"
 	"github.com/Tawunchai/work-project/controller/like"
 	"github.com/Tawunchai/work-project/controller/login"
+	"github.com/Tawunchai/work-project/controller/new"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/user"
 	"github.com/Tawunchai/work-project/middlewares"
@@ -46,6 +48,12 @@ func main() {
 		//review
 		public.GET("/reviews", review.ListReview)
 
+		//new
+		public.GET("/news", new.ListNew)
+
+		//getstarted
+		public.GET("/getstarteds", getstarted.ListGetStarted)
+		
 		//like
 		public.POST("/reviews/like", like.LikeReview)
 		public.DELETE("/reviews/unlike", like.UnlikeReview)

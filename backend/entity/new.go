@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Naw struct {
+type New struct {
 	gorm.Model
 	Picture		 string 
 	Title		 string

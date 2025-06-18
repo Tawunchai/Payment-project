@@ -263,6 +263,7 @@ form.custom-sign-up-form > .custom-btn {
   font-size: 0.8rem;
 }
 
+
 .custom-right-panel .custom-image,
 .custom-right-panel .custom-content {
   transform: translateX(800px);
@@ -433,5 +434,15 @@ form.custom-sign-up-form > .custom-btn {
   .custom-container.custom-sign-up-mode:before {
     bottom: 28%;
     left: 50%;
+  }
+
+  form.custom-sign-up-form input::placeholder,
+  form.custom-sign-up-form select::placeholder {
+    font-size: 0.75rem;
+  }
+
+  form.custom-sign-up-form input,
+  form.custom-sign-up-form select {
+    font-size: 0.85rem; /* ปรับขนาดข้อความที่พิมพ์ลงไป */
   }
 }

@@ -36,7 +36,7 @@ func SetupDatabase() {
 		&entity.Calendar{},
 		&entity.EVcharging{},
 		&entity.GettingStarted{},
-		&entity.Naw{},
+		&entity.New{},
 		&entity.Status{},
 		&entity.Type{},
 	)
@@ -52,7 +52,6 @@ func SetupDatabase() {
 
 	db.FirstOrCreate(&AdminRole, &entity.UserRoles{RoleName: "Admin"})
 	db.FirstOrCreate(&UserRole, &entity.UserRoles{RoleName: "User"})
-
 
 	User1 := entity.User{
 		Username:   "user1",
@@ -112,6 +111,45 @@ func SetupDatabase() {
 	}
 	db.FirstOrCreate(&Employee1, entity.Employee{UserID: &eid1})
 
+	getting1 := entity.GettingStarted{
+		Title:       "Best interest rates on the market",
+		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
+		EmployeeID:  &eid1, 
+	}
+
+	getting2 := entity.GettingStarted{
+		Title:       "Prevent unstable prices",
+		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
+		EmployeeID:  &eid1,
+	}
+
+	getting3 := entity.GettingStarted{
+		Title:       "Best price on the market",
+		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
+		EmployeeID:  &eid1,
+	}
+
+	db.FirstOrCreate(&getting1, entity.GettingStarted{Title: "1.Best interest rates on the market"})
+	db.FirstOrCreate(&getting2, entity.GettingStarted{Title: "2.Prevent unstable prices"})
+	db.FirstOrCreate(&getting3, entity.GettingStarted{Title: "3.Best price on the market"})
+
+	news1 := entity.New{
+		Picture:     "uploads/new/news1.png",
+		Title:       "Personalized Profession Online Tutor on Your Schedule 1",
+		Description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Necessitatibus atque voluptas labore nemo ipsam voluptatum maxime facere hic, eum illo, nobis inventore asperiores eaque exercitationem maiores laboriosam accusantium nihil quaerat.",
+		EmployeeID:  &eid1,
+	}
+
+	news2 := entity.New{
+		Picture:     "uploads/new/news2.png",
+		Title:       "Personalized Profession Online Tutor on Your Schedule 2",
+		Description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Necessitatibus atque voluptas labore nemo ipsam voluptatum maxime facere hic, eum illo, nobis inventore asperiores eaque exercitationem maiores laboriosam accusantium nihil quaerat.",
+		EmployeeID:  &eid1,
+	}
+
+	// ใช้ FirstOrCreate เพื่อไม่ให้ซ้ำ
+	db.FirstOrCreate(&news1, entity.New{Title: "Personalized Profession Online Tutor on Your Schedule 1"})
+	db.FirstOrCreate(&news2, entity.New{Title: "Personalized Profession Online Tutor on Your Schedule 2"})
 
 	uid1 := uint(1)
 	uid2 := uint(2)

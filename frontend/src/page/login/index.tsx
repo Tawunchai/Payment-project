@@ -26,6 +26,26 @@ function Login() {
 
   // Toggle between sign in and sign up mode
   const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [fileList, setFileList] = useState<any[]>([]);
+
+  const onChange = ({ fileList: newFileList }: any) => {
+  setFileList(newFileList);
+};
+
+const onPreview = async (file: any) => {
+  let src = file.url;
+  if (!src) {
+    src = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file.originFileObj);
+      reader.onload = () => resolve(reader.result);
+    });
+  }
+  const image = new Image();
+  image.src = src;
+  const imgWindow = window.open(src);
+  imgWindow?.document.write(image.outerHTML);
+};
 
   // --- Sign In Logic ---
 
@@ -99,7 +119,6 @@ function Login() {
       return;
     }
 
-    // เตรียมข้อมูลตาม UsersInterface
     const newUser: UsersInterface = {
       Username: signUpUsername.trim(),
       Email: signUpEmail.trim(),
@@ -107,10 +126,12 @@ function Login() {
       FirstName: signUpFirstName,
       LastName: signUpLastName,
       Phonenumber: signUpPhoneNumber,
-      GenderID: { ID: signUpGenderID },  // ตามที่ backend ต้องการ
-      UserRoleID: { ID: 2, RoleName: "User" }, // กำหนด role เริ่มต้น
-      Profile: "", // สามารถเพิ่มฟีลด์อัพโหลดภาพภายหลัง
+      GenderID: { ID: signUpGenderID },  
+      UserRoleID: { ID: 2, RoleName: "User" }, 
+      Profile: "",
     };
+
+    console.log(newUser)
 
     const res = await CreateUser(newUser);
 
@@ -254,7 +275,7 @@ function Login() {
             <button type="submit" className="custom-btn">
               Sign up
             </button>
-            <p className="custom-social-text">Welcome To My Website</p>
+            <center className="custom-social-text">Welcome To My Website</center>
           </form>
         </div>
       </div>

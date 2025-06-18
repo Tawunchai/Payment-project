@@ -17,7 +17,7 @@ type Employee struct {
 
 	Report []Report `gorm:"foreignKey:EmployeeID"`
 
-	New []Naw `gorm:"foreignKey:EmployeeID"`
+	New []New `gorm:"foreignKey:EmployeeID"`
 
 	GettingStarted []GettingStarted `gorm:"foreignKey:EmployeeID"`
 

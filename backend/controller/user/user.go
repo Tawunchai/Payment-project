@@ -33,83 +33,80 @@ func ServeImage(c *gin.Context) {
 }
 
 type UserRoleRequest struct {
-    ID       uint   `json:"ID"`
-    RoleName string `json:"RoleName"`
+	ID       uint   `json:"ID"`
+	RoleName string `json:"RoleName"`
 }
 
 type GenderRequest struct {
-    ID     uint   `json:"ID"`
-    Gender string `json:"Gender"`
+	ID     uint   `json:"ID"`
+	Gender string `json:"Gender"`
 }
 
 type CreateUserRequest struct {
-    Username    string          `json:"username" binding:"required"`
-    Email       string          `json:"email" binding:"required,email"`
-    FirstName   string          `json:"first_name"`
-    LastName    string          `json:"last_name"`
-    PhoneNumber string          `json:"phonenumber"`
-    GenderID    GenderRequest   `json:"genderID" binding:"required"`
-    UserRoleID  UserRoleRequest `json:"userRoleID"` 
-    Password    string          `json:"password" binding:"required"`
-    Profile     string          `json:"profile"`
+	Username    string          `json:"username" binding:"required"`
+	Email       string          `json:"email" binding:"required,email"`
+	FirstName   string          `json:"FirstName"`
+	LastName    string          `json:"LastName"`
+	PhoneNumber string          `json:"phonenumber"`
+	GenderID    GenderRequest   `json:"genderID" binding:"required"`
+	UserRoleID  UserRoleRequest `json:"userRoleID"`
+	Password    string          `json:"password" binding:"required"`
+	Profile     string          `json:"profile"`
 }
 
 func CreateUser(c *gin.Context) {
-    var req CreateUserRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	var req CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-    db := config.DB()
+	db := config.DB()
 
-    // เช็ค username ซ้ำ
-    var existingUser entity.User
-    if err := db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
-        c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
-        return
-    }
+	// เช็ค username ซ้ำ
+	var existingUser entity.User
+	if err := db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		return
+	}
 
-    userRoleID := req.UserRoleID.ID
-    if userRoleID == 0 {
-        userRoleID = 2 // default
-    }
+	userRoleID := req.UserRoleID.ID
+	if userRoleID == 0 {
+		userRoleID = 2 // default
+	}
 
-    user := entity.User{
-        Username:    req.Username,
-        Email:       req.Email,
-        FirstName:   req.FirstName,
-        LastName:    req.LastName,
-        PhoneNumber: req.PhoneNumber,
-        GenderID:    req.GenderID.ID,
-        UserRoleID:  userRoleID,
-        Profile:     req.Profile,
-        Password:    req.Password, // ควร hash ก่อนบันทึกจริง
-    }
+	user := entity.User{
+		Username:    req.Username,
+		Email:       req.Email,
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
+		PhoneNumber: req.PhoneNumber,
+		GenderID:    req.GenderID.ID,
+		UserRoleID:  userRoleID,
+		Profile:     req.Profile,
+		Password:    req.Password, // ควร hash ก่อนบันทึกจริง
+	}
 
-    if err := db.Create(&user).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create user: %v", err)})
-        return
-    }
+	if err := db.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create user: %v", err)})
+		return
+	}
 
-    c.JSON(http.StatusCreated, gin.H{
-        "message": "User created successfully",
-        "user": gin.H{
-            "id":          user.ID,
-            "username":    user.Username,
-            "email":       user.Email,
-            "first_name":  user.FirstName,
-            "last_name":   user.LastName,
-            "profile":     user.Profile,
-            "phoneNumber": user.PhoneNumber,
-            "userRoleID":  user.UserRoleID,
-            "genderID":    user.GenderID,
-        },
-    })
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User created successfully",
+		"user": gin.H{
+			"id":          user.ID,
+			"username":    user.Username,
+			"email":       user.Email,
+			"first_name":  user.FirstName,
+			"last_name":   user.LastName,
+			"profile":     user.Profile,
+			"phoneNumber": user.PhoneNumber,
+			"userRoleID":  user.UserRoleID,
+			"genderID":    user.GenderID,
+		},
+	})
 }
-
-
-
 
 func GetEmployeeByUserID(c *gin.Context) {
 	db := config.DB()

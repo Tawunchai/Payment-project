@@ -7,7 +7,6 @@ import (
 
 type GettingStarted struct {
 	gorm.Model
-	Icon		 string 
 	Title  		 string
 	Description  string 
 	
