@@ -15,4 +15,11 @@ type Employee struct {
 	UserID 		*uint
 	User   		*User `gorm:"foreignKey:UserID"`
 
+	Report []Report `gorm:"foreignKey:EmployeeID"`
+
+	New []Naw `gorm:"foreignKey:EmployeeID"`
+
+	GettingStarted []GettingStarted `gorm:"foreignKey:EmployeeID"`
+
+	Calendar []Calendar `gorm:"foreignKey:EmployeeID"`
 }

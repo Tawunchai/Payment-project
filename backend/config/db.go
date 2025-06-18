@@ -2,10 +2,7 @@ package config
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/Tawunchai/work-project/entity"
-
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -31,6 +28,15 @@ func SetupDatabase() {
 		&entity.UserRoles{},
 		&entity.Genders{},
 		&entity.Employee{},
+		&entity.Report{},
+		&entity.Review{},
+		&entity.Like{},
+		&entity.Calendar{},
+		&entity.EVcharging{},
+		&entity.GettingStarted{},
+		&entity.Naw{},
+		&entity.Status{},
+		&entity.Type{},
 	)
 
 	GenderMale := entity.Genders{Gender: "Male"}
@@ -45,7 +51,6 @@ func SetupDatabase() {
 	db.FirstOrCreate(&AdminRole, &entity.UserRoles{RoleName: "Admin"})
 	db.FirstOrCreate(&UserRole, &entity.UserRoles{RoleName: "User"})
 
-	birthDayStr, _ := time.Parse("2006-01-02", "1999-01-01")
 
 	User1 := entity.User{
 		Username:   "user1",
@@ -53,7 +58,6 @@ func SetupDatabase() {
 		LastName:   "Green",
 		Email:      "janis.green@example.com",
 		Password:   "123",
-		Birthday:   birthDayStr,
 		Profile:    "uploads/profile/profile6.jpg",
 		GenderID:   1,
 		UserRoleID: 2,
@@ -66,7 +70,6 @@ func SetupDatabase() {
 		LastName:   "Taylor",
 		Email:      "chris.taylor@example.com",
 		Password:   "123",
-		Birthday:   birthDayStr,
 		Profile:    "uploads/profile/profile5.jpeg",
 		GenderID:   2,
 		UserRoleID: 2,
@@ -79,7 +82,6 @@ func SetupDatabase() {
 		LastName:   "Smith",
 		Email:      "alex.smith@example.com",
 		Password:   "123",
-		Birthday:   birthDayStr,
 		Profile:    "uploads/profile/profile4.jpeg",
 		GenderID:   1,
 		UserRoleID: 2,
@@ -92,7 +94,6 @@ func SetupDatabase() {
 		LastName:   "KD",
 		Email:      "Kanyapron@gmail.com",
 		Password:   "123",
-		Birthday:   birthDayStr,
 		Profile:    "uploads/profile/profile1.jpg",
 		GenderID:   1,
 		UserRoleID: 1,

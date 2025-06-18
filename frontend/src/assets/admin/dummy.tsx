@@ -482,10 +482,10 @@ export const links = [
   },
 
   {
-    title: 'Pages',
+    title: 'Mangement',
     links: [
       {
-        name: 'Orders',
+        name: 'EV Charging',
         icon: <AiOutlineShoppingCart />,
       },
       {
@@ -499,14 +499,26 @@ export const links = [
     ],
   },
   {
-    title: 'Apps',
+    title: 'WORK',
     links: [
+      {
+        name: 'Payment',
+        icon: <FiEdit />,
+      },
       {
         name: 'Calendar',
         icon: <AiOutlineCalendar />,
       },
       {
         name: 'Editor',
+        icon: <FiEdit />,
+      },
+      {
+        name: 'New',
+        icon: <FiEdit />,
+      },
+      {
+        name: 'Getting Started',
         icon: <FiEdit />,
       },
     ],

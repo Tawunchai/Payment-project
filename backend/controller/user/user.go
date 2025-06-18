@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 )
 
 func ServeImage(c *gin.Context) {
@@ -63,16 +62,6 @@ func CreateUser(c *gin.Context) {
 	user.Email = c.PostForm("email")
 	user.FirstName = c.PostForm("first_name")
 	user.LastName = c.PostForm("last_name")
-
-	birthDayStr := c.PostForm("birthDay")
-	if birthDayStr != "" {
-		birthDay, err := time.Parse("2006-01-02", birthDayStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("รูปแบบวันเกิดไม่ถูกต้อง: %v", err)})
-			return
-		}
-		user.Birthday = birthDay
-	}
 
 	user.Profile = filePath
 

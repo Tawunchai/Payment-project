@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -13,7 +12,6 @@ type User struct {
 	Email       string
 	FirstName   string
 	LastName    string
-	Birthday    time.Time
 	Profile     string
 	PhoneNumber string
 
@@ -23,5 +21,7 @@ type User struct {
 	GenderID uint
 	Gender   *Genders `gorm:"foreignKey: GenderID"`
 
-	Employee *Employee `gorm:"foreignKey:UserID"`
+	Employees []Employee `gorm:"foreignKey:UserID"`
+
+	Review []Review `gorm:"foreignKey:UserID"`
 }

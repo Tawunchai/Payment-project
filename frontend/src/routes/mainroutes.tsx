@@ -43,6 +43,13 @@ const UserRoutes = (): RouteObject[] => [
 
 const AdminRoutes = (): RouteObject[] => [
   {
+    path: "/",
+    element: <MainLayout />,
+    children: [
+      { index: true, element: <Admin /> },   
+    ],
+  }, 
+  {
     path: "/admin",
     element: <MainLayout />,
     children: [
