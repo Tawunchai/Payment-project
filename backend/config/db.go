@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/Tawunchai/work-project/entity"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -58,7 +60,7 @@ func SetupDatabase() {
 		LastName:   "Green",
 		Email:      "janis.green@example.com",
 		Password:   "123",
-		Profile:    "uploads/profile/profile6.jpg",
+		Profile:    "uploads/user/avatar1.jpg",
 		GenderID:   1,
 		UserRoleID: 2,
 	}
@@ -70,7 +72,7 @@ func SetupDatabase() {
 		LastName:   "Taylor",
 		Email:      "chris.taylor@example.com",
 		Password:   "123",
-		Profile:    "uploads/profile/profile5.jpeg",
+		Profile:    "uploads/user/avatar2.jpg",
 		GenderID:   2,
 		UserRoleID: 2,
 	}
@@ -82,7 +84,7 @@ func SetupDatabase() {
 		LastName:   "Smith",
 		Email:      "alex.smith@example.com",
 		Password:   "123",
-		Profile:    "uploads/profile/profile4.jpeg",
+		Profile:    "uploads/user/avatar3.png",
 		GenderID:   1,
 		UserRoleID: 2,
 	}
@@ -94,7 +96,7 @@ func SetupDatabase() {
 		LastName:   "KD",
 		Email:      "Kanyapron@gmail.com",
 		Password:   "123",
-		Profile:    "uploads/profile/profile1.jpg",
+		Profile:    "uploads/user/avatar4.jpg",
 		GenderID:   1,
 		UserRoleID: 1,
 	}
@@ -109,5 +111,35 @@ func SetupDatabase() {
 		UserID:     &eid1,
 	}
 	db.FirstOrCreate(&Employee1, entity.Employee{UserID: &eid1})
+
+
+	uid1 := uint(1)
+	uid2 := uint(2)
+	uid3 := uint(3)
+
+	Review1 := &entity.Review{
+		Rating:     5,
+		Comment:    "The zoo was incredibly well-maintained, and the animals looked happy and healthy. The staff were friendly and knowledgeable, always ready to share interesting facts about the animals. I loved the interactive exhibits, especially the feeding sessions with the giraffes! Its a great place for families, and theres something for everyone to enjoy. I can't wait to visit again!",
+		ReviewDate: time.Now(),
+		UserID:     &uid1,
+	}
+
+	Review2 := &entity.Review{
+		Rating:     4,
+		Comment:    "The zoo had a wide variety of animals, and the staff were helpful. However, some areas felt overcrowded, and a few enclosures looked outdated. The food options were decent, but a bit overpriced. Its a nice place to visit, but it could be even better with a few updates",
+		ReviewDate: time.Now(),
+		UserID:     &uid2,
+	}
+
+	Review3 := &entity.Review{
+		Rating:     3,
+		Comment:    "The animals were interesting, and the staff seemed to care about them. However, some enclosures felt too small, and the facilities could have been cleaner. The ticket price was a bit high for the experience provided. It was okay, but I wouldnt rush back.",
+		ReviewDate: time.Now(),
+		UserID:     &uid3,
+	}
+
+	db.FirstOrCreate(Review1, &entity.Review{UserID: &uid1})
+	db.FirstOrCreate(Review2, &entity.Review{UserID: &uid2})
+	db.FirstOrCreate(Review3, &entity.Review{UserID: &uid3})
 
 }

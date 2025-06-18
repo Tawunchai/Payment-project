@@ -2,30 +2,28 @@ package user
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/Tawunchai/work-project/config"
-	"github.com/Tawunchai/work-project/entity"
-	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+
+	"github.com/Tawunchai/work-project/config"
+	"github.com/Tawunchai/work-project/entity"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func ServeImage(c *gin.Context) {
-
 	filePath := c.Param("filename")
-
+	filePath = strings.TrimPrefix(filePath, "/")
 
 	fullFilePath := filepath.Join("uploads", filePath)
-
 
 	if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบไฟล์"})
 		return
 	}
-
 
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 	c.Header("Pragma", "no-cache")
@@ -34,77 +32,83 @@ func ServeImage(c *gin.Context) {
 	c.File(fullFilePath)
 }
 
+type UserRoleRequest struct {
+    ID       uint   `json:"ID"`
+    RoleName string `json:"RoleName"`
+}
+
+type GenderRequest struct {
+    ID     uint   `json:"ID"`
+    Gender string `json:"Gender"`
+}
+
+type CreateUserRequest struct {
+    Username    string          `json:"username" binding:"required"`
+    Email       string          `json:"email" binding:"required,email"`
+    FirstName   string          `json:"first_name"`
+    LastName    string          `json:"last_name"`
+    PhoneNumber string          `json:"phonenumber"`
+    GenderID    GenderRequest   `json:"genderID" binding:"required"`
+    UserRoleID  UserRoleRequest `json:"userRoleID"` 
+    Password    string          `json:"password" binding:"required"`
+    Profile     string          `json:"profile"`
+}
+
 func CreateUser(c *gin.Context) {
-	var user entity.User
-	db := config.DB()
+    var req CreateUserRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-	profileImage, err := c.FormFile("profile")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Error receiving profile image: %v", err)})
-		return
-	}
+    db := config.DB()
 
-	uploadDir := "uploads"
-	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create upload directory: %v", err)})
-		return
-	}
+    // เช็ค username ซ้ำ
+    var existingUser entity.User
+    if err := db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+        c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+        return
+    }
 
-	fileName := fmt.Sprintf("%s-%s", uuid.New().String(), profileImage.Filename)
-	filePath := filepath.Join(uploadDir, fileName)
+    userRoleID := req.UserRoleID.ID
+    if userRoleID == 0 {
+        userRoleID = 2 // default
+    }
 
-	if err := c.SaveUploadedFile(profileImage, filePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to save profile image: %v", err)})
-		return
-	}
+    user := entity.User{
+        Username:    req.Username,
+        Email:       req.Email,
+        FirstName:   req.FirstName,
+        LastName:    req.LastName,
+        PhoneNumber: req.PhoneNumber,
+        GenderID:    req.GenderID.ID,
+        UserRoleID:  userRoleID,
+        Profile:     req.Profile,
+        Password:    req.Password, // ควร hash ก่อนบันทึกจริง
+    }
 
-	user.Username = c.PostForm("username")
-	user.Email = c.PostForm("email")
-	user.FirstName = c.PostForm("first_name")
-	user.LastName = c.PostForm("last_name")
+    if err := db.Create(&user).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create user: %v", err)})
+        return
+    }
 
-	user.Profile = filePath
-
-	user.UserRoleID = 2
-
-	genderIDStr := c.PostForm("genderID")
-	genderID, err := strconv.ParseUint(genderIDStr, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid genderID format"})
-		return
-	}
-	user.GenderID = uint(genderID)
-
-	user.PhoneNumber = c.PostForm("phonenumber")
-
-	user.Password = c.PostForm("password")
-
-	var existingUser entity.User
-	if err := db.Where("username = ?", user.Username).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
-		return
-	}
-
-	if err := db.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create user: %v", err)})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "User created successfully",
-		"user":    user,
-	})
+    c.JSON(http.StatusCreated, gin.H{
+        "message": "User created successfully",
+        "user": gin.H{
+            "id":          user.ID,
+            "username":    user.Username,
+            "email":       user.Email,
+            "first_name":  user.FirstName,
+            "last_name":   user.LastName,
+            "profile":     user.Profile,
+            "phoneNumber": user.PhoneNumber,
+            "userRoleID":  user.UserRoleID,
+            "genderID":    user.GenderID,
+        },
+    })
 }
 
-func ListGenders(c *gin.Context) {
-	var genders []entity.Genders
 
-	db := config.DB()
-
-	db.Find(&genders)
-
-	c.JSON(http.StatusOK, &genders)
-}
 
 
 func GetEmployeeByUserID(c *gin.Context) {
@@ -116,7 +120,6 @@ func GetEmployeeByUserID(c *gin.Context) {
 		return
 	}
 
-	// แปลง id จาก string เป็น uint
 	userID, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "UserID ต้องเป็นตัวเลข"})

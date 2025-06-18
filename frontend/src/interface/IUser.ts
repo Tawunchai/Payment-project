@@ -1,18 +1,15 @@
-import { ReactNode } from "react";
-import { EmployeeInterface } from "../interface/IEmployee"
+import { UserroleInterface } from "../interface/IUserrole"
+import { GendersInterface } from "../interface/IGender"
 
 export interface UsersInterface {
-    PhoneNumber: ReactNode;
     ID?: number;
     Username?: string;
     Password?: string;
     Email?: string;
     FirstName?: string;
     LastName?: string;
-    BirthDay?: string;
     Profile?: string ;
-    UserRoleID?: number;
-    GenderID?: number;
     Phonenumber?: string;
-    Employee?: EmployeeInterface;
+    UserRoleID?: UserroleInterface;
+    GenderID?: GendersInterface;
   }

@@ -1,16 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { message } from "antd";
 import { LoginInterface } from "../../interface/Login";
 import { AddLogin, GetEmployeeByUserID } from "../../services/httpLogin";
+import { CreateUser } from "../../services/index";  
+import { UsersInterface } from "../../interface/IUser";
 import Logo_Login from "../../assets/car_login.svg";
 import Logo_Regis from "../../assets/signup.svg";
 import "./login.css";
 
 function Login() {
   const [messageApi, contextHolder] = message.useMessage();
+
+  // Sign in state
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  // Sign up states
+  const [signUpUsername, setSignUpUsername] = useState("");
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpPassword, setSignUpPassword] = useState("");
+  const [signUpFirstName, setSignUpFirstName] = useState("");
+  const [signUpLastName, setSignUpLastName] = useState("");
+  const [signUpPhoneNumber, setSignUpPhoneNumber] = useState("");
+  const [signUpGenderID, setSignUpGenderID] = useState<number | undefined>(undefined);
+
+  // Toggle between sign in and sign up mode
   const [isSignUpMode, setIsSignUpMode] = useState(false);
+
+  // --- Sign In Logic ---
 
   const clickLoginbt = async (datalogin: LoginInterface) => {
     const res = await AddLogin(datalogin);
@@ -67,11 +84,51 @@ function Login() {
     await clickLoginbt(datalogin);
   };
 
-  // Toggle SignUp mode
-  useEffect(() => {
-    // No longer use direct DOM event listeners
-    // Just control mode with React state below
-  }, []);
+  // --- Sign Up Logic ---
+
+  const handleSubmitSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (
+      !signUpUsername ||
+      !signUpEmail ||
+      !signUpPassword ||
+      signUpGenderID === undefined
+    ) {
+      messageApi.warning("กรุณากรอกข้อมูลให้ครบทุกช่องที่จำเป็น");
+      return;
+    }
+
+    // เตรียมข้อมูลตาม UsersInterface
+    const newUser: UsersInterface = {
+      Username: signUpUsername.trim(),
+      Email: signUpEmail.trim(),
+      Password: signUpPassword,
+      FirstName: signUpFirstName,
+      LastName: signUpLastName,
+      Phonenumber: signUpPhoneNumber,
+      GenderID: { ID: signUpGenderID },  // ตามที่ backend ต้องการ
+      UserRoleID: { ID: 2, RoleName: "User" }, // กำหนด role เริ่มต้น
+      Profile: "", // สามารถเพิ่มฟีลด์อัพโหลดภาพภายหลัง
+    };
+
+    const res = await CreateUser(newUser);
+
+    if (res) {
+      messageApi.success("สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ");
+      setIsSignUpMode(false);
+      // เคลียร์ฟอร์ม
+      setSignUpUsername("");
+      setSignUpEmail("");
+      setSignUpPassword("");
+      setSignUpFirstName("");
+      setSignUpLastName("");
+      setSignUpPhoneNumber("");
+      setSignUpGenderID(undefined);
+    } else {
+      messageApi.error("สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
 
   return (
     <div className={`custom-container ${isSignUpMode ? "custom-sign-up-mode" : ""}`}>
@@ -111,23 +168,87 @@ function Login() {
             <p className="custom-social-text">Welcome To My Website</p>
           </form>
 
-          {/* Sign Up Form (ยังไม่ทำงานจริง) */}
-          <form className="custom-sign-up-form">
+          {/* Sign Up Form */}
+          <form onSubmit={handleSubmitSignUp} className="custom-sign-up-form">
             <h2 className="custom-title">Sign up</h2>
 
             <div className="custom-input-field">
               <i className="fas fa-user"></i>
-              <input type="text" placeholder="Username" />
+              <input
+                type="text"
+                placeholder="Username"
+                value={signUpUsername}
+                onChange={(e) => setSignUpUsername(e.target.value)}
+                required
+              />
             </div>
 
             <div className="custom-input-field">
               <i className="fas fa-envelope"></i>
-              <input type="email" placeholder="Email" />
+              <input
+                type="email"
+                placeholder="Email"
+                value={signUpEmail}
+                onChange={(e) => setSignUpEmail(e.target.value)}
+                required
+              />
             </div>
 
             <div className="custom-input-field">
               <i className="fas fa-lock"></i>
-              <input type="password" placeholder="Password" />
+              <input
+                type="password"
+                placeholder="Password"
+                value={signUpPassword}
+                onChange={(e) => setSignUpPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="custom-input-field">
+              <i className="fas fa-id-card"></i>
+              <input
+                type="text"
+                placeholder="First Name"
+                value={signUpFirstName}
+                onChange={(e) => setSignUpFirstName(e.target.value)}
+              />
+            </div>
+
+            <div className="custom-input-field">
+              <i className="fas fa-id-card"></i>
+              <input
+                type="text"
+                placeholder="Last Name"
+                value={signUpLastName}
+                onChange={(e) => setSignUpLastName(e.target.value)}
+              />
+            </div>
+
+            <div className="custom-input-field">
+              <i className="fas fa-phone"></i>
+              <input
+                type="text"
+                placeholder="Phone Number"
+                value={signUpPhoneNumber}
+                onChange={(e) => setSignUpPhoneNumber(e.target.value)}
+              />
+            </div>
+
+            <div className="custom-input-field">
+              <i className="fas fa-venus-mars"></i>
+              <select
+                value={signUpGenderID || ""}
+                onChange={(e) => setSignUpGenderID(Number(e.target.value))}
+                required
+              >
+                <option value="" disabled>
+                  Select Gender
+                </option>
+                <option value={1}>Male</option>
+                <option value={2}>Female</option>
+                {/* เพิ่มตามฐานข้อมูล Gender */}
+              </select>
             </div>
 
             <button type="submit" className="custom-btn">

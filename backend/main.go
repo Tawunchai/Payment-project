@@ -4,7 +4,10 @@ import (
 	"net/http"
 
 	"github.com/Tawunchai/work-project/config"
+	"github.com/Tawunchai/work-project/controller/gender"
+	"github.com/Tawunchai/work-project/controller/like"
 	"github.com/Tawunchai/work-project/controller/login"
+	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/user"
 	"github.com/Tawunchai/work-project/middlewares"
 	"github.com/gin-gonic/gin"
@@ -32,10 +35,21 @@ func main() {
 
 	public := r.Group("")
 	{
+		//user
 		public.GET("/employee/:userID", user.GetEmployeeByUserID) 
 		public.GET("/uploads/*filename", user.ServeImage)
-		public.GET("/genders", user.ListGenders)
-		public.POST("/signup", user.CreateUser)
+		public.POST("/create-user", user.CreateUser)
+
+		//gender
+		public.GET("/genders", gender.ListGenders)
+
+		//review
+		public.GET("/reviews", review.ListReview)
+
+		//like
+		public.POST("/reviews/like", like.LikeReview)
+		public.DELETE("/reviews/unlike", like.UnlikeReview)
+		public.GET("/reviews/:userID/:reviewID/like", like.CheckUserLikeStatus)
 	}
 
 	r.GET("/", func(c *gin.Context) {

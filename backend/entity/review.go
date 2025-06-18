@@ -11,7 +11,6 @@ type Review struct {
 	Rating       uint  
 	Comment      string 
 	ReviewDate   time.Time 
-	Picture      string
 
 	UserID       *uint 
 	User         User    `gorm:"foreignKey:UserID"` 
