@@ -54,66 +54,66 @@ func SetupDatabase() {
 	db.FirstOrCreate(&UserRole, &entity.UserRoles{RoleName: "User"})
 
 	User1 := entity.User{
-		Username:   "user1",
-		FirstName:  "Janis",
-		LastName:   "Green",
-		Email:      "janis.green@example.com",
-		Password:   "123",
-		Profile:    "uploads/user/avatar1.jpg",
+		Username:    "user1",
+		FirstName:   "Janis",
+		LastName:    "Green",
+		Email:       "janis.green@example.com",
+		Password:    "123",
+		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0935096372",
-		GenderID:   1,
-		UserRoleID: 2,
+		GenderID:    1,
+		UserRoleID:  2,
 	}
 	db.FirstOrCreate(&User1, entity.User{Username: "user1"})
 
 	User2 := entity.User{
-		Username:   "user2",
-		FirstName:  "Chris",
-		LastName:   "Taylor",
-		Email:      "chris.taylor@example.com",
-		Password:   "123",
-		Profile:    "uploads/user/avatar2.jpg",
+		Username:    "user2",
+		FirstName:   "Chris",
+		LastName:    "Taylor",
+		Email:       "chris.taylor@example.com",
+		Password:    "123",
+		Profile:     "uploads/user/avatar2.jpg",
 		PhoneNumber: "0895845671",
-		GenderID:   2,
-		UserRoleID: 2,
+		GenderID:    2,
+		UserRoleID:  2,
 	}
 	db.FirstOrCreate(&User2, entity.User{Username: "user2"})
 
 	User3 := entity.User{
-		Username:   "user3",
-		FirstName:  "Alex",
-		LastName:   "Smith",
-		Email:      "alex.smith@example.com",
-		Password:   "123",
-		Profile:    "uploads/user/avatar3.png",
+		Username:    "user3",
+		FirstName:   "Alex",
+		LastName:    "Smith",
+		Email:       "alex.smith@example.com",
+		Password:    "123",
+		Profile:     "uploads/user/avatar3.png",
 		PhoneNumber: "0938473272",
-		GenderID:   1,
-		UserRoleID: 2,
+		GenderID:    1,
+		UserRoleID:  2,
 	}
 	db.FirstOrCreate(&User3, entity.User{Username: "user3"})
 
 	Admin1 := entity.User{
-		Username:   "admin1",
-		FirstName:  "Kanyapron",
-		LastName:   "KD",
-		Email:      "Kanyapron@gmail.com",
-		Password:   "123",
-		Profile:    "uploads/user/avatar4.jpg",
+		Username:    "admin1",
+		FirstName:   "Kanyapron",
+		LastName:    "KD",
+		Email:       "Kanyapron@gmail.com",
+		Password:    "123",
+		Profile:     "uploads/user/avatar4.jpg",
 		PhoneNumber: "0981183502",
-		GenderID:   1,
-		UserRoleID: 1,
+		GenderID:    1,
+		UserRoleID:  1,
 	}
 
 	Admin2 := entity.User{
-		Username:   "admin2",
-		FirstName:  "JoJo",
-		LastName:   "Smoke",
-		Email:      "Smoke@gmail.com",
-		Password:   "123",
-		Profile:    "uploads/user/avatar1.jpg",
+		Username:    "admin2",
+		FirstName:   "JoJo",
+		LastName:    "Smoke",
+		Email:       "Smoke@gmail.com",
+		Password:    "123",
+		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0981183502",
-		GenderID:   2,
-		UserRoleID: 1,
+		GenderID:    2,
+		UserRoleID:  1,
 	}
 
 	db.FirstOrCreate(&Admin1, entity.User{Username: "admin1"})
@@ -224,12 +224,14 @@ func SetupDatabase() {
 	db.FirstOrCreate(&type2, entity.Type{Type: "Level 2 Charger"})
 	db.FirstOrCreate(&type3, entity.Type{Type: "Level 1 Charger"})
 
+	ev_eid := uint(1)
+
 	ev1 := entity.EVcharging{
 		Name:       "Charger A1",
 		Voltage:    "400V",
 		Current:    "200A",
 		Price:      15.50,
-		EmployeeID: &eid1,
+		EmployeeID: &ev_eid,
 		StatusID:   status1.ID,
 		TypeID:     type1.ID,
 	}
@@ -239,13 +241,35 @@ func SetupDatabase() {
 		Voltage:    "240V",
 		Current:    "100A",
 		Price:      10.75,
-		EmployeeID: &eid1,
+		EmployeeID: &ev_eid,
 		StatusID:   status2.ID,
 		TypeID:     type2.ID,
 	}
 
-
 	db.FirstOrCreate(&ev1, entity.EVcharging{Name: "Charger A1"})
 	db.FirstOrCreate(&ev2, entity.EVcharging{Name: "Charger B2"})
+
+	calendar_eid := uint(1) 
+
+	calendar1 := entity.Calendar{
+		Title:       "Staff Meeting",
+		Location:    "Room A101",
+		Description: "Monthly all-staff meeting",
+		StartDate:   time.Date(2025, 7, 1, 9, 0, 0, 0, time.Local),
+		EndDate:     time.Date(2025, 7, 1, 10, 30, 0, 0, time.Local),
+		EmployeeID:  &calendar_eid,
+	}
+
+	calendar2 := entity.Calendar{
+		Title:       "EV Maintenance",
+		Location:    "EV Station Zone B",
+		Description: "Routine maintenance for EV chargers",
+		StartDate:   time.Date(2025, 7, 3, 13, 0, 0, 0, time.Local),
+		EndDate:     time.Date(2025, 7, 3, 15, 0, 0, 0, time.Local),
+		EmployeeID:  &calendar_eid,
+	}
+
+	db.FirstOrCreate(&calendar1, entity.Calendar{Title: "Staff Meeting"})
+	db.FirstOrCreate(&calendar2, entity.Calendar{Title: "EV Maintenance"})
 
 }

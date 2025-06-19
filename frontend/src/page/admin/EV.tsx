@@ -13,48 +13,46 @@ import {
 } from "@syncfusion/ej2-react-grids";
 
 import { Header } from "../../component/admin";
-import { customersGrid } from "../../assets/admin/dummy"; // ปรับ path ตามโปรเจกต์จริง
-import { ListUsersByRoleUser } from "../../services/index";
+import { EVGrid } from "../../assets/admin/dummy"; // ตรวจสอบให้แน่ใจว่า EVGrid ตรงกับโครงสร้างข้อมูล EV
+import { ListEVCharging } from "../../services/index"; // เปลี่ยน service
 
 const EV = () => {
-  const [customerData, setCustomerData] = useState<any[]>([]);
+  const [evData, setEVData] = useState<any[]>([]);
   const selectionsettings = { persistSelection: true };
   const toolbarOptions = ["Delete"];
   const editing = { allowDeleting: true, allowEditing: true };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const users = await ListUsersByRoleUser();
-      console.log(users)
-      if (users) {
-        const formatted = users.map((user) => ({
-          UserID: user.ID,
-          Username: user.Username ?? "-",
-          CustomerName: `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim(),
-          CustomerEmail: user.Email ?? "-",
-          CustomerImage:
-            user.Profile && user.Profile !== ""
-              ? user.Profile
-              : "https://via.placeholder.com/40",
-          Role: user.UserRole?.RoleName ?? "-",
-          Status: user.Gender?.Gender ?? "-",
-          StatusBg: user.Gender?.Gender === "Male" ? "#8BE78B" : "#FEC90F",
-          PhoneNumber: user.PhoneNumber ?? "-", 
+    const fetchEVData = async () => {
+      const evs = await ListEVCharging();
+      console.log(evs)
+      if (evs) {
+        const formatted = evs.map((ev) => ({
+          ID: ev.ID,
+          Name: ev.Name ?? "-",
+          Email: ev.Employee?.User?.Email ?? "-",
+          Voltage: ev.Voltage ?? "-",
+          Current: ev.Current ?? "-",
+          Price: ev.Price ?? 0,
+          Type: ev.Type?.Type ?? "-",
+          Status: ev.Status?.Status ?? "-",
+          EmployeeName: ev.Employee
+            ? `${ev.Employee?.User?.FirstName ?? ""} ${ev.Employee?.User?.LastName ?? ""}`.trim()
+            : "-",
+            ProfileImage: ev.Employee?.User?.Profile || "profile/default.png",
         }));
-
-
-        setCustomerData(formatted);
+        setEVData(formatted);
       }
     };
 
-    fetchUsers();
+    fetchEVData();
   }, []);
 
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white rounded-3xl">
-      <Header category="Page" title="Customers" />
+      <Header category="Page" title="EV Charging Stations" />
       <GridComponent
-        dataSource={customerData}
+        dataSource={evData}
         enableHover={false}
         allowPaging
         pageSettings={{ pageCount: 5 }}
@@ -64,7 +62,7 @@ const EV = () => {
         allowSorting
       >
         <ColumnsDirective>
-          {customersGrid.map((item: any, index: number) => (
+          {EVGrid.map((item: any, index: number) => (
             <ColumnDirective key={index} {...item} />
           ))}
         </ColumnsDirective>

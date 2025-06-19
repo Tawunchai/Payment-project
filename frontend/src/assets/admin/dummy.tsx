@@ -76,6 +76,7 @@ const gridEmployeeCountry = (props: any) => (
     <span>{props.Country}</span>
   </div>
 );
+
 export const EditorData = () => (
   <div>
     <h3>
@@ -397,6 +398,41 @@ export const LinePrimaryYAxis = {
   minorTickLines: { width: 0 },
 };
 
+const EmployeeGridStatus = (props: any) => (
+  <div className="flex gap-2 justify-center items-center text-gray-700 capitalize">
+    <p style={{ background: props.StatusBg }} className="rounded-full h-3 w-3" />
+    <p>{props.Status}</p>
+  </div>
+);
+
+const gridEmployeeProfile = (props: any) => (
+  <div className="image flex items-center gap-4">
+    <img
+      className="rounded-full w-10 h-10"
+      src={`http://localhost:8000/${props.ProfileImage}`}
+      alt="employee"
+    />
+    <div>
+      <p>{props.Name}</p>
+      <p className="text-gray-500 text-sm">{props.Email}</p>
+    </div>
+  </div>
+);
+
+const gridEVProfile = (props: any) => (
+  <div className="image flex items-center gap-4">
+    <img
+      className="rounded-full w-10 h-10"
+      src={`http://localhost:8000/${props.ProfileImage}`}
+      alt="employee"
+    />
+    <div>
+      <p>{props.EmployeeName}</p>
+      <p className="text-gray-500 text-sm">{props.Email}</p>
+    </div>
+  </div>
+);
+
 export const customersGrid = [
   { type: "checkbox", width: "50" },
   {
@@ -439,40 +475,60 @@ export const customersGrid = [
   },
 ];
 
-const customerGridImage11 = (props: any) => (
-  <div className="image flex gap-4 items-center">
-    <img
-      className="rounded-full w-10 h-10"
-      src={`http://localhost:8000/${props.CustomerImage}`}
-      alt="employee"
-    />
-    <div>
-      <p>{props.CustomerName}</p>
-      <p className="text-gray-500 text-sm">{props.CustomerEmail}</p>
-    </div>
-  </div>
-);
+export const EVGrid = [
+  { type: "checkbox", width: "50" },
+  {
+    field: "ID",
+    headerText: "EV ID",
+    width: "120",
+    textAlign: "Center",
+    isPrimaryKey: true,
+  },
+  {
+    field: "Name",
+    headerText: "Station Name",
+    width: "150",
+    textAlign: "Center",
+  },
+  {
+    field: "Voltage",
+    headerText: "Voltage",
+    width: "100",
+    textAlign: "Center",
+  },
+  {
+    field: "Current",
+    headerText: "Current",
+    width: "100",
+    textAlign: "Center",
+  },
+  {
+    field: "Price",
+    headerText: "Price (THB)",
+    width: "120",
+    textAlign: "Center",
+  },
+  {
+    field: "Type",
+    headerText: "Type",
+    width: "120",
+    textAlign: "Center",
+  },
+  {
+    field: "Status",
+    headerText: "Status",
+    width: "120",
+    textAlign: "Center",
+  },
+  {
+    field: "EmployeeName",
+    headerText: "Responsible Employee",
+    width: "180",
+    textAlign: "Center",
+    template: gridEVProfile,
+  },
+];
 
-const EmployeeGridStatus = (props: any) => (
-  <div className="flex gap-2 justify-center items-center text-gray-700 capitalize">
-    <p style={{ background: props.StatusBg }} className="rounded-full h-3 w-3" />
-    <p>{props.Status}</p>
-  </div>
-);
-
-const gridEmployeeProfile = (props: any) => (
-  <div className="image flex items-center gap-4">
-    <img
-      className="rounded-full w-10 h-10"
-      src={`http://localhost:8000/${props.ProfileImage}`}
-      alt="employee"
-    />
-    <div>
-      <p>{props.Name}</p>
-      <p className="text-gray-500 text-sm">{props.Email}</p>
-    </div>
-  </div>
-);
 
 export const employeesGrid = [
   { type: "checkbox", width: "50" },
@@ -605,6 +661,10 @@ export const links = [
       },
       {
         name: 'Stacked',
+        icon: <AiOutlineBarChart />,
+      },
+      {
+        name: 'Modal',
         icon: <AiOutlineBarChart />,
       },
     ],

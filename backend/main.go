@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Tawunchai/work-project/config"
+	"github.com/Tawunchai/work-project/controller/calendar"
 	"github.com/Tawunchai/work-project/controller/charging"
 	"github.com/Tawunchai/work-project/controller/employee"
 	"github.com/Tawunchai/work-project/controller/gender"
@@ -34,20 +35,19 @@ func main() {
 	authorized := r.Group("")
 	authorized.Use(middlewares.Authorizes())
 	{
-		
+
 	}
 
 	public := r.Group("")
 	{
 		//user and admin
-		public.GET("/employee/:userID", user.GetEmployeeByUserID) 
+		public.GET("/employee/:userID", user.GetEmployeeByUserID)
 		public.GET("/uploads/*filename", user.ServeImage)
 		public.POST("/create-user", user.CreateUser)
 		public.GET("/users", user.ListUser)
 		public.GET("/users/by-role/user", user.GetDataUserByRoleUser)
 		public.GET("/users/by-role/admin", user.GetDataUserByRoleAdmin)
 		public.GET("/employees/user/:id", employee.GetEmployeeByUserID)
-
 
 		//EV Charging
 		public.GET("/evs", charging.ListEVData)
@@ -63,7 +63,13 @@ func main() {
 
 		//getstarted
 		public.GET("/getstarteds", getstarted.ListGetStarted)
-		
+
+		//calendar
+		public.GET("/calendars", calendar.ListCalendar)
+		public.POST("create-calendar", calendar.PostCalendar)
+		public.PUT("update-calendar/:id", calendar.UpdateCalendar)
+		public.DELETE("delete-calendar/:id", calendar.DeleteCalendar)
+
 		//like
 		public.POST("/reviews/like", like.LikeReview)
 		public.DELETE("/reviews/unlike", like.UnlikeReview)

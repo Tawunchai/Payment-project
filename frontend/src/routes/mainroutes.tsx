@@ -17,6 +17,8 @@ const Customers = Loadable(lazy(() => import("../page/admin/Customers")));
 const Calendar = Loadable(lazy(() => import("../page/admin/Calendar")));
 const Editor = Loadable(lazy(() => import("../page/admin/Editor")));
 
+const Modal = Loadable(lazy(() => import("../component/modal")));
+
 {/* charts  */}
 const Area = Loadable(lazy(() => import("../page/admin/Charts/Area")));
 const Bar = Loadable(lazy(() => import("../page/admin/Charts/Bar")));
@@ -48,7 +50,7 @@ const AdminRoutes = (): RouteObject[] => [
     children: [
       { index: true, element: <Admin /> },   
     ],
-  }, 
+  },
   {
     path: "/admin",
     element: <MainLayout />,
@@ -69,6 +71,7 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "Pie", element: <Pie /> },
       { path: "Pyramid", element: <Pyramid /> },
       { path: "Stacked", element: <Stacked /> },
+      { path: "Modal", element: <Modal /> },
     ],
   },
 ];

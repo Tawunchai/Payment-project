@@ -1,18 +1,50 @@
-import { useState } from 'react';
-import { ScheduleComponent, ViewsDirective, ViewDirective, Day, Week, WorkWeek, Month, Agenda, Inject, Resize, DragAndDrop } from '@syncfusion/ej2-react-schedule';
+import { useEffect, useState } from 'react';
+import {
+  ScheduleComponent,
+  ViewsDirective,
+  ViewDirective,
+  Day,
+  Week,
+  WorkWeek,
+  Month,
+  Agenda,
+  Inject,
+  Resize,
+  DragAndDrop,
+} from '@syncfusion/ej2-react-schedule';
 import { DatePickerComponent } from '@syncfusion/ej2-react-calendars';
 import type { ScheduleComponent as ScheduleType } from '@syncfusion/ej2-react-schedule';
-import { scheduleData } from '../../assets/admin/dummy';
 import { Header } from '../../component/admin';
 import type { View } from '@syncfusion/ej2-react-schedule';
 
-
+import { ListCalendars } from '../../services/index';
+import { CalendarInterface } from '../../interface/ICalendar';
 
 const PropertyPane = (props: any) => <div className="mt-5">{props.children}</div>;
 
 const Scheduler = () => {
   const [scheduleObj, setScheduleObj] = useState<ScheduleType | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
   const views: View[] = ['Day', 'Week', 'WorkWeek', 'Month', 'Agenda'];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res: CalendarInterface[] | null = await ListCalendars();
+      if (res) {
+        const mapped = res.map((item, index) => ({
+          Id: item.ID,
+          Subject: item.Title,
+          Location: item.Location,
+          Description: item.Description,
+          StartTime: item.StartDate,
+          EndTime: item.EndDate,
+          CategoryColor: '#1aaa55', // กำหนดสีตามต้องการหรือสุ่ม
+        }));
+        setEvents(mapped);
+      }
+    };
+    fetchData();
+  }, []);
 
   const change = (args: any) => {
     if (scheduleObj) {
@@ -31,8 +63,8 @@ const Scheduler = () => {
       <ScheduleComponent
         height="650px"
         ref={(schedule: any) => setScheduleObj(schedule)}
-        selectedDate={new Date(2021, 0, 10)}
-        eventSettings={{ dataSource: scheduleData }}
+        selectedDate={new Date()}
+        eventSettings={{ dataSource: events }}
         dragStart={onDragStart}
       >
         <ViewsDirective>
@@ -43,14 +75,12 @@ const Scheduler = () => {
         <Inject services={[Day, Week, WorkWeek, Month, Agenda, Resize, DragAndDrop]} />
       </ScheduleComponent>
       <PropertyPane>
-        <table
-          style={{ width: '100%', background: 'white' }}
-        >
+        <table style={{ width: '100%', background: 'white' }}>
           <tbody>
             <tr style={{ height: '50px' }}>
               <td style={{ width: '100%' }}>
                 <DatePickerComponent
-                  value={new Date(2021, 0, 10)}
+                  value={new Date()}
                   showClearButton={false}
                   placeholder="Current Date"
                   floatLabelType="Always"

@@ -12,7 +12,12 @@ func ListEVData(c *gin.Context) {
 	var evs []entity.EVcharging
 
 	db := config.DB()
-	results := db.Preload("Employee").Preload("Status").Preload("Type").Find(&evs)
+	results := db.
+		Preload("Employee.User"). 
+		Preload("Employee").      
+		Preload("Status").
+		Preload("Type").
+		Find(&evs)
 
 	if results.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})

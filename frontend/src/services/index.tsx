@@ -5,6 +5,7 @@ import { NewsInterface } from "../interface/INews";
 import { GetstartedInterface } from "../interface/IGetstarted";
 import { EVchargingInterface } from "../interface/IEV";
 import { EmployeeInterface } from "../interface/IEmployee";
+import { CalendarInterface } from "../interface/ICalendar";
 
 const apiUrl = "http://localhost:8000";
 
@@ -197,6 +198,99 @@ export const GetEmployeeByUserID = async (id: number): Promise<EmployeeInterface
     return null;
   } catch (error) {
     console.error("Error fetching employee by user ID", error);
+    return null;
+  }
+};
+
+
+export const CreateCalendar = async (
+  calendarData: CalendarInterface
+): Promise<{ message: string; calendar: CalendarInterface } | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-calendar`, calendarData, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating calendar:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+
+export const ListCalendars = async (): Promise<CalendarInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/calendars`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching calendars:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const UpdateCalendar = async (
+  id: number,
+  calendarData: CalendarInterface
+): Promise<{ message: string; calendar: CalendarInterface } | null> => {
+  try {
+    const response = await axios.put(`${apiUrl}/update-calendar/${id}`, calendarData, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating calendar:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const DeleteCalendar = async (
+  id: number
+): Promise<{ message: string } | null> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-calendar/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error deleting calendar:", error.response?.data || error.message);
     return null;
   }
 };
