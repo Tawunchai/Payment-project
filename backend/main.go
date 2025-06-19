@@ -66,9 +66,9 @@ func main() {
 
 		//calendar
 		public.GET("/calendars", calendar.ListCalendar)
-		public.POST("create-calendar", calendar.PostCalendar)
-		public.PUT("update-calendar/:id", calendar.UpdateCalendar)
-		public.DELETE("delete-calendar/:id", calendar.DeleteCalendar)
+		public.POST("/create-calendar", calendar.PostCalendar)
+		public.PUT("/update-calendar/:id", calendar.UpdateCalendar)
+		public.DELETE("/delete-calendar/:id", calendar.DeleteCalendar)
 
 		//like
 		public.POST("/reviews/like", like.LikeReview)

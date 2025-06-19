@@ -1,4 +1,3 @@
-import {EmployeeInterface} from "./IEmployee"
 
 export interface CalendarInterface {
   ID?: number;
@@ -7,5 +6,5 @@ export interface CalendarInterface {
   Description: string;
   StartDate: string;   
   EndDate: string;
-  EmployeeID?: EmployeeInterface;
+  EmployeeID?: number;
 }

@@ -16,6 +16,9 @@ const Employees = Loadable(lazy(() => import("../page/admin/Employees")));
 const Customers = Loadable(lazy(() => import("../page/admin/Customers")));
 const Calendar = Loadable(lazy(() => import("../page/admin/Calendar")));
 const Editor = Loadable(lazy(() => import("../page/admin/Editor")));
+const Payment = Loadable(lazy(() => import("../page/admin/Payment")));
+const New = Loadable(lazy(() => import("../page/admin/New")));
+const GettingStarted = Loadable(lazy(() => import("../page/admin/GettingStarted")));
 
 const Modal = Loadable(lazy(() => import("../component/modal")));
 
@@ -62,6 +65,9 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "Customers", element: <Customers /> },
       { path: "Calendar", element: <Calendar /> },
       { path: "Editor", element: <Editor /> },
+      { path: "Payment", element: <Payment /> },
+      { path: "New", element: <New /> },
+      { path: "Getting Started", element: <GettingStarted /> },
       {/* charts  */},
       { path: "Area", element: <Area /> },
       { path: "Bar", element: <Bar /> },

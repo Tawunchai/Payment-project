@@ -17,7 +17,7 @@ import type { ScheduleComponent as ScheduleType } from '@syncfusion/ej2-react-sc
 import { Header } from '../../component/admin';
 import type { View } from '@syncfusion/ej2-react-schedule';
 
-import { ListCalendars } from '../../services/index';
+import { ListCalendars, CreateCalendar, UpdateCalendar, DeleteCalendar } from '../../services/index';
 import { CalendarInterface } from '../../interface/ICalendar';
 
 const PropertyPane = (props: any) => <div className="mt-5">{props.children}</div>;
@@ -27,23 +27,26 @@ const Scheduler = () => {
   const [events, setEvents] = useState<any[]>([]);
   const views: View[] = ['Day', 'Week', 'WorkWeek', 'Month', 'Agenda'];
 
+  const loggedInEmployeeID = 1;
+
+  const refreshEvents = async () => {
+    const updated = await ListCalendars();
+    if (updated) {
+      const mapped = updated.map((item) => ({
+        Id: item.ID,
+        Subject: item.Title,
+        Location: item.Location,
+        Description: item.Description,
+        StartTime: item.StartDate,
+        EndTime: item.EndDate,
+        CategoryColor: '#1aaa55',
+      }));
+      setEvents(mapped);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      const res: CalendarInterface[] | null = await ListCalendars();
-      if (res) {
-        const mapped = res.map((item, index) => ({
-          Id: item.ID,
-          Subject: item.Title,
-          Location: item.Location,
-          Description: item.Description,
-          StartTime: item.StartDate,
-          EndTime: item.EndDate,
-          CategoryColor: '#1aaa55', // กำหนดสีตามต้องการหรือสุ่ม
-        }));
-        setEvents(mapped);
-      }
-    };
-    fetchData();
+    refreshEvents();
   }, []);
 
   const change = (args: any) => {
@@ -57,6 +60,62 @@ const Scheduler = () => {
     arg.navigation.enable = true;
   };
 
+  const handleActionComplete = async (args: any) => {
+    if (args.requestType === 'eventCreated') {
+      const createdData = Array.isArray(args.data) ? args.data[0] : args.data;
+
+      const newCalendar: CalendarInterface = {
+        Title: createdData.Subject,
+        Location: createdData.Location || '',
+        Description: createdData.Description || '',
+        StartDate: createdData.StartTime,
+        EndDate: createdData.EndTime,
+        EmployeeID: loggedInEmployeeID,
+      };
+
+      console.log("📌 newCalendar: ", newCalendar);
+
+      const response = await CreateCalendar(newCalendar);
+      if (response) {
+        await refreshEvents();
+      }
+    }
+
+    else if (args.requestType === 'eventChanged') {
+      const changedData = Array.isArray(args.data) ? args.data[0] : args.data;
+
+      const updatedCalendar: CalendarInterface = {
+        Title: changedData.Subject,
+        Location: changedData.Location || '',
+        Description: changedData.Description || '',
+        StartDate: changedData.StartTime,
+        EndDate: changedData.EndTime,
+        EmployeeID: loggedInEmployeeID,
+      };
+
+      console.log("✏️ updatedCalendar: ", updatedCalendar);
+
+      if (changedData.Id) {
+        const updateResponse = await UpdateCalendar(changedData.Id, updatedCalendar);
+        if (updateResponse) {
+          await refreshEvents();
+        }
+      }
+    }
+
+    else if (args.requestType === 'eventRemoved') {
+      const removedData = Array.isArray(args.data) ? args.data[0] : args.data;
+
+      if (removedData.Id) {
+        console.log("🗑️ Deleting event with ID:", removedData.Id);
+        const deleteResponse = await DeleteCalendar(removedData.Id);
+        if (deleteResponse) {
+          await refreshEvents();
+        }
+      }
+    }
+  };
+
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white rounded-3xl">
       <Header category="App" title="Calendar" />
@@ -66,6 +125,7 @@ const Scheduler = () => {
         selectedDate={new Date()}
         eventSettings={{ dataSource: events }}
         dragStart={onDragStart}
+        actionComplete={handleActionComplete} // จัดการ create, update, delete
       >
         <ViewsDirective>
           {views.map((item) => (
