@@ -1,4 +1,4 @@
-import { UsersInterface} from "./IUser"
+import { UsersInterface } from "./IUser"
 
 export interface EmployeeInterface {
     ID?:          number;

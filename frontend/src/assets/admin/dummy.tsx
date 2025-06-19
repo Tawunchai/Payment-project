@@ -23,7 +23,7 @@ import product5 from './product5.jpg';
 import product6 from './product6.jpg';
 import product7 from './product7.jpg';
 
-export const gridOrderImage = (props : any) => (
+export const gridOrderImage = (props: any) => (
   <div>
     <img
       className="rounded-xl h-20 md:ml-3"
@@ -33,7 +33,7 @@ export const gridOrderImage = (props : any) => (
   </div>
 );
 
-export const gridOrderStatus = (props : any) => (
+export const gridOrderStatus = (props: any) => (
   <button
     type="button"
     style={{ background: props.StatusBg }}
@@ -44,35 +44,33 @@ export const gridOrderStatus = (props : any) => (
 );
 
 export const kanbanGrid = [
-  { headerText: 'To Do',
+  {
+    headerText: 'To Do',
     keyField: 'Open',
-    allowToggle: true },
+    allowToggle: true
+  },
 
-  { headerText: 'In Progress',
+  {
+    headerText: 'In Progress',
     keyField: 'InProgress',
-    allowToggle: true },
+    allowToggle: true
+  },
 
-  { headerText: 'Testing',
+  {
+    headerText: 'Testing',
     keyField: 'Testing',
     allowToggle: true,
-    isExpanded: false },
+    isExpanded: false
+  },
 
-  { headerText: 'Done',
+  {
+    headerText: 'Done',
     keyField: 'Close',
-    allowToggle: true },
+    allowToggle: true
+  },
 ];
-const gridEmployeeProfile = (props : any) => (
-  <div className="flex items-center gap-2">
-    <img
-      className="rounded-full w-10 h-10"
-      src={props.EmployeeImage}
-      alt="employee"
-    />
-    <p>{props.Name}</p>
-  </div>
-);
 
-const gridEmployeeCountry = (props : any) => (
+const gridEmployeeCountry = (props: any) => (
   <div className="flex items-center justify-center gap-2">
     <GrLocation />
     <span>{props.Country}</span>
@@ -120,21 +118,22 @@ export const EditorData = () => (
     </h3>
   </div>
 );
-const customerGridImage = (props : any) => (
-  <div className="image flex gap-4">
+
+const customerGridImage = (props: any) => (
+  <div className="image flex gap-4 items-center">
     <img
       className="rounded-full w-10 h-10"
-      src={props.CustomerImage}
+      src={`http://localhost:8000/${props.CustomerImage}`}
       alt="employee"
     />
     <div>
       <p>{props.CustomerName}</p>
-      <p>{props.CustomerEmail}</p>
+      <p className="text-gray-500 text-sm">{props.CustomerEmail}</p>
     </div>
   </div>
 );
 
-const customerGridStatus = (props : any) => (
+const customerGridStatus = (props: any) => (
   <div className="flex gap-2 justify-center items-center text-gray-700 capitalize">
     <p style={{ background: props.StatusBg }} className="rounded-full h-3 w-3" />
     <p>{props.Status}</p>
@@ -160,7 +159,7 @@ export const areaPrimaryYAxis = {
   labelStyle: { color: 'gray' },
 
 };
-export const barPrimaryXAxis : AxisModel = {
+export const barPrimaryXAxis: AxisModel = {
   valueType: 'Category',
   interval: 1,
   majorGridLines: { width: 0 },
@@ -324,20 +323,26 @@ export const colorMappingData = [
 ];
 
 export const rangeColorMapping = [
-  { label: '1°C to 10°C',
+  {
+    label: '1°C to 10°C',
     start: '1',
     end: '10',
-    colors: colorMappingData[1] },
+    colors: colorMappingData[1]
+  },
 
-  { label: '11°C to 20°C',
+  {
+    label: '11°C to 20°C',
     start: '11',
     end: '20',
-    colors: colorMappingData[2] },
+    colors: colorMappingData[2]
+  },
 
-  { label: '21°C to 30°C',
+  {
+    label: '21°C to 30°C',
     start: '21',
     end: '30',
-    colors: colorMappingData[3] },
+    colors: colorMappingData[3]
+  },
 
 ];
 
@@ -373,9 +378,9 @@ export const FinancialPrimaryYAxis = {
 };
 
 export const LinePrimaryXAxis = {
-  valueType: 'DateTime' as 'DateTime',   
+  valueType: 'DateTime' as 'DateTime',
   labelFormat: 'y',
-  intervalType: 'Years' as 'Years', 
+  intervalType: 'Years' as 'Years',
   edgeLabelPlacement: 'Shift' as EdgeLabelPlacement,
   majorGridLines: { width: 0 },
   background: 'white',
@@ -393,82 +398,125 @@ export const LinePrimaryYAxis = {
 };
 
 export const customersGrid = [
-  { type: 'checkbox', width: '50' },
-  { headerText: 'Name',
-    width: '150',
-    template: customerGridImage,
-    textAlign: 'Center' },
-  { field: 'ProjectName',
-    headerText: 'Project Name',
-    width: '150',
-    textAlign: 'Center' },
-  { field: 'Status',
-    headerText: 'Status',
-    width: '130',
-    format: 'yMd',
-    textAlign: 'Center',
-    template: customerGridStatus },
+  { type: "checkbox", width: "50" },
   {
-    field: 'Weeks',
-    headerText: 'Weeks',
-    width: '100',
-    format: 'C2',
-    textAlign: 'Center' },
-  { field: 'Budget',
-    headerText: 'Budget',
-    width: '100',
-    format: 'yMd',
-    textAlign: 'Center' },
-
-  { field: 'Location',
-    headerText: 'Location',
-    width: '150',
-    textAlign: 'Center' },
-
-  { field: 'CustomerID',
-    headerText: 'Customer ID',
-    width: '120',
-    textAlign: 'Center',
+    field: "UserID",
+    headerText: "User ID",
+    width: "120",
+    textAlign: "Center",
     isPrimaryKey: true,
   },
-
+  {
+    headerText: "Name",
+    width: "150",
+    template: customerGridImage, // แสดงรูป+ชื่อ (อย่าลืมแก้ template ให้ใช้ CustomerName)
+    textAlign: "Center",
+  },
+  {
+    field: "Username",
+    headerText: "Username",
+    width: "150",
+    textAlign: "Center",
+  },
+  {
+    field: "Role",
+    headerText: "Role",
+    width: "150",
+    textAlign: "Center",
+  },
+  {
+    field: "Gender",
+    headerText: "Gender",
+    width: "100",
+    textAlign: "Center",
+    template: customerGridStatus, // ถ้ามี template แสดงสถานะ (ถ้าไม่มีก็ลบ template นี้ออก)
+  },
+  {
+    field: "PhoneNumber",  // เพิ่มคอลัมน์ PhoneNumber
+    headerText: "Phone Number",
+    width: "130",
+    textAlign: "Center",
+  },
 ];
+
+const customerGridImage11 = (props: any) => (
+  <div className="image flex gap-4 items-center">
+    <img
+      className="rounded-full w-10 h-10"
+      src={`http://localhost:8000/${props.CustomerImage}`}
+      alt="employee"
+    />
+    <div>
+      <p>{props.CustomerName}</p>
+      <p className="text-gray-500 text-sm">{props.CustomerEmail}</p>
+    </div>
+  </div>
+);
+
+const EmployeeGridStatus = (props: any) => (
+  <div className="flex gap-2 justify-center items-center text-gray-700 capitalize">
+    <p style={{ background: props.StatusBg }} className="rounded-full h-3 w-3" />
+    <p>{props.Status}</p>
+  </div>
+);
+
+const gridEmployeeProfile = (props: any) => (
+  <div className="image flex items-center gap-4">
+    <img
+      className="rounded-full w-10 h-10"
+      src={`http://localhost:8000/${props.ProfileImage}`}
+      alt="employee"
+    />
+    <div>
+      <p>{props.Name}</p>
+      <p className="text-gray-500 text-sm">{props.Email}</p>
+    </div>
+  </div>
+);
 
 export const employeesGrid = [
-  { headerText: 'Employee',
-    width: '150',
+  { type: "checkbox", width: "50" },
+  {
+    field: "EmployeeID",
+    headerText: "Employee ID",
+    width: "125",
+    textAlign: "Center",
+  },
+  {
+    headerText: "Employee",
+    width: "200",
     template: gridEmployeeProfile,
-    textAlign: 'Center' },
-  { field: 'Name',
-    headerText: '',
-    width: '0',
-    textAlign: 'Center',
+    textAlign: "Center",
   },
-  { field: 'Title',
-    headerText: 'Designation',
-    width: '170',
-    textAlign: 'Center',
+  {
+    field: "Role",
+    headerText: "Role",
+    width: "150",
+    textAlign: "Center",
   },
-  { headerText: 'Country',
-    width: '120',
-    textAlign: 'Center',
-    template: gridEmployeeCountry },
-
-  { field: 'HireDate',
-    headerText: 'Hire Date',
-    width: '135',
-    format: 'yMd',
-    textAlign: 'Center' },
-
-  { field: 'ReportsTo',
-    headerText: 'Reports To',
-    width: '120',
-    textAlign: 'Center' },
-  { field: 'EmployeeID',
-    headerText: 'Employee ID',
-    width: '125',
-    textAlign: 'Center' },
+  {
+    field: "Gender",
+    headerText: "Gender",
+    width: "120",
+    textAlign: "Center",
+    template: EmployeeGridStatus,
+  },
+  {
+    field: "Phone",
+    headerText: "Phone Number",
+    width: "150",
+    textAlign: "Center",
+  },
+  {
+    field: "Salary",           
+    headerText: "Salary",
+    width: "120",
+    textAlign: "Center",
+    format: "C2",             
+  },
 ];
+
+
 
 export const links = [
   {
@@ -889,7 +937,8 @@ export const ordersGrid = [
     editType: 'dropdownedit',
     textAlign: 'Center',
   },
-  { field: 'CustomerName',
+  {
+    field: 'CustomerName',
     headerText: 'Customer Name',
     width: '150',
     textAlign: 'Center',
@@ -1495,7 +1544,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar3,
+      avatar3,
   },
   {
     EmployeeID: 2,
@@ -1565,7 +1614,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar2,
+      avatar2,
 
   },
   {
@@ -1636,7 +1685,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar,
+      avatar,
   },
   {
     EmployeeID: 2,
@@ -1706,7 +1755,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar2,
+      avatar2,
 
   },
   {
@@ -1777,7 +1826,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar2,
+      avatar2,
 
   },
   {
@@ -1848,7 +1897,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar2,
+      avatar2,
 
   },
   {
@@ -1919,7 +1968,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar2,
+      avatar2,
 
   },
   {
@@ -1990,7 +2039,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar2,
+      avatar2,
 
   },
   {
@@ -2061,7 +2110,7 @@ export const employeesData = [
     Country: 'USA',
     ReportsTo: 'Carson',
     EmployeeImage:
-    avatar2,
+      avatar2,
 
   },
   {
@@ -2181,7 +2230,7 @@ export const ordersData = [
     Status: 'rejected',
     StatusBg: 'red',
     ProductImage:
-    product1,
+      product1,
   },
   {
     OrderID: 94757,
@@ -3097,29 +3146,35 @@ export const SparklineAreaData = [
 ];
 
 export const lineCustomSeries = [
-  { dataSource: lineChartData[0],
+  {
+    dataSource: lineChartData[0],
     xName: 'x',
     yName: 'y',
     name: 'Germany',
     width: '2',
     marker: { visible: true, width: 10, height: 10 },
-    type: 'Line' },
+    type: 'Line'
+  },
 
-  { dataSource: lineChartData[1],
+  {
+    dataSource: lineChartData[1],
     xName: 'x',
     yName: 'y',
     name: 'England',
     width: '2',
     marker: { visible: true, width: 10, height: 10 },
-    type: 'Line' },
+    type: 'Line'
+  },
 
-  { dataSource: lineChartData[2],
+  {
+    dataSource: lineChartData[2],
     xName: 'x',
     yName: 'y',
     name: 'India',
     width: '2',
     marker: { visible: true, width: 10, height: 10 },
-    type: 'Line' },
+    type: 'Line'
+  },
 
 ];
 
@@ -3182,7 +3237,8 @@ export const stackedChartData = [
 
 export const stackedCustomSeries = [
 
-  { dataSource: stackedChartData[0],
+  {
+    dataSource: stackedChartData[0],
     xName: 'x',
     yName: 'y',
     name: 'Budget',
@@ -3191,7 +3247,8 @@ export const stackedCustomSeries = [
 
   },
 
-  { dataSource: stackedChartData[1],
+  {
+    dataSource: stackedChartData[1],
     xName: 'x',
     yName: 'y',
     name: 'Expense',
@@ -3210,7 +3267,7 @@ export const stackedPrimaryXAxis: AxisModel = {
   interval: 1,
   lineStyle: { width: 0 },
   labelIntersectAction: 'Rotate45',
-  valueType: 'Category', 
+  valueType: 'Category',
 };
 
 export const stackedPrimaryYAxis = {

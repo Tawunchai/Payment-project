@@ -146,3 +146,51 @@ func GetEmployeeByUserID(c *gin.Context) {
 		"employeeID": employee.ID,
 	})
 }
+
+func ListUser(c *gin.Context) {
+	var users []entity.User
+
+	db := config.DB()
+	results := db.Preload("UserRole").Preload("Gender").Find(&users)
+
+	if results.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, users)
+}
+
+func GetDataUserByRoleUser(c *gin.Context) {
+	var users []entity.User
+
+	db := config.DB()
+	// ดึงเฉพาะผู้ใช้ที่ UserRole.RoleName = "User"
+	err := db.Preload("UserRole").Preload("Gender").
+		Joins("JOIN user_roles ON user_roles.id = users.user_role_id").
+		Where("user_roles.role_name = ?", "User").
+		Find(&users).Error
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
+func GetDataUserByRoleAdmin(c *gin.Context) {
+	var users []entity.User
+
+	db := config.DB()
+	err := db.Preload("UserRole").Preload("Gender").
+		Joins("JOIN user_roles ON user_roles.id = users.user_role_id").
+		Where("user_roles.role_name = ?", "Admin").
+		Find(&users).Error
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}

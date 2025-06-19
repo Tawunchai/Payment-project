@@ -11,7 +11,7 @@ const User = Loadable(lazy(() => import("../page/user/index")));
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
 const MainLayout = Loadable(lazy(() => import("../component/admin/MainLayout")));
-const Orders = Loadable(lazy(() => import("../page/admin/Orders")));
+const EV = Loadable(lazy(() => import("../page/admin/EV")));
 const Employees = Loadable(lazy(() => import("../page/admin/Employees")));
 const Customers = Loadable(lazy(() => import("../page/admin/Customers")));
 const Calendar = Loadable(lazy(() => import("../page/admin/Calendar")));
@@ -55,7 +55,7 @@ const AdminRoutes = (): RouteObject[] => [
     children: [
       { index: true, element: <Admin /> },
       { path: "Dashboard", element: <Admin /> },
-      { path: "Orders", element: <Orders /> },
+      { path: "EV Charging", element: <EV /> },
       { path: "Employees", element: <Employees /> },
       { path: "Customers", element: <Customers /> },
       { path: "Calendar", element: <Calendar /> },

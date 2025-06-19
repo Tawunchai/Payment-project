@@ -16,7 +16,7 @@ import { Header } from "../../component/admin";
 import { customersGrid } from "../../assets/admin/dummy"; // ปรับ path ตามโปรเจกต์จริง
 import { ListUsersByRoleUser } from "../../services/index";
 
-const Customers = () => {
+const EV = () => {
   const [customerData, setCustomerData] = useState<any[]>([]);
   const selectionsettings = { persistSelection: true };
   const toolbarOptions = ["Delete"];
@@ -74,4 +74,4 @@ const Customers = () => {
   );
 };
 
-export default Customers;
+export default EV;

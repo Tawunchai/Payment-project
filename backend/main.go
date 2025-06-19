@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/Tawunchai/work-project/config"
+	"github.com/Tawunchai/work-project/controller/charging"
+	"github.com/Tawunchai/work-project/controller/employee"
 	"github.com/Tawunchai/work-project/controller/gender"
 	"github.com/Tawunchai/work-project/controller/getstarted"
 	"github.com/Tawunchai/work-project/controller/like"
@@ -37,10 +39,18 @@ func main() {
 
 	public := r.Group("")
 	{
-		//user
+		//user and admin
 		public.GET("/employee/:userID", user.GetEmployeeByUserID) 
 		public.GET("/uploads/*filename", user.ServeImage)
 		public.POST("/create-user", user.CreateUser)
+		public.GET("/users", user.ListUser)
+		public.GET("/users/by-role/user", user.GetDataUserByRoleUser)
+		public.GET("/users/by-role/admin", user.GetDataUserByRoleAdmin)
+		public.GET("/employees/user/:id", employee.GetEmployeeByUserID)
+
+
+		//EV Charging
+		public.GET("/evs", charging.ListEVData)
 
 		//gender
 		public.GET("/genders", gender.ListGenders)

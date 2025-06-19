@@ -60,6 +60,7 @@ func SetupDatabase() {
 		Email:      "janis.green@example.com",
 		Password:   "123",
 		Profile:    "uploads/user/avatar1.jpg",
+		PhoneNumber: "0935096372",
 		GenderID:   1,
 		UserRoleID: 2,
 	}
@@ -72,6 +73,7 @@ func SetupDatabase() {
 		Email:      "chris.taylor@example.com",
 		Password:   "123",
 		Profile:    "uploads/user/avatar2.jpg",
+		PhoneNumber: "0895845671",
 		GenderID:   2,
 		UserRoleID: 2,
 	}
@@ -84,22 +86,38 @@ func SetupDatabase() {
 		Email:      "alex.smith@example.com",
 		Password:   "123",
 		Profile:    "uploads/user/avatar3.png",
+		PhoneNumber: "0938473272",
 		GenderID:   1,
 		UserRoleID: 2,
 	}
 	db.FirstOrCreate(&User3, entity.User{Username: "user3"})
 
-	Admin := entity.User{
-		Username:   "admin",
+	Admin1 := entity.User{
+		Username:   "admin1",
 		FirstName:  "Kanyapron",
 		LastName:   "KD",
 		Email:      "Kanyapron@gmail.com",
 		Password:   "123",
 		Profile:    "uploads/user/avatar4.jpg",
+		PhoneNumber: "0981183502",
 		GenderID:   1,
 		UserRoleID: 1,
 	}
-	db.FirstOrCreate(&Admin, entity.User{Username: "admin"})
+
+	Admin2 := entity.User{
+		Username:   "admin2",
+		FirstName:  "JoJo",
+		LastName:   "Smoke",
+		Email:      "Smoke@gmail.com",
+		Password:   "123",
+		Profile:    "uploads/user/avatar1.jpg",
+		PhoneNumber: "0981183502",
+		GenderID:   2,
+		UserRoleID: 1,
+	}
+
+	db.FirstOrCreate(&Admin1, entity.User{Username: "admin1"})
+	db.FirstOrCreate(&Admin2, entity.User{Username: "admin2"})
 
 	eid1 := uint(4)
 	Employee1 := entity.Employee{
@@ -109,12 +127,23 @@ func SetupDatabase() {
 		Salary:     25000,
 		UserID:     &eid1,
 	}
+
+	eid2 := uint(5)
+	Employee2 := entity.Employee{
+		Bio:        "Admid Korean",
+		Experience: "100 years of experience as a admin with Tesla company",
+		Education:  "Master degree of marketting at Harvard university",
+		Salary:     50000,
+		UserID:     &eid2,
+	}
+
 	db.FirstOrCreate(&Employee1, entity.Employee{UserID: &eid1})
+	db.FirstOrCreate(&Employee2, entity.Employee{UserID: &eid2})
 
 	getting1 := entity.GettingStarted{
 		Title:       "Best interest rates on the market",
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
-		EmployeeID:  &eid1, 
+		EmployeeID:  &eid1,
 	}
 
 	getting2 := entity.GettingStarted{
@@ -179,5 +208,44 @@ func SetupDatabase() {
 	db.FirstOrCreate(Review1, &entity.Review{UserID: &uid1})
 	db.FirstOrCreate(Review2, &entity.Review{UserID: &uid2})
 	db.FirstOrCreate(Review3, &entity.Review{UserID: &uid3})
+
+	// สร้าง Status
+	status1 := entity.Status{Status: "Available"}
+	status2 := entity.Status{Status: "Unavailable"}
+
+	db.FirstOrCreate(&status1, entity.Status{Status: "Available"})
+	db.FirstOrCreate(&status2, entity.Status{Status: "Unavailable"})
+
+	type1 := entity.Type{Type: "DC Fast Charger"}
+	type2 := entity.Type{Type: "Level 2 Charger"}
+	type3 := entity.Type{Type: "Level 1 Charger"}
+
+	db.FirstOrCreate(&type1, entity.Type{Type: "DC Fast Charger"})
+	db.FirstOrCreate(&type2, entity.Type{Type: "Level 2 Charger"})
+	db.FirstOrCreate(&type3, entity.Type{Type: "Level 1 Charger"})
+
+	ev1 := entity.EVcharging{
+		Name:       "Charger A1",
+		Voltage:    "400V",
+		Current:    "200A",
+		Price:      15.50,
+		EmployeeID: &eid1,
+		StatusID:   status1.ID,
+		TypeID:     type1.ID,
+	}
+
+	ev2 := entity.EVcharging{
+		Name:       "Charger B2",
+		Voltage:    "240V",
+		Current:    "100A",
+		Price:      10.75,
+		EmployeeID: &eid1,
+		StatusID:   status2.ID,
+		TypeID:     type2.ID,
+	}
+
+
+	db.FirstOrCreate(&ev1, entity.EVcharging{Name: "Charger A1"})
+	db.FirstOrCreate(&ev2, entity.EVcharging{Name: "Charger B2"})
 
 }

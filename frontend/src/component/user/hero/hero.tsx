@@ -1,12 +1,40 @@
-import "./hero.css"
-import Hero_Image from "../../../assets/picture/car_charging.jpg"
-import CountUp from "react-countup"
+import "./hero.css";
+import Hero_Image from "../../../assets/picture/car_charging.jpg";
+import CountUp from "react-countup";
+import { useEffect, useState } from "react";
+import { ListEVCharging } from "../../../services/index";
+import { ListUsers } from "../../../services/index";
+import { EVchargingInterface } from "../../../interface/IEV";
+import { UsersInterface } from "../../../interface/IUser";
 
 type HeaderProps = {
   scrollToValue: () => void;
 };
 
-const hero = ({ scrollToValue }: HeaderProps) => {
+const Hero = ({ scrollToValue }: HeaderProps) => {
+  const [evList, setEVList] = useState<EVchargingInterface[]>([]);
+  const [userList, setUserList] = useState<UsersInterface[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const evs = await ListEVCharging();
+      console.log(evs)
+      const users = await ListUsers();
+
+      if (evs) setEVList(evs);
+      if (users) setUserList(users);
+    };
+
+    fetchData();
+  }, []);
+
+  const namePriceSums = evList.reduce((acc: Record<string, number>, ev) => {
+    const name = ev.Name || "Unknown";
+    acc[name] = (acc[name] || 0) + ev.Price;
+    return acc;
+  }, {});
+
+
   return (
     <section className="hero-wrapper">
       <div className="flexCenter paddings innerWidth hero-container">
@@ -14,7 +42,7 @@ const hero = ({ scrollToValue }: HeaderProps) => {
           <div className="hero-title">
             <div className="orange-circle" />
             <h1>
-              Discover  <br />
+              Discover <br />
               Best EV <br />
               Charging Spot
             </h1>
@@ -31,25 +59,19 @@ const hero = ({ scrollToValue }: HeaderProps) => {
           </div>
 
           <div className="flexCenter stats">
-            <div className="flexColCenter stat">
-              <span>
-                <CountUp start={8800} end={9000} duration={4} />
-                <span>$</span>
-              </span>
-              <span className="secondaryText">AC Charging</span>
-            </div>
+            {Object.entries(namePriceSums).map(([name, totalPrice]) => (
+              <div key={name} className="flexColCenter stat">
+                <span>
+                  <CountUp start={0} end={parseFloat(totalPrice.toFixed(2))} duration={2} decimals={2} />
+                  <span>$</span>
+                </span>
+                <span className="secondaryText">{name}</span>
+              </div>
+            ))}
 
             <div className="flexColCenter stat">
               <span>
-                <CountUp start={1950} end={2000} duration={4} />
-                <span>$</span>
-              </span>
-              <span className="secondaryText">DC Charging</span>
-            </div>
-
-            <div className="flexColCenter stat">
-              <span>
-                <CountUp end={28} />
+                <CountUp start={0} end={userList.length} duration={2} />
                 <span>+</span>
               </span>
               <span className="secondaryText">Members</span>
@@ -59,12 +81,12 @@ const hero = ({ scrollToValue }: HeaderProps) => {
 
         <div className="flexCenter hero-right">
           <div className="image-container">
-            <img src={Hero_Image} alt="" />
+            <img src={Hero_Image} alt="EV Charging" />
           </div>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default hero
+export default Hero;

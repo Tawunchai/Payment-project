@@ -9,7 +9,7 @@ export interface UsersInterface {
     FirstName?: string;
     LastName?: string;
     Profile?: string ;
-    Phonenumber?: string;
-    UserRoleID?: UserroleInterface;
-    GenderID?: GendersInterface;
+    PhoneNumber?: string;
+    UserRole?: UserroleInterface;
+    Gender?: GendersInterface;
   }
