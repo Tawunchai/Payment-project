@@ -1,3 +1,5 @@
+const { Container } = require("postcss");
+
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   darkMode: 'class',
@@ -9,6 +11,16 @@ module.exports = {
     extend: {
       fontSize: {
         14: '14px',
+      },
+      ContainerExtra: {
+        center:true,
+        padding:{
+          DEFAULT: "1rem",
+          sm: "2rem",
+          lg: "4rem",
+          xl: "5rem",
+          "2xl" : "6rem",
+        },
       },
       backgroundColor: {
         'main-bg': '#FAFBFB',

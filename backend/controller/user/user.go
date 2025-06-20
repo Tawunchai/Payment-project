@@ -108,6 +108,28 @@ func CreateUser(c *gin.Context) {
 	})
 }
 
+// DeleteUserByID ลบ User ตาม ID
+func DeleteUserByID(c *gin.Context) {
+	id := c.Param("id")
+
+	db := config.DB()
+	var user entity.User
+
+	// ค้นหาว่ามี User นี้หรือไม่
+	if err := db.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// ลบ User
+	if err := db.Delete(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}
+
 func GetEmployeeByUserID(c *gin.Context) {
 	db := config.DB()
 	idStr := c.Param("userID")

@@ -15,17 +15,16 @@ const EV = Loadable(lazy(() => import("../page/admin/EV")));
 const Employees = Loadable(lazy(() => import("../page/admin/Employees")));
 const Customers = Loadable(lazy(() => import("../page/admin/Customers")));
 const Calendar = Loadable(lazy(() => import("../page/admin/Calendar")));
-const Editor = Loadable(lazy(() => import("../page/admin/Editor")));
+const Editor = Loadable(lazy(() => import("../page/Editor/Editor")));
 const Payment = Loadable(lazy(() => import("../page/admin/Payment")));
-const New = Loadable(lazy(() => import("../page/admin/New")));
-const GettingStarted = Loadable(lazy(() => import("../page/admin/GettingStarted")));
+const New = Loadable(lazy(() => import("../page/admin/New/New")));
+const GettingStarted = Loadable(lazy(() => import("../page/admin/Getting/GettingStarted")));
 
 const Modal = Loadable(lazy(() => import("../component/modal")));
 
 {/* charts  */}
 const Area = Loadable(lazy(() => import("../page/admin/Charts/Area")));
 const Bar = Loadable(lazy(() => import("../page/admin/Charts/Bar")));
-const ColorMapping = Loadable(lazy(() => import("../page/admin/Charts/ColorMapping")));
 const Financial = Loadable(lazy(() => import("../page/admin/Charts/Financial")));
 const Line = Loadable(lazy(() => import("../page/admin/Charts/Line")));
 const Pie = Loadable(lazy(() => import("../page/admin/Charts/Pie")));
@@ -71,7 +70,6 @@ const AdminRoutes = (): RouteObject[] => [
       {/* charts  */},
       { path: "Area", element: <Area /> },
       { path: "Bar", element: <Bar /> },
-      { path: "ColorMapping", element: <ColorMapping /> },
       { path: "Financial", element: <Financial /> },
       { path: "Line", element: <Line /> },
       { path: "Pie", element: <Pie /> },

@@ -1,8 +1,10 @@
-import React from 'react'
+import ColorMapping from "./Charts/ColorMapping";
 
 const Payment = () => {
   return (
-    <div>Payment</div>
+    <div>
+      <div><ColorMapping/></div>
+    </div>
   )
 }
 

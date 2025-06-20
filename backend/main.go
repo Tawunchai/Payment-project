@@ -44,6 +44,7 @@ func main() {
 		public.GET("/employee/:userID", user.GetEmployeeByUserID)
 		public.GET("/uploads/*filename", user.ServeImage)
 		public.POST("/create-user", user.CreateUser)
+		public.DELETE("/delete-users/:id", user.DeleteUserByID)
 		public.GET("/users", user.ListUser)
 		public.GET("/users/by-role/user", user.GetDataUserByRoleUser)
 		public.GET("/users/by-role/admin", user.GetDataUserByRoleAdmin)

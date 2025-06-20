@@ -126,6 +126,29 @@ export const ListUsers = async (): Promise<UsersInterface[] | null> => {
   }
 };
 
+export const DeleteUser = async (
+  id: number
+): Promise<{ message: string } | null> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-users/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error deleting user:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 export const ListUsersByRoleAdmin = async (): Promise<UsersInterface[] | null> => {
   try {
     const response = await axios.get(`${apiUrl}/users/by-role/admin`, {

@@ -434,7 +434,6 @@ const gridEVProfile = (props: any) => (
 );
 
 export const customersGrid = [
-  { type: "checkbox", width: "50" },
   {
     field: "UserID",
     headerText: "User ID",
@@ -564,11 +563,11 @@ export const employeesGrid = [
     textAlign: "Center",
   },
   {
-    field: "Salary",           
+    field: "Salary",
     headerText: "Salary",
     width: "120",
     textAlign: "Center",
-    format: "C2",             
+    format: "C2",
   },
 ];
 
@@ -581,6 +580,10 @@ export const links = [
       {
         name: 'Dashboard',
         icon: <FiShoppingBag />,
+      },
+      {
+        name: 'Payment',
+        icon: <FiEdit />,
       },
     ],
   },
@@ -605,10 +608,6 @@ export const links = [
   {
     title: 'WORK',
     links: [
-      {
-        name: 'Payment',
-        icon: <FiEdit />,
-      },
       {
         name: 'Calendar',
         icon: <AiOutlineCalendar />,
