@@ -216,3 +216,57 @@ func GetDataUserByRoleAdmin(c *gin.Context) {
 
 	c.JSON(http.StatusOK, users)
 }
+
+func UpdateUserByID(c *gin.Context) {
+	idParam := c.Param("id")
+	userID, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	db := config.DB()
+
+	var user entity.User
+	if err := db.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var input map[string]interface{}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+	}
+
+	// Allowed fields
+	allowedFields := map[string]bool{
+		"Username":    true,
+		"Password":    true,
+		"Email":       true,
+		"FirstName":   true,
+		"LastName":    true,
+		"Profile":     true,
+		"PhoneNumber": true,
+		"UserRoleID":  true,
+		"GenderID":    true,
+	}
+
+	// Clean input
+	for key := range input {
+		if !allowedFields[key] {
+			delete(input, key)
+		}
+	}
+
+	// Remove nested structs if exist
+	delete(input, "UserRole")
+	delete(input, "Gender")
+
+	if err := db.Model(&user).Updates(input).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully", "user": user})
+}

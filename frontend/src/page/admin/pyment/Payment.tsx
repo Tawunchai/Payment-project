@@ -1,4 +1,4 @@
-import ColorMapping from "./Charts/ColorMapping";
+import ColorMapping from "../charts/ColorMapping";
 
 const Payment = () => {
   return (

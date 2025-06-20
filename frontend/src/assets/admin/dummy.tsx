@@ -475,7 +475,6 @@ export const customersGrid = [
 ];
 
 export const EVGrid = [
-  { type: "checkbox", width: "50" },
   {
     field: "ID",
     headerText: "EV ID",
@@ -530,7 +529,6 @@ export const EVGrid = [
 
 
 export const employeesGrid = [
-  { type: "checkbox", width: "50" },
   {
     field: "EmployeeID",
     headerText: "Employee ID",
@@ -620,10 +618,10 @@ export const links = [
         name: 'New',
         icon: <FiEdit />,
       },
-      {
+      /*{
         name: 'Getting Started',
         icon: <FiEdit />,
-      },
+      },*/
     ],
   },
   {

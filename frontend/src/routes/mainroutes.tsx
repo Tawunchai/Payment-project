@@ -11,25 +11,25 @@ const User = Loadable(lazy(() => import("../page/user/index")));
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
 const MainLayout = Loadable(lazy(() => import("../component/admin/MainLayout")));
-const EV = Loadable(lazy(() => import("../page/admin/EV")));
-const Employees = Loadable(lazy(() => import("../page/admin/Employees")));
-const Customers = Loadable(lazy(() => import("../page/admin/Customers")));
-const Calendar = Loadable(lazy(() => import("../page/admin/Calendar")));
+const EV = Loadable(lazy(() => import("../page/admin/ev/EV")));
+const Employees = Loadable(lazy(() => import("../page/admin/employee/Employees")));
+const Customers = Loadable(lazy(() => import("../page/admin/customer/Customers")));
+const Calendar = Loadable(lazy(() => import("../page/admin/calendar/Calendar")));
 const Editor = Loadable(lazy(() => import("../page/Editor/Editor")));
-const Payment = Loadable(lazy(() => import("../page/admin/Payment")));
+const Payment = Loadable(lazy(() => import("../page/admin/pyment/Payment")));
 const New = Loadable(lazy(() => import("../page/admin/New/New")));
-const GettingStarted = Loadable(lazy(() => import("../page/admin/Getting/GettingStarted")));
+const GettingStarted = Loadable(lazy(() => import("../page/admin/getting/GettingStarted")));
 
 const Modal = Loadable(lazy(() => import("../component/modal")));
 
 {/* charts  */}
-const Area = Loadable(lazy(() => import("../page/admin/Charts/Area")));
-const Bar = Loadable(lazy(() => import("../page/admin/Charts/Bar")));
-const Financial = Loadable(lazy(() => import("../page/admin/Charts/Financial")));
-const Line = Loadable(lazy(() => import("../page/admin/Charts/Line")));
-const Pie = Loadable(lazy(() => import("../page/admin/Charts/Pie")));
-const Pyramid = Loadable(lazy(() => import("../page/admin/Charts/Pyramid")));
-const Stacked = Loadable(lazy(() => import("../page/admin/Charts/Stacked")));
+const Area = Loadable(lazy(() => import("../page/admin/charts/Area")));
+const Bar = Loadable(lazy(() => import("../page/admin/charts/Bar")));
+const Financial = Loadable(lazy(() => import("../page/admin/charts/Financial")));
+const Line = Loadable(lazy(() => import("../page/admin/charts/Line")));
+const Pie = Loadable(lazy(() => import("../page/admin/charts/Pie")));
+const Pyramid = Loadable(lazy(() => import("../page/admin/charts/Pyramid")));
+const Stacked = Loadable(lazy(() => import("../page/admin/charts/Stacked")));
 
 
 
@@ -66,7 +66,7 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "Editor", element: <Editor /> },
       { path: "Payment", element: <Payment /> },
       { path: "New", element: <New /> },
-      { path: "Getting Started", element: <GettingStarted /> },
+      //{ path: "Getting Started", element: <GettingStarted /> },
       {/* charts  */},
       { path: "Area", element: <Area /> },
       { path: "Bar", element: <Bar /> },

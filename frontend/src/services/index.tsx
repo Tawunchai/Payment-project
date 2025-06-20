@@ -6,6 +6,8 @@ import { GetstartedInterface } from "../interface/IGetstarted";
 import { EVchargingInterface } from "../interface/IEV";
 import { EmployeeInterface } from "../interface/IEmployee";
 import { CalendarInterface } from "../interface/ICalendar";
+import { GendersInterface } from "../interface/IGender";
+import { UserroleInterface } from "../interface/IUserrole";
 
 const apiUrl = "http://localhost:8000";
 
@@ -213,6 +215,29 @@ export const ListEVCharging = async (): Promise<EVchargingInterface[] | null> =>
   }
 };
 
+export const DeleteEVcharging = async (
+  id: number
+): Promise<{ message: string } | null> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-evchargings/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error deleting EVcharging:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 // services/employee.ts
 export const GetEmployeeByUserID = async (id: number): Promise<EmployeeInterface | null> => {
   try {
@@ -221,6 +246,29 @@ export const GetEmployeeByUserID = async (id: number): Promise<EmployeeInterface
     return null;
   } catch (error) {
     console.error("Error fetching employee by user ID", error);
+    return null;
+  }
+};
+
+export const DeleteAdmin = async (
+  id: number
+): Promise<{ message: string } | null> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-admins/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error deleting admin:", error.response?.data || error.message);
     return null;
   }
 };
@@ -314,6 +362,56 @@ export const DeleteCalendar = async (
     }
   } catch (error: any) {
     console.error("Error deleting calendar:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const UpdateUser = async (
+  id: number,
+  data: Partial<UsersInterface>
+): Promise<{ message: string; user: UsersInterface } | null> => {
+  try {
+    const response = await axios.patch(`${apiUrl}/update-user/${id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status code:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating user:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const ListGenders = async (): Promise<GendersInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/genders`);
+    if (response.status === 200) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching genders:", error);
+    return null;
+  }
+};
+
+export const ListUserRoles = async (): Promise<UserroleInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/userroles`);
+    if (response.status === 200) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching user roles:", error);
     return null;
   }
 };

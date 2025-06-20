@@ -25,3 +25,21 @@ func ListEVData(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, evs)
 }
+
+func DeleteEVByID(c *gin.Context) {
+	id := c.Param("id")
+
+	db := config.DB()
+	var ev entity.EVcharging
+	if err := db.First(&ev, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "EVcharging not found"})
+		return
+	}
+
+	if err := db.Delete(&ev).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "EVcharging deleted successfully"})
+}

@@ -13,6 +13,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/login"
 	"github.com/Tawunchai/work-project/controller/new"
 	"github.com/Tawunchai/work-project/controller/review"
+	"github.com/Tawunchai/work-project/controller/role"
 	"github.com/Tawunchai/work-project/controller/user"
 	"github.com/Tawunchai/work-project/middlewares"
 	"github.com/gin-gonic/gin"
@@ -44,14 +45,21 @@ func main() {
 		public.GET("/employee/:userID", user.GetEmployeeByUserID)
 		public.GET("/uploads/*filename", user.ServeImage)
 		public.POST("/create-user", user.CreateUser)
+		public.PATCH("/update-user/:id", user.UpdateUserByID)
 		public.DELETE("/delete-users/:id", user.DeleteUserByID)
 		public.GET("/users", user.ListUser)
 		public.GET("/users/by-role/user", user.GetDataUserByRoleUser)
 		public.GET("/users/by-role/admin", user.GetDataUserByRoleAdmin)
 		public.GET("/employees/user/:id", employee.GetEmployeeByUserID)
+		public.DELETE("/delete-admins/:id", employee.DeleteAdminByID)
+
+		//role
+		public.GET("/userroles", role.ListUserRoles)
 
 		//EV Charging
 		public.GET("/evs", charging.ListEVData)
+		public.DELETE("/delete-evchargings/:id", charging.DeleteEVByID)
+
 
 		//gender
 		public.GET("/genders", gender.ListGenders)

@@ -14,11 +14,11 @@ import {
 } from '@syncfusion/ej2-react-schedule';
 import { DatePickerComponent } from '@syncfusion/ej2-react-calendars';
 import type { ScheduleComponent as ScheduleType } from '@syncfusion/ej2-react-schedule';
-import { Header } from '../../component/admin';
+import { Header } from '../../../component/admin';
 import type { View } from '@syncfusion/ej2-react-schedule';
 
-import { ListCalendars, CreateCalendar, UpdateCalendar, DeleteCalendar } from '../../services/index';
-import { CalendarInterface } from '../../interface/ICalendar';
+import { ListCalendars, CreateCalendar, UpdateCalendar, DeleteCalendar } from '../../../services/index';
+import { CalendarInterface } from '../../../interface/ICalendar';
 
 const PropertyPane = (props: any) => <div className="mt-5">{props.children}</div>;
 

@@ -27,3 +27,21 @@ func GetEmployeeByUserID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, employee)
 }
+
+func DeleteAdminByID(c *gin.Context) {
+	id := c.Param("id")
+
+	db := config.DB()
+	var admin entity.Employee
+	if err := db.First(&admin, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Admin not found"})
+		return
+	}
+
+	if err := db.Delete(&admin).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Admin deleted successfully"})
+}

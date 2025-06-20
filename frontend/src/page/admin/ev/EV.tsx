@@ -1,0 +1,159 @@
+import { useEffect, useRef, useState } from "react";
+import {
+  GridComponent,
+  ColumnsDirective,
+  ColumnDirective,
+  Page,
+  Selection,
+  Inject,
+  Edit,
+  Toolbar,
+  Sort,
+  Filter,
+} from "@syncfusion/ej2-react-grids";
+import { SelectionSettingsModel } from "@syncfusion/ej2-react-grids";
+
+import { Header } from "../../../component/admin";
+import { EVGrid } from "../../../assets/admin/dummy";
+import { ListEVCharging, DeleteEVcharging } from "../../../services/index";
+import Modal from "../getting/modal";
+import { Trash2 } from "react-feather";
+
+const EV = () => {
+  const [evData, setEVData] = useState<any[]>([]);
+  const selectedRowsRef = useRef<number[]>([]);
+  const gridRef = useRef<any>(null);
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+
+  const selectionsettings: SelectionSettingsModel = {
+    persistSelection: true,
+    type: "Multiple",
+    mode: "Row",
+  };
+
+  const toolbarOptions = [{ text: "Delete", id: "customDelete", prefixIcon: "e-delete" }];
+  const editing = { allowDeleting: true, allowEditing: true };
+
+  useEffect(() => {
+    fetchEVData();
+  }, []);
+
+  const fetchEVData = async () => {
+    const evs = await ListEVCharging();
+    if (evs) {
+      const formatted = evs.map((ev: any) => ({
+        ID: ev.ID,
+        Name: ev.Name ?? "-",
+        Email: ev.Employee?.User?.Email ?? "-",
+        Voltage: ev.Voltage ?? "-",
+        Current: ev.Current ?? "-",
+        Price: ev.Price ?? 0,
+        Type: ev.Type?.Type ?? "-",
+        Status: ev.Status?.Status ?? "-",
+        EmployeeName: ev.Employee
+          ? `${ev.Employee?.User?.FirstName ?? ""} ${ev.Employee?.User?.LastName ?? ""}`.trim()
+          : "-",
+        ProfileImage: ev.Employee?.User?.Profile || "profile/default.png",
+      }));
+      setEVData(formatted);
+    }
+  };
+
+  const rowSelected = (args: any) => {
+    const id = args.data?.ID;
+    if (id && !selectedRowsRef.current.includes(id)) {
+      selectedRowsRef.current.push(id);
+    }
+  };
+
+  const rowDeselected = (args: any) => {
+    const id = args.data?.ID;
+    if (id) {
+      selectedRowsRef.current = selectedRowsRef.current.filter((eid) => eid !== id);
+    }
+  };
+
+  const toolbarClick = (args: any) => {
+    if (args.item.id === "customDelete") {
+      if (selectedRowsRef.current.length === 0) return;
+      setOpenConfirmModal(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    const results = await Promise.all(
+      selectedRowsRef.current.map((evId) => DeleteEVcharging(evId))
+    );
+
+    const failedIds = selectedRowsRef.current.filter((_, i) => !results[i]);
+
+    if (failedIds.length === 0) {
+      await fetchEVData(); // ✅ โหลดใหม่
+    }
+
+    selectedRowsRef.current = [];
+    setOpenConfirmModal(false);
+  };
+
+  const cancelDelete = () => {
+    setOpenConfirmModal(false);
+    selectedRowsRef.current = [];
+
+    if (gridRef.current) {
+      gridRef.current.clearSelection();
+    }
+  };
+
+  return (
+    <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white rounded-3xl">
+      <Header category="Page" title="EV Charging Stations" />
+      <GridComponent
+        id="grid-ev"
+        ref={gridRef}
+        dataSource={evData}
+        enableHover={false}
+        allowPaging
+        pageSettings={{ pageCount: 5 }}
+        selectionSettings={selectionsettings}
+        toolbar={toolbarOptions}
+        editSettings={editing}
+        allowSorting
+        toolbarClick={toolbarClick}
+        rowSelected={rowSelected}
+        rowDeselected={rowDeselected}
+      >
+        <ColumnsDirective>
+          <ColumnDirective type="checkbox" width="50" />
+          <ColumnDirective field="ID" isPrimaryKey={true} visible={false} />
+          {EVGrid.map((item: any, index: number) => (
+            <ColumnDirective key={index} {...item} />
+          ))}
+        </ColumnsDirective>
+        <Inject services={[Page, Selection, Toolbar, Edit, Sort, Filter]} />
+      </GridComponent>
+
+      {/* ✅ Modal Confirm Delete */}
+      <Modal open={openConfirmModal} onClose={() => setOpenConfirmModal(false)}>
+        <div className="text-center w-56">
+          <Trash2 size={56} className="mx-auto text-red-500" />
+          <div className="mx-auto my-4 w-48">
+            <h3 className="text-lg font-black text-gray-800">ยืนยันการลบ</h3>
+            <p className="text-sm text-gray-500">
+              คุณแน่ใจว่าต้องการลบ {selectedRowsRef.current.length} รายการใช่หรือไม่?
+            </p>
+          </div>
+          <div className="flex gap-4">
+            <button className="btn btn-danger w-full" onClick={confirmDelete}>
+              ลบ
+            </button>
+            <button className="btn btn-light w-full" onClick={cancelDelete}>
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+export default EV;

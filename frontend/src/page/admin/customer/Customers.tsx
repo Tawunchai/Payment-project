@@ -12,19 +12,25 @@ import {
   Sort,
   Filter,
 } from "@syncfusion/ej2-react-grids";
-
-import { Header } from "../../component/admin";
-import { customersGrid } from "../../assets/admin/dummy";
-import { ListUsersByRoleUser, DeleteUser } from "../../services/index";
-import Modal from "./Getting/modal"; // <-- import Modal
+import { GendersInterface } from "../../../interface/IGender";
+import { UserroleInterface } from "../../../interface/IUserrole";
+import { Header } from "../../../component/admin";
+import { customersGrid } from "../../../assets/admin/dummy";
+import { ListUsersByRoleUser, DeleteUser, UpdateUser, ListGenders, ListUserRoles } from "../../../services/index";
+import Modal from "../getting/modal";
+import EditUserModal from "./edit/index";
 import { Trash2 } from "react-feather";
 
 const Customers = () => {
+
   const [customerData, setCustomerData] = useState<any[]>([]);
   const selectedRowsRef = useRef<number[]>([]);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [genders, setGenders] = useState<GendersInterface[]>([]);
+  const [userRoles, setUserRoles] = useState<UserroleInterface[]>([]);
 
-  const gridRef = useRef<any>(null); // ✅ ใช้ ref เพื่อควบคุม GridComponent
+  const gridRef = useRef<any>(null);
 
   const selectionsettings: SelectionSettingsModel = {
     persistSelection: true,
@@ -32,33 +38,44 @@ const Customers = () => {
     mode: "Row",
   };
 
-  const toolbarOptions = [{ text: 'Delete', id: 'customDelete', prefixIcon: 'e-delete' }];
+  const toolbarOptions = [{ text: "Delete", id: "customDelete", prefixIcon: "e-delete" }];
   const editing = { allowEditing: true };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const users = await ListUsersByRoleUser();
-      if (users) {
-        const formatted = users.map((user) => ({
-          UserID: user.ID,
-          Username: user.Username ?? "-",
-          CustomerName: `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim(),
-          CustomerEmail: user.Email ?? "-",
-          CustomerImage:
-            user.Profile && user.Profile !== ""
-              ? user.Profile
-              : "https://via.placeholder.com/40",
-          Role: user.UserRole?.RoleName ?? "-",
-          Gender: user.Gender?.Gender ?? "-",
-          StatusBg: user.Gender?.Gender === "Male" ? "#8BE78B" : "#FEC90F",
-          PhoneNumber: user.PhoneNumber ?? "-",
-        }));
-        setCustomerData(formatted);
-      }
-    };
-
     fetchUsers();
+    fetchDropdownOptions();
   }, []);
+
+  const fetchDropdownOptions = async () => {
+    const g = await ListGenders();
+    const r = await ListUserRoles();
+    if (g) setGenders(g);
+    if (r) setUserRoles(r);
+  };
+
+  const fetchUsers = async () => {
+    const users = await ListUsersByRoleUser();
+    if (users) {
+      const formatted = users.map((user) => ({
+        UserID: user.ID,
+        Username: user.Username ?? "-",
+        FirstName: user.FirstName ?? "",
+        LastName: user.LastName ?? "",
+        CustomerName: `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim(),
+        CustomerEmail: user.Email ?? "-",
+        CustomerImage:
+          user.Profile && user.Profile !== ""
+            ? user.Profile
+            : "https://via.placeholder.com/40",
+        Role: user.UserRole?.RoleName ?? "-",
+        Status: user.Gender?.Gender ?? "-",
+        StatusBg: user.Gender?.Gender === "Male" ? "#8BE78B" : "#FEC90F",
+        PhoneNumber: user.PhoneNumber ?? "-",
+        Raw: user, 
+      }));
+      setCustomerData(formatted);
+    }
+  };
 
   const rowSelected = (args: any) => {
     const id = args.data?.UserID;
@@ -89,24 +106,7 @@ const Customers = () => {
     const failedIds = selectedRowsRef.current.filter((_, i) => !results[i]);
 
     if (failedIds.length === 0) {
-      const refreshed = await ListUsersByRoleUser(); // 🔁 ดึงข้อมูลใหม่
-      if (refreshed) {
-        const formatted = refreshed.map((user) => ({
-          UserID: user.ID,
-          Username: user.Username ?? "-",
-          CustomerName: `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim(),
-          CustomerEmail: user.Email ?? "-",
-          CustomerImage:
-            user.Profile && user.Profile !== ""
-              ? user.Profile
-              : "https://via.placeholder.com/40",
-          Role: user.UserRole?.RoleName ?? "-",
-          Gender: user.Gender?.Gender ?? "-",
-          StatusBg: user.Gender?.Gender === "Male" ? "#8BE78B" : "#FEC90F",
-          PhoneNumber: user.PhoneNumber ?? "-",
-        }));
-        setCustomerData(formatted);
-      }
+      await fetchUsers();
     }
 
     selectedRowsRef.current = [];
@@ -115,12 +115,29 @@ const Customers = () => {
 
   const cancelDelete = () => {
     setOpenConfirmModal(false);
+    gridRef.current?.clearSelection();
+    selectedRowsRef.current = [];
+  };
 
-    if (gridRef.current) {
-      gridRef.current.clearSelection(); // ✅ เคลียร์ selection เมื่อยกเลิก
+  const openEditModal = (user: any) => {
+    setEditUser(user);
+  };
+
+  const handleUpdate = async (updated: any) => {
+    if (!updated.UserID && !updated.ID) {
+      alert("User ID not found");
+      return;
     }
-
-    selectedRowsRef.current = []; // ✅ เคลียร์ state ที่ใช้เช็ค
+    const id = updated.UserID ?? updated.ID;
+    const { Raw, CustomerName, ...dataToUpdate } = updated; 
+    console.log(dataToUpdate)
+    const res = await UpdateUser(id, dataToUpdate);
+    if (res) {
+      await fetchUsers();
+      setEditUser(null);
+    } else {
+      alert("Failed to update user");
+    }
   };
 
   return (
@@ -128,7 +145,7 @@ const Customers = () => {
       <Header category="Page" title="Customers" />
       <GridComponent
         id="grid-users"
-        ref={gridRef} // ✅ เพิ่ม ref
+        ref={gridRef}
         dataSource={customerData}
         enableHover={true}
         allowPaging={true}
@@ -144,14 +161,27 @@ const Customers = () => {
         <ColumnsDirective>
           <ColumnDirective type="checkbox" width="50" />
           <ColumnDirective field="UserID" headerText="ID" isPrimaryKey={true} visible={false} />
+      
           {customersGrid.map((item: any, index: number) => (
             <ColumnDirective key={index} {...item} />
           ))}
+          <ColumnDirective
+            headerText="Action"
+            width="100"
+            template={(props: any) => (
+              <button
+                onClick={() => openEditModal(props.Raw)}
+                className="text-blue-500 underline"
+              >
+                Edit
+              </button>
+            )}
+          />
         </ColumnsDirective>
         <Inject services={[Page, Selection, Toolbar, Edit, Sort, Filter]} />
       </GridComponent>
 
-      {/* ✅ Confirm Delete Modal */}
+      {/* Confirm Delete Modal */}
       <Modal open={openConfirmModal} onClose={() => setOpenConfirmModal(false)}>
         <div className="text-center w-56">
           <Trash2 size={56} className="mx-auto text-red-500" />
@@ -171,6 +201,18 @@ const Customers = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Edit User Modal */}
+      {editUser && (
+        <EditUserModal
+          open={!!editUser}
+          onClose={() => setEditUser(null)}
+          user={editUser}
+          onSave={handleUpdate}
+          genders={genders}        // ต้องดึงข้อมูลมาจาก API หรือ mock
+          userRoles={userRoles}    // ต้องดึงข้อมูลมาจาก API หรือ mock
+        />
+      )}
     </div>
   );
 };
