@@ -70,13 +70,6 @@ export const kanbanGrid = [
   },
 ];
 
-const gridEmployeeCountry = (props: any) => (
-  <div className="flex items-center justify-center gap-2">
-    <GrLocation />
-    <span>{props.Country}</span>
-  </div>
-);
-
 export const EditorData = () => (
   <div>
     <h3>

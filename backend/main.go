@@ -69,6 +69,9 @@ func main() {
 
 		//new
 		public.GET("/news", new.ListNew)
+		public.POST("/create-news", new.CreateNews)
+		public.PATCH("/update-news/:id", new.UpdateNewsByID)
+		public.DELETE("/delete-news/:id", new.DeleteNewByID)
 
 		//getstarted
 		public.GET("/getstarteds", getstarted.ListGetStarted)

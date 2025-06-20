@@ -85,6 +85,75 @@ export const ListNews = async (): Promise<NewsInterface[] | null> => {
   }
 };
 
+export const CreateNews = async (formData: FormData): Promise<{ message: string; data: any } | null> => {
+  try {
+    console.log(formData)
+    const response = await axios.post(`${apiUrl}/create-news`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeader(),
+      },
+    });
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating news:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const UpdateNewsByID = async (
+  id: number,
+  formData: FormData
+): Promise<{ message: string; data: any } | null> => {
+  try {
+    const response = await axios.patch(`${apiUrl}/update-news/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating news:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+
+export const DeleteNews = async (
+  id: number
+): Promise<{ message: string } | null> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-news/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error deleting news:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 export const ListGetStarted = async (): Promise<GetstartedInterface[] | null> => {
   try {
     const response = await axios.get(`${apiUrl}/getstarteds`, {

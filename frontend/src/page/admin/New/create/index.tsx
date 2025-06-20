@@ -1,7 +1,68 @@
+import { useState } from "react";
+import { message, Upload } from "antd";
+import ImgCrop from "antd-img-crop";
+import { PlusOutlined } from "@ant-design/icons";
+import { CreateNews } from "../../../../services/index"; // ปรับ path ให้ตรงกับไฟล์ service คุณ
+import BackgroundImage from "../../../../assets/admin/img/img.jpg";
 import "../new.css";
-import BackgroundImage from "../../../assets/admin/img/img.jpg";
 
-const index = () => {
+const Index = () => {
+  const [fileList, setFileList] = useState<any[]>([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const employeeID = 1;
+
+  const onChange = ({ fileList: newFileList }: any) => {
+    setFileList(newFileList);
+  };
+
+  const onPreview = async (file: any) => {
+    let src = file.url;
+    if (!src && file.originFileObj) {
+      src = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file.originFileObj);
+        reader.onload = () => resolve(reader.result as string);
+      });
+    }
+    const imgWindow = window.open(src);
+    imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (fileList.length === 0) {
+      message.error("กรุณาอัปโหลดรูปภาพ");
+      return;
+    }
+
+    if (!title || !description) {
+      message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("picture", fileList[0].originFileObj);
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("employeeID", employeeID.toString());
+    for (const [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    const result = await CreateNews(formData);
+
+    if (result) {
+      message.success("สร้างข่าวสำเร็จ");
+      setFileList([]);
+      setTitle("");
+      setDescription("");
+    } else {
+      message.error("สร้างข่าวล้มเหลว");
+    }
+  };
+
   return (
     <div>
       <main>
@@ -18,62 +79,64 @@ const index = () => {
                   </p>
                 </div>
 
-                <form action="index.html" method="post" className="contact-form">
-                  <div className="input-wrap">
-                    <input
-                      className="contact-input"
-                      autoComplete="off"
-                      name="First Name"
-                      type="text"
-                      required
-                    />
-                    <label>First name</label>
-                    <i className="contact-icon fa-solid fa-address-card"></i>
+                <form className="contact-form" onSubmit={handleSubmit}>
+                  <div className="input-wrap w-full flex justify-center md:justify-start">
+                    <ImgCrop rotationSlider>
+                      <Upload
+                        fileList={fileList}
+                        onChange={onChange}
+                        onPreview={onPreview}
+                        beforeUpload={(file) => {
+                          const isImage = file.type.startsWith("image/");
+                          if (!isImage) {
+                            message.error("กรุณาอัปโหลดไฟล์รูปภาพ");
+                            return Upload.LIST_IGNORE;
+                          }
+                          return false;
+                        }}
+                        maxCount={1}
+                        multiple={false}
+                        listType="picture-card"
+                      >
+                        <div>
+                          <PlusOutlined />
+                          <div style={{ marginTop: 8 }}>Upload</div>
+                        </div>
+                      </Upload>
+                    </ImgCrop>
                   </div>
 
                   <div className="input-wrap">
                     <input
                       className="contact-input"
                       autoComplete="off"
-                      name="Last Name"
+                      name="Title"
                       type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
                       required
+                      placeholder="Title"
                     />
-                    <label>Last name</label>
-                    <i className="contact-icon fa-solid fa-address-card"></i>
-                  </div>
-
-                  <div className="input-wrap input-wrap-full">
-                    <input
-                      className="contact-input"
-                      autoComplete="off"
-                      name="Email"
-                      type="email"
-                      required
-                    />
-                    <label>Email</label>
-                    <i className="contact-icon fa-solid fa-envelope"></i>
+                    <i className="contact-icon fa-solid fa-heading"></i>
                   </div>
 
                   <div className="input-wrap input-wrap-textarea input-wrap-full">
                     <textarea
-                      name="Message"
+                      name="Description"
                       autoComplete="off"
                       className="contact-input"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                       required
+                      placeholder="Description"
                     ></textarea>
-                    <label>Message</label>
-                    <i className="contact-icon fa-solid fa-inbox"></i>
+                    <i className="contact-icon fa-solid fa-file-lines"></i>
                   </div>
 
                   <div className="contact-buttons">
-                    <button className="contact-btn upload" type="button">
-                      <span>
-                        <i className="fa-solid fa-paperclip"></i> Clear
-                      </span>
-                      <input type="file" name="attachment" />
+                    <button className="contact-btn" type="submit">
+                      Submit
                     </button>
-                    <input type="submit" value="Send message" className="contact-btn" />
                   </div>
                 </form>
               </div>
@@ -82,6 +145,7 @@ const index = () => {
             <div className="new-right">
               <div className="image-wrapper">
                 <img src={BackgroundImage} className="contact-img" alt="Contact" />
+                {/* SVGs */}
                 <div className="wave-wrap">
                   <svg
                     className="wave"
@@ -115,4 +179,4 @@ const index = () => {
   );
 };
 
-export default index;
+export default Index;
