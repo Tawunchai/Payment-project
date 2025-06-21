@@ -8,6 +8,8 @@ import { EmployeeInterface } from "../interface/IEmployee";
 import { CalendarInterface } from "../interface/ICalendar";
 import { GendersInterface } from "../interface/IGender";
 import { UserroleInterface } from "../interface/IUserrole";
+import { TypeInterface } from "../interface/IType";
+import { StatusInterface } from "../interface/IStatus";
 
 const apiUrl = "http://localhost:8000";
 
@@ -87,7 +89,6 @@ export const ListNews = async (): Promise<NewsInterface[] | null> => {
 
 export const CreateNews = async (formData: FormData): Promise<{ message: string; data: any } | null> => {
   try {
-    console.log(formData)
     const response = await axios.post(`${apiUrl}/create-news`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -284,6 +285,31 @@ export const ListEVCharging = async (): Promise<EVchargingInterface[] | null> =>
   }
 };
 
+export const UpdateEVByID = async (
+  id: number,
+  data: Partial<EVchargingInterface>
+): Promise<{ message: string; data: EVchargingInterface } | null> => {
+  try {
+    const response = await axios.patch(`${apiUrl}/update-evs/${id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating EV Charging:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+
 export const DeleteEVcharging = async (
   id: number
 ): Promise<{ message: string } | null> => {
@@ -307,6 +333,50 @@ export const DeleteEVcharging = async (
   }
 };
 
+//Type
+export const ListTypeEV = async (): Promise<TypeInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/types`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching EV Types:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+//Status
+export const ListStatus = async (): Promise<StatusInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/statuss`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching Status list:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 // services/employee.ts
 export const GetEmployeeByUserID = async (id: number): Promise<EmployeeInterface | null> => {
   try {
@@ -318,6 +388,42 @@ export const GetEmployeeByUserID = async (id: number): Promise<EmployeeInterface
     return null;
   }
 };
+
+export const UpdateAdminByID = async (
+  id: number,
+  data: Partial<Pick<EmployeeInterface, "Salary">> & { userRoleID?: number }
+): Promise<{ message: string; data: EmployeeInterface } | null> => {
+  try {
+    // สร้าง payload เป็น JSON object
+    const payload: any = {};
+
+    if (data.Salary !== undefined) {
+      payload.salary = data.Salary;
+    }
+
+    if (data.userRoleID !== undefined) {
+      payload.userRoleID = data.userRoleID;
+    }
+
+    const response = await axios.patch(`${apiUrl}/update-boss-admins/${id}`, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status code:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating admin:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 
 export const DeleteAdmin = async (
   id: number

@@ -7,8 +7,8 @@ import (
 type EVcharging struct {
 	gorm.Model
 	Name    string
-	Voltage string
-	Current string
+	Voltage float64
+	Current float64
 	Price   float64
 
 	EmployeeID *uint

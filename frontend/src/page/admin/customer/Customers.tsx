@@ -167,11 +167,12 @@ const Customers = () => {
           ))}
           <ColumnDirective
             headerText="Action"
+            textAlign="Center"
             width="100"
             template={(props: any) => (
               <button
                 onClick={() => openEditModal(props.Raw)}
-                className="text-blue-500 underline"
+                className="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded"
               >
                 Edit
               </button>

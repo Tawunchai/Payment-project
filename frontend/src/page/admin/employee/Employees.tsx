@@ -19,13 +19,19 @@ import {
   ListUsersByRoleAdmin,
   GetEmployeeByUserID,
   DeleteAdmin,
+  ListUserRoles,  
 } from "../../../services/index";
 
 import Modal from "../getting/modal";
 import { Trash2 } from "react-feather";
+import EditAdminModal from "./edit/index"; 
 
 const Employees = () => {
   const [employeeData, setEmployeeData] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<any[]>([]);  // เก็บ roles
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<any>(null);
+
   const selectedRowsRef = useRef<number[]>([]);
   const gridRef = useRef<any>(null);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
@@ -41,6 +47,7 @@ const Employees = () => {
 
   useEffect(() => {
     fetchAdmins();
+    fetchUserRoles();
   }, []);
 
   const fetchAdmins = async () => {
@@ -61,11 +68,18 @@ const Employees = () => {
             StatusBg: user.Gender?.Gender === "Male" ? "#8BE78B" : "#FEC90F",
             Phone: user.PhoneNumber ?? "-",
             Salary: employeeDetail?.Salary ?? "-",
+            UserRole: user.UserRole,
+            UserID: user.ID,
           };
         })
       );
       setEmployeeData(formatted);
     }
+  };
+
+  const fetchUserRoles = async () => {
+    const roles = await ListUserRoles();
+    if (roles) setUserRoles(roles);
   };
 
   const rowSelected = (args: any) => {
@@ -106,12 +120,23 @@ const Employees = () => {
 
   const cancelDelete = () => {
     setOpenConfirmModal(false);
-
     if (gridRef.current) {
       gridRef.current.clearSelection();
     }
-
     selectedRowsRef.current = [];
+  };
+
+  // แก้ไข: เปิด modal แก้ไขข้อมูล admin
+  const handleEdit = (rowData: any) => {
+    setEditingEmployee(rowData);
+    setEditModalOpen(true);
+  };
+
+  // เมื่อบันทึกข้อมูลใน modal เสร็จ
+  const onSaveEdit = () => {
+    setEditModalOpen(false);
+    setEditingEmployee(null);
+    fetchAdmins(); // รีโหลดข้อมูลหลังแก้ไข
   };
 
   return (
@@ -134,19 +159,31 @@ const Employees = () => {
       >
         <ColumnsDirective>
           <ColumnDirective type="checkbox" width="50" />
-          <ColumnDirective
-            field="EmployeeID"
-            headerText="ID"
-            isPrimaryKey={true}
-            visible={false}
-          />
+          <ColumnDirective field="EmployeeID" headerText="ID" isPrimaryKey={true} visible={false} />
+
           {employeesGrid.map((item: any, index: number) => (
             <ColumnDirective key={index} {...item} />
           ))}
+
+          <ColumnDirective
+            headerText="Action"
+            textAlign="Center"
+            width="120"
+            template={(props: any) => (
+              <button
+                className="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                onClick={() => handleEdit(props)}
+              >
+                Edit
+              </button>
+            )}
+          />
         </ColumnsDirective>
+
         <Inject services={[Page, Selection, Toolbar, Edit, Sort, Filter]} />
       </GridComponent>
 
+      {/* Modal ลบ */}
       <Modal open={openConfirmModal} onClose={() => setOpenConfirmModal(false)}>
         <div className="text-center w-56">
           <Trash2 size={56} className="mx-auto text-red-500" />
@@ -166,6 +203,15 @@ const Employees = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Modal แก้ไข admin */}
+      <EditAdminModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        employee={editingEmployee}
+        onSaved={onSaveEdit}
+        userRoles={userRoles}
+      />
     </div>
   );
 };

@@ -14,6 +14,8 @@ import (
 	"github.com/Tawunchai/work-project/controller/new"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/role"
+	"github.com/Tawunchai/work-project/controller/status"
+	types "github.com/Tawunchai/work-project/controller/type"
 	"github.com/Tawunchai/work-project/controller/user"
 	"github.com/Tawunchai/work-project/middlewares"
 	"github.com/gin-gonic/gin"
@@ -52,13 +54,21 @@ func main() {
 		public.GET("/users/by-role/admin", user.GetDataUserByRoleAdmin)
 		public.GET("/employees/user/:id", employee.GetEmployeeByUserID)
 		public.DELETE("/delete-admins/:id", employee.DeleteAdminByID)
+		public.PATCH("/update-boss-admins/:id", employee.UpdateAdminByID)
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)
 
+		//type
+		public.GET("/types", types.ListTypeEV)
+
+		//status
+		public.GET("/statuss", status.ListStatus)
+
 		//EV Charging
 		public.GET("/evs", charging.ListEVData)
 		public.DELETE("/delete-evchargings/:id", charging.DeleteEVByID)
+		public.PATCH("/update-evs/:id", charging.UpdateEVByID)
 
 
 		//gender

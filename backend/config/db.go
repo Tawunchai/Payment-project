@@ -228,8 +228,8 @@ func SetupDatabase() {
 
 	ev1 := entity.EVcharging{
 		Name:       "Charger A1",
-		Voltage:    "400V",
-		Current:    "200A",
+		Voltage:    400,
+		Current:    200,
 		Price:      15.50,
 		EmployeeID: &ev_eid,
 		StatusID:   status1.ID,
@@ -238,8 +238,8 @@ func SetupDatabase() {
 
 	ev2 := entity.EVcharging{
 		Name:       "Charger B2",
-		Voltage:    "240V",
-		Current:    "100A",
+		Voltage:    240,
+		Current:    100,
 		Price:      10.75,
 		EmployeeID: &ev_eid,
 		StatusID:   status2.ID,

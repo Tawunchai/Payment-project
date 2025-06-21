@@ -15,15 +15,24 @@ import { SelectionSettingsModel } from "@syncfusion/ej2-react-grids";
 
 import { Header } from "../../../component/admin";
 import { EVGrid } from "../../../assets/admin/dummy";
-import { ListEVCharging, DeleteEVcharging } from "../../../services/index";
+import { ListEVCharging, DeleteEVcharging, ListStatus, ListTypeEV } from "../../../services/index";
 import Modal from "../getting/modal";
 import { Trash2 } from "react-feather";
 
+import EditEVModal from "./edit/index"; // ปรับ path ตามจริง
+
 const EV = () => {
   const [evData, setEVData] = useState<any[]>([]);
+  const [statusList, setStatusList] = useState<any[]>([]);
+  const [typeList, setTypeList] = useState<any[]>([]);
+
   const selectedRowsRef = useRef<number[]>([]);
   const gridRef = useRef<any>(null);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
+
+  // State สำหรับ modal edit
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingEV, setEditingEV] = useState<any>(null);
 
   const selectionsettings: SelectionSettingsModel = {
     persistSelection: true,
@@ -36,10 +45,13 @@ const EV = () => {
 
   useEffect(() => {
     fetchEVData();
+    fetchStatusList();
+    fetchTypeList();
   }, []);
 
   const fetchEVData = async () => {
     const evs = await ListEVCharging();
+    console.log(evs)
     if (evs) {
       const formatted = evs.map((ev: any) => ({
         ID: ev.ID,
@@ -54,9 +66,22 @@ const EV = () => {
           ? `${ev.Employee?.User?.FirstName ?? ""} ${ev.Employee?.User?.LastName ?? ""}`.trim()
           : "-",
         ProfileImage: ev.Employee?.User?.Profile || "profile/default.png",
+        EmployeeID: ev.EmployeeID,
+        StatusID: ev.StatusID,
+        TypeID: ev.TypeID,
       }));
       setEVData(formatted);
     }
+  };
+
+  const fetchStatusList = async () => {
+    const statuses = await ListStatus();
+    if (statuses) setStatusList(statuses);
+  };
+
+  const fetchTypeList = async () => {
+    const types = await ListTypeEV();
+    if (types) setTypeList(types);
   };
 
   const rowSelected = (args: any) => {
@@ -88,7 +113,7 @@ const EV = () => {
     const failedIds = selectedRowsRef.current.filter((_, i) => !results[i]);
 
     if (failedIds.length === 0) {
-      await fetchEVData(); // ✅ โหลดใหม่
+      await fetchEVData();
     }
 
     selectedRowsRef.current = [];
@@ -103,6 +128,20 @@ const EV = () => {
       gridRef.current.clearSelection();
     }
   };
+
+  // แก้ไข: เปิด modal แก้ไข EV
+  const handleEdit = (rowData: any) => {
+    setEditingEV(rowData);
+    setEditModalOpen(true);
+  };
+
+  // เมื่อบันทึกข้อมูลใน modal เสร็จ
+  const onSaveEdit = async () => {
+  setEditModalOpen(false);
+  setEditingEV(null);
+  await new Promise((r) => setTimeout(r, 300)); // รอ 300 ms
+  fetchEVData();
+};
 
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white rounded-3xl">
@@ -128,11 +167,24 @@ const EV = () => {
           {EVGrid.map((item: any, index: number) => (
             <ColumnDirective key={index} {...item} />
           ))}
+          <ColumnDirective
+            headerText="Action"
+            textAlign="Center"
+            width="120"
+            template={(props: any) => (
+              <button
+                className="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                onClick={() => handleEdit(props)}
+              >
+                Edit
+              </button>
+            )}
+          />
         </ColumnsDirective>
         <Inject services={[Page, Selection, Toolbar, Edit, Sort, Filter]} />
       </GridComponent>
 
-      {/* ✅ Modal Confirm Delete */}
+      {/* Modal Confirm Delete */}
       <Modal open={openConfirmModal} onClose={() => setOpenConfirmModal(false)}>
         <div className="text-center w-56">
           <Trash2 size={56} className="mx-auto text-red-500" />
@@ -152,6 +204,16 @@ const EV = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Modal แก้ไข EV Charging */}
+      <EditEVModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        evCharging={editingEV}
+        onSaved={onSaveEdit}
+        statusList={statusList}
+        typeList={typeList}
+      />
     </div>
   );
 };
