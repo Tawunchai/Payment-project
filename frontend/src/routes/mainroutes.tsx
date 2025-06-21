@@ -28,7 +28,7 @@ const Modal = Loadable(lazy(() => import("../component/modal")));
 const Area = Loadable(lazy(() => import("../page/admin/charts/Area")));
 const Bar = Loadable(lazy(() => import("../page/admin/charts/Bar")));
 const Financial = Loadable(lazy(() => import("../page/admin/charts/Financial")));
-const Line = Loadable(lazy(() => import("../page/admin/charts/Line")));
+const Line = Loadable(lazy(() => import("../page/SocialProfile/SocialProfile")));
 const Pie = Loadable(lazy(() => import("../page/admin/charts/Pie")));
 const Pyramid = Loadable(lazy(() => import("../page/admin/charts/Pyramid")));
 const Stacked = Loadable(lazy(() => import("../page/admin/charts/Stacked")));
