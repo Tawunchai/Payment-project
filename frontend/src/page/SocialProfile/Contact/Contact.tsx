@@ -10,11 +10,10 @@ const Contact = () => {
   return (
     <Card
       title={t("widgets.title.contact")}
-      classNames={{ body: "pt-0", header: "border-0" }}
+      classNames={{ body: "pt-2", header: "border-0" }}
       bordered={false}
     >
-      <div className="flex flex-col gap-4">
-        {/* Email Section */}
+      <div className="flex flex-col gap-9">
         <div className="flex">
           <span className="text-2xl text-primary mr-3">
             <RiMailLine />

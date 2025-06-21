@@ -1,4 +1,4 @@
-import { AiOutlineCalendar, AiOutlineShoppingCart, AiOutlineAreaChart, AiOutlineBarChart, AiOutlineStock } from 'react-icons/ai';
+import { AiOutlineCalendar, AiOutlineShoppingCart, AiOutlineAreaChart, AiOutlineBarChart } from 'react-icons/ai';
 import { FiShoppingBag, FiEdit, FiPieChart, FiBarChart, FiCreditCard, FiStar, FiShoppingCart } from 'react-icons/fi';
 import { BsBarChart, BsBoxSeam, BsCurrencyDollar, BsShield, BsChatLeft } from 'react-icons/bs';
 import { IoMdContacts } from 'react-icons/io';
@@ -7,7 +7,6 @@ import { MdOutlineSupervisorAccount } from 'react-icons/md';
 import { HiOutlineRefresh } from 'react-icons/hi';
 import { TiTick } from 'react-icons/ti';
 import { GiLouvrePyramid } from 'react-icons/gi';
-import { GrLocation } from 'react-icons/gr';
 import { AxisModel } from '@syncfusion/ej2-react-charts';
 import type { EdgeLabelPlacement } from '@syncfusion/ej2-react-charts';
 import { ContextMenuItem } from '@syncfusion/ej2-react-grids';
@@ -469,13 +468,6 @@ export const customersGrid = [
 
 export const EVGrid = [
   {
-    field: "ID",
-    headerText: "EV ID",
-    width: "120",
-    textAlign: "Center",
-    isPrimaryKey: true,
-  },
-  {
     field: "Name",
     headerText: "Station Name",
     width: "150",
@@ -620,10 +612,6 @@ export const links = [
   {
     title: 'Charts',
     links: [
-      {
-        name: 'Line',
-        icon: <AiOutlineStock />,
-      },
       {
         name: 'Area',
         icon: <AiOutlineAreaChart />,
@@ -956,20 +944,6 @@ export const userProfileData = [
     desc: 'Account Settings',
     iconColor: '#03C9D7',
     iconBg: '#E5FAFB',
-  },
-  {
-    icon: <BsShield />,
-    title: 'My Inbox',
-    desc: 'Messages & Emails',
-    iconColor: 'rgb(0, 194, 146)',
-    iconBg: 'rgb(235, 250, 242)',
-  },
-  {
-    icon: <FiCreditCard />,
-    title: 'My Tasks',
-    desc: 'To-do and Daily Tasks',
-    iconColor: 'rgb(255, 244, 229)',
-    iconBg: 'rgb(254, 201, 15)',
   },
 ];
 

@@ -176,6 +176,50 @@ export const ListGetStarted = async (): Promise<GetstartedInterface[] | null> =>
   }
 };
 
+export const CreateGettingStarted = async (data: { title: string; description: string; employeeID: number }): Promise<{ message: string; data: any } | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-getting`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating getting started:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const DeleteGettingByID = async (
+  id: number
+): Promise<{ message: string } | null> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-gettings/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error deleting GettingStarted:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 
 export const ListUsers = async (): Promise<UsersInterface[] | null> => {
   try {

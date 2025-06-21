@@ -85,6 +85,8 @@ func main() {
 
 		//getstarted
 		public.GET("/getstarteds", getstarted.ListGetStarted)
+		public.POST("/create-getting", getstarted.CreateGettingStarted)
+		public.DELETE("/delete-gettings/:id", getstarted.DeleteGettingByID)
 
 		//calendar
 		public.GET("/calendars", calendar.ListCalendar)

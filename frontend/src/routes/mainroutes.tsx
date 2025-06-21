@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { useRoutes, RouteObject} from "react-router-dom";
+import { useRoutes, RouteObject } from "react-router-dom";
 import Loadable from "../component/third-patry/Loadable";
 
 const Login = Loadable(lazy(() => import("../page/login/index")));
@@ -16,15 +16,16 @@ const Employees = Loadable(lazy(() => import("../page/admin/employee/Employees")
 const Customers = Loadable(lazy(() => import("../page/admin/customer/Customers")));
 const Calendar = Loadable(lazy(() => import("../page/admin/calendar/Calendar")));
 const Editor = Loadable(lazy(() => import("../page/Editor/Editor")));
+const Create_Editor = Loadable(lazy(() => import("../page/Editor/create")));
+const Edit_Editor = Loadable(lazy(() => import("../page/Editor/edit")));
 const Payment = Loadable(lazy(() => import("../page/admin/pyment/Payment")));
 const New = Loadable(lazy(() => import("../page/admin/New/New")));
 const Create_New = Loadable(lazy(() => import("../page/admin/New/create")));
 const Edit_New = Loadable(lazy(() => import("../page/admin/New/edit")));
-const GettingStarted = Loadable(lazy(() => import("../page/admin/getting/GettingStarted")));
 
 const Modal = Loadable(lazy(() => import("../component/modal")));
 
-{/* charts  */}
+{/* charts  */ }
 const Area = Loadable(lazy(() => import("../page/admin/charts/Area")));
 const Bar = Loadable(lazy(() => import("../page/admin/charts/Bar")));
 const Financial = Loadable(lazy(() => import("../page/admin/charts/Financial")));
@@ -37,8 +38,8 @@ const Stacked = Loadable(lazy(() => import("../page/admin/charts/Stacked")));
 
 const UserRoutes = (): RouteObject[] => [
   {
-    path: "/", element: <User />, 
-  },                                          
+    path: "/", element: <User />,
+  },
   {
     path: "/user",
     children: [
@@ -52,7 +53,7 @@ const AdminRoutes = (): RouteObject[] => [
     path: "/",
     element: <MainLayout />,
     children: [
-      { index: true, element: <Admin /> },   
+      { index: true, element: <Admin /> },
     ],
   },
   {
@@ -61,17 +62,18 @@ const AdminRoutes = (): RouteObject[] => [
     children: [
       { index: true, element: <Admin /> },
       { path: "Dashboard", element: <Admin /> },
+      { path: "Payment", element: <Payment /> },
       { path: "EV Charging", element: <EV /> },
       { path: "Employees", element: <Employees /> },
       { path: "Customers", element: <Customers /> },
       { path: "Calendar", element: <Calendar /> },
       { path: "Editor", element: <Editor /> },
-      { path: "Payment", element: <Payment /> },
+      { path: "create-editor", element: <Create_Editor /> },
+      { path: "edit-editor", element: <Edit_Editor /> },
       { path: "New", element: <New /> },
-      //{ path: "Getting Started", element: <GettingStarted /> },
       { path: "create-new", element: <Create_New /> },
       { path: "edit-new", element: <Edit_New /> },
-      {/* charts  */},
+      {/* charts  */ },
       { path: "Area", element: <Area /> },
       { path: "Bar", element: <Bar /> },
       { path: "Financial", element: <Financial /> },
@@ -90,9 +92,9 @@ const MainRoutes = (): RouteObject[] => [
     path: "/",
     children: [
       { index: true, element: <Login /> },
-      {path: "/register", element: <Register/>},
+      { path: "/register", element: <Register /> },
       { path: "*", element: <Login /> },
-      {path: "/register", element: <Register/>},
+      { path: "/register", element: <Register /> },
     ],
   },
 ];
@@ -123,7 +125,7 @@ function ConfigRoutes() {
         routes = MainRoutes();
         break;
     }
-  } 
+  }
   else {
     routes = MainRoutes();
   }
