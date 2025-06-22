@@ -2,6 +2,8 @@ package getstarted
 
 import (
 	"net/http"
+	"strconv"
+
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/entity"
 	"github.com/gin-gonic/gin"
@@ -48,6 +50,42 @@ func CreateGettingStarted(c *gin.Context) {
         "data":    getting,
     })
 }
+
+func PatchGettingStartedByID(c *gin.Context) {
+	id := c.Param("id")
+
+	var gettingStarted entity.GettingStarted
+	if err := config.DB().First(&gettingStarted, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบข้อมูล Getting Started"})
+		return
+	}
+
+	// ตรวจสอบค่าที่ส่งมา แล้วอัปเดตเฉพาะฟิลด์ที่ส่งมาเท่านั้น
+	if title := c.PostForm("title"); title != "" {
+		gettingStarted.Title = title
+	}
+	if description := c.PostForm("description"); description != "" {
+		gettingStarted.Description = description
+	}
+	if employeeIDStr := c.PostForm("employeeID"); employeeIDStr != "" {
+		if parsedID, err := strconv.ParseUint(employeeIDStr, 10, 32); err == nil {
+			temp := uint(parsedID)
+			gettingStarted.EmployeeID = &temp
+		}
+	}
+
+	// บันทึก
+	if err := config.DB().Save(&gettingStarted).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถบันทึกข้อมูลได้"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "อัปเดตข้อมูลสำเร็จ",
+		"data":    gettingStarted,
+	})
+}
+
 
 func DeleteGettingByID(c *gin.Context) {
 	id := c.Param("id")

@@ -1,22 +1,48 @@
 package config
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/Tawunchai/work-project/entity"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var db *gorm.DB
+
+type CustomLogger struct{}
+
+func (l *CustomLogger) LogMode(level logger.LogLevel) logger.Interface {
+	return l
+}
+
+func (l *CustomLogger) Info(ctx context.Context, msg string, args ...interface{}) {}
+
+func (l *CustomLogger) Warn(ctx context.Context, msg string, args ...interface{}) {}
+
+func (l *CustomLogger) Error(ctx context.Context, msg string, args ...interface{}) {
+	if !strings.Contains(msg, "record not found") {
+		log.Printf(msg, args...)
+	}
+}
+
+func (l *CustomLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+}
 
 func DB() *gorm.DB {
 	return db
 }
 
+
 func ConnectionDB() {
-	database, err := gorm.Open(sqlite.Open("work.db?cache=shared"), &gorm.Config{})
+	database, err := gorm.Open(sqlite.Open("work.db?cache=shared"), &gorm.Config{
+		Logger: &CustomLogger{},
+	})
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -249,7 +275,7 @@ func SetupDatabase() {
 	db.FirstOrCreate(&ev1, entity.EVcharging{Name: "Charger A1"})
 	db.FirstOrCreate(&ev2, entity.EVcharging{Name: "Charger B2"})
 
-	calendar_eid := uint(1) 
+	calendar_eid := uint(1)
 
 	calendar1 := entity.Calendar{
 		Title:       "Staff Meeting",
@@ -271,5 +297,38 @@ func SetupDatabase() {
 
 	db.FirstOrCreate(&calendar1, entity.Calendar{Title: "Staff Meeting"})
 	db.FirstOrCreate(&calendar2, entity.Calendar{Title: "EV Maintenance"})
+
+	userID1 := uint(1)
+	userID2 := uint(2)
+	userID3 := uint(3)
+
+	report1 := &entity.Report{
+		Picture:     "uploads/reports/avatar1.jpg", 
+		Description: "พบว่าสัตว์ในสวนสัตว์มีสุขภาพดีและได้รับการดูแลอย่างดี มีการจัดแสดงที่น่าสนใจมากมาย",
+		Status:      "Pending",
+		UserID:      &userID1,
+		EmployeeID:  nil, // ตั้งเป็น nil
+	}
+
+	report2 := &entity.Report{
+		Picture:     "uploads/reports/avatar2.jpg", 
+		Description: "สวนสัตว์สะอาดและปลอดภัย แต่ควรเพิ่มพื้นที่สำหรับสัตว์บางชนิดให้มากขึ้น",
+		Status:      "Pending",
+		UserID:      &userID2,
+		EmployeeID:  nil,
+	}
+
+	report3 := &entity.Report{
+		Picture:     "uploads/reports/avatar3.png", 
+		Description: "สถานที่และอุปกรณ์บางส่วนเริ่มทรุดโทรม ควรได้รับการปรับปรุงเพื่อความปลอดภัย",
+		Status:      "Pending",
+		UserID:      &userID3,
+		EmployeeID:  nil,
+	}
+
+	// สร้างหรือดึงข้อมูลที่มีอยู่แล้ว โดยใช้ UserID ตรวจสอบข้อมูลซ้ำ
+	db.FirstOrCreate(report1, entity.Report{UserID: &userID1})
+	db.FirstOrCreate(report2, entity.Report{UserID: &userID2})
+	db.FirstOrCreate(report3, entity.Report{UserID: &userID3})
 
 }

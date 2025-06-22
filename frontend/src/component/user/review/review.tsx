@@ -3,7 +3,7 @@ import Slider from "react-slick";
 import Profile from "../../../assets/profile/people1.png"; // fallback image
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-
+import Like from "../../like/like"
 import { ReviewInterface } from "../../../interface/IReview";
 import { ListReviews } from "../../../services/index";
 
@@ -99,6 +99,7 @@ const Review = () => {
                     >
                       {item.Comment}
                     </p>
+                      <Like reviewID={item.ID!} userID={1} />
                   </div>
                 </div>
               </div>

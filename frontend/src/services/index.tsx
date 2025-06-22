@@ -10,6 +10,7 @@ import { GendersInterface } from "../interface/IGender";
 import { UserroleInterface } from "../interface/IUserrole";
 import { TypeInterface } from "../interface/IType";
 import { StatusInterface } from "../interface/IStatus";
+import { ReportInterface } from "../interface/IReport";
 
 const apiUrl = "http://localhost:8000";
 
@@ -17,6 +18,43 @@ const getAuthHeader = () => {
   const token = localStorage.getItem("token");
   const tokenType = localStorage.getItem("token_type");
   return { Authorization: `${tokenType} ${token}` };
+};
+
+const getRequestOptions = () => {
+  const Authorization = localStorage.getItem("token");
+  const Bearer = localStorage.getItem("token_type");
+  return {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${Bearer} ${Authorization}`,
+    },
+  };
+};
+
+const deleteRequestOptions = () => {
+  const Authorization = localStorage.getItem("token");
+  const Bearer = localStorage.getItem("token_type");
+  return {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${Bearer} ${Authorization}`,
+    },
+  };
+};
+
+const postRequestOptions = (body: any) => {
+  const Authorization = localStorage.getItem("token");
+  const Bearer = localStorage.getItem("token_type");
+  return {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${Bearer} ${Authorization}`,
+    },
+    body: JSON.stringify(body),
+  };
 };
 
 export const ListReviews = async (): Promise<ReviewInterface[] | null> => {
@@ -37,6 +75,67 @@ export const ListReviews = async (): Promise<ReviewInterface[] | null> => {
   } catch (error) {
     console.error("Error fetching reviews:", error);
     return null;
+  }
+};
+
+export const onLikeButtonClick = async (
+  reviewID: number,
+  userID: number
+): Promise<any | false> => {
+  try {
+    const postOptions = postRequestOptions({
+      user_id: userID,
+      review_id: reviewID,
+    });
+
+    const response = await fetch(`${apiUrl}/reviews/like`, postOptions);
+
+    if (!response.ok) throw new Error("การตอบสนองของเครือข่ายไม่ถูกต้อง");
+    return await response.json();
+  } catch (error) {
+    console.error("ข้อผิดพลาดในการกดไลค์:", error);
+    return false;
+  }
+};
+
+export const fetchLikeStatus = async (
+  reviewID: number,
+  userID: number
+): Promise<{ hasLiked: boolean; likeCount: number } | false> => {
+  try {
+    const requestOptions = getRequestOptions();
+
+    const response = await fetch(
+      `${apiUrl}/reviews/${userID}/${reviewID}/like`,
+      requestOptions
+    );
+
+    if (!response.ok) throw new Error("การตอบสนองของเครือข่ายไม่ถูกต้อง");
+    const data = await response.json();
+    return {
+      hasLiked: data.hasLiked ?? false,
+      likeCount: data.likeCount ?? 0,
+    };
+  } catch (error) {
+    console.error("ข้อผิดพลาดในการดึงสถานะไลค์:", error);
+    return false;
+  }
+};
+
+export const onUnlikeButtonClick = async (reviewID: number, userID: number) => {
+  try {
+    const deleteOptions = deleteRequestOptions();
+
+    const response = await fetch(`${apiUrl}/reviews/unlike`, {
+      ...deleteOptions,
+      body: JSON.stringify({ user_id: userID, review_id: reviewID }),
+    });
+
+    if (!response.ok) throw new Error("การตอบสนองของเครือข่ายไม่ถูกต้อง");
+    return await response.json();
+  } catch (error) {
+    console.error("ข้อผิดพลาดในการยกเลิกไลค์:", error);
+    return false;
   }
 };
 
@@ -155,6 +254,97 @@ export const DeleteNews = async (
   }
 };
 
+export const ListReports = async (): Promise<ReportInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/reports`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data; // คาดว่า backend ส่ง array ของ ReportInterface
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    return null;
+  }
+};
+
+export const CreateReport = async (
+  formData: FormData
+): Promise<{ message: string; data: any } | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-report`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating report:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const UpdateReportByID = async (
+  id: number,
+  status: string
+): Promise<{ message: string; data: any } | null> => {
+  try {
+    const response = await axios.put(`${apiUrl}/update-reports/${id}`, { status }, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating report:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const DeleteReportByID = async (
+  id: number
+): Promise<{ message: string } | null> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-report/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data; 
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error deleting report:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 export const ListGetStarted = async (): Promise<GetstartedInterface[] | null> => {
   try {
     const response = await axios.get(`${apiUrl}/getstarteds`, {
@@ -193,6 +383,30 @@ export const CreateGettingStarted = async (data: { title: string; description: s
     }
   } catch (error: any) {
     console.error("Error creating getting started:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const UpdateGettingStartedByID = async (
+  id: number,
+  formData: FormData
+): Promise<{ message: string; data: any } | null> => {
+  try {
+    const response = await axios.patch(`${apiUrl}/update-gettings/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating GettingStarted:", error.response?.data || error.message);
     return null;
   }
 };

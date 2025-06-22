@@ -16,14 +16,6 @@ export const tabs: Tabs[] = [
     key: "article",
     tab: "Overview",
   },
-  {
-    key: "app",
-    tab: "Work",
-  },
-  {
-    key: "project",
-    tab: "Education",
-  },
 ];
 export interface User {
   id: number;

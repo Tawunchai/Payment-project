@@ -12,6 +12,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/like"
 	"github.com/Tawunchai/work-project/controller/login"
 	"github.com/Tawunchai/work-project/controller/new"
+	"github.com/Tawunchai/work-project/controller/report"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/role"
 	"github.com/Tawunchai/work-project/controller/status"
@@ -86,7 +87,14 @@ func main() {
 		//getstarted
 		public.GET("/getstarteds", getstarted.ListGetStarted)
 		public.POST("/create-getting", getstarted.CreateGettingStarted)
+		public.PATCH("/update-gettings/:id", getstarted.PatchGettingStartedByID)
 		public.DELETE("/delete-gettings/:id", getstarted.DeleteGettingByID)
+
+		//report
+		public.GET("/reports", report.ListReport)
+		public.POST("/create-report", report.CreateReport)
+		public.PUT("/update-reports/:id", report.UpdateReport)
+		public.DELETE("/delete-report/:id", report.DeleteReportByID)
 
 		//calendar
 		public.GET("/calendars", calendar.ListCalendar)

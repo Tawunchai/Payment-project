@@ -1,4 +1,8 @@
-import { currentYear } from "./data";
+import { useState } from "react";
+import { message } from "antd";
+import { LoginInterface } from "../../interface/Login";
+import { AddLogin, GetEmployeeByUserID } from "../../services/httpLogin";
+
 import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
 import background2 from "../../assets/EV Car.jpeg";
 import {
@@ -11,168 +15,172 @@ import {
   theme,
   Typography,
 } from "antd";
-import { AiFillApple } from "react-icons/ai";
-import { FaPaypal } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
-import { RiMastercardFill } from "react-icons/ri";
 import { Link } from "react-router-dom";
 
 const { useToken } = theme;
 
 const LoginForm1 = () => {
   const { token } = useToken();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const clickLoginbt = async (datalogin: LoginInterface) => {
+    const res = await AddLogin(datalogin);
+
+    if (res.status === 200) {
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("token_type", res.data.token_type);
+      localStorage.setItem("isLogin", "true");
+      localStorage.setItem("roleName", res.data.UserRole.RoleName);
+      localStorage.setItem("userid", res.data.UserID);
+      localStorage.setItem("firstnameuser", res.data.FirstNameUser);
+      localStorage.setItem("lastnameuser", res.data.LastNameUser);
+
+      const RoleName = localStorage.getItem("roleName");
+      const userID = localStorage.getItem("userid");
+
+      if (userID && RoleName !== "User") {
+        try {
+          const employeeID = await GetEmployeeByUserID(Number(userID));
+          if (employeeID != null) {
+            localStorage.setItem("employeeid", employeeID.toString());
+          }
+        } catch (error) {
+          console.error("Failed to fetch EmployeeID:", error);
+        }
+      }
+
+      messageApi.success(`ท่านได้ทำการ เข้าสู่ระบบ ${RoleName} สำเร็จ`);
+
+      setTimeout(() => {
+        if (RoleName === "Admin") window.location.href = "/admin";
+        else if (RoleName === "User") window.location.href = "/user";
+      }, 100);
+    } else {
+      messageApi.error("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่");
+    }
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full min-h-screen p-4">
-      {/* LEFT FORM */}
-      <div className="lg:col-span-6 flex justify-center order-2 lg:order-1">
-        <div className="flex flex-col justify-around w-full max-w-xl p-4 lg:p-8 min-h-full">
-          {/* Logo */}
-          <div className="mb-8">
-            <Link to={"#"}>
-              <Image
-                src={ASSET_IMAGES}
-                alt="logo"
-                className="w-[90px]"
-                preview={false}
-              />
-            </Link>
-          </div>
+    <>
+      {contextHolder}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full min-h-screen p-4">
+        <div className="lg:col-span-6 flex justify-center order-2 lg:order-1">
+          <div className="flex flex-col justify-around w-full max-w-xl p-4 lg:p-8 min-h-full">
+            <div className="mb-8">
+              <Link to={"#"}>
+                <Image
+                  src={ASSET_IMAGES}
+                  alt="logo"
+                  className="w-[90px]"
+                  preview={false}
+                />
+              </Link>
+            </div>
 
-          {/* Form */}
-          <div className="mb-4">
-            <div className="mb-10">
-              <div
-                className="text-3xl sm:text-4xl font-semibold mb-2.5"
-                style={{
-                  color: token.colorTextHeading,
+            <div className="mb-4">
+              <div className="mb-10">
+                <div
+                  className="text-3xl sm:text-4xl font-semibold mb-2.5"
+                  style={{ color: token.colorTextHeading }}
+                >
+                  Sign in
+                </div>
+                <Typography.Text>เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่าน</Typography.Text>
+              </div>
+
+              <Divider className="mb-6" plain>
+                โปรดกรอกข้อมูลเข้าสู่ระบบ
+              </Divider>
+
+              <Form
+                layout="vertical"
+                className="mb-10"
+                onFinish={async () => {
+                  if (!username || !password) {
+                    messageApi.warning("กรุณากรอกข้อมูลให้ครบ");
+                    return;
+                  }
+
+                  const datalogin: LoginInterface = {
+                    username: username.trim(),
+                    password,
+                  };
+
+                  await clickLoginbt(datalogin);
                 }}
               >
-                Sign in
-              </div>
-              <Typography.Text>Continue where you left off</Typography.Text>
+                <Form.Item
+                  label="Username"
+                  name="username"
+                  rules={[{ required: true, message: "กรุณากรอก Username" }]}
+                >
+                  <Input
+                    placeholder="Username"
+                    size="large"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Password"
+                  name="password"
+                  rules={[{ required: true, message: "กรุณากรอกรหัสผ่าน" }]}
+                >
+                  <Input.Password
+                    placeholder="Password"
+                    size="large"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </Form.Item>
+
+                <Form.Item>
+                  <Button block type="primary" htmlType="submit" size="large">
+                    Log in
+                  </Button>
+                </Form.Item>
+              </Form>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-              <Button
-                className="flex-1"
-                icon={<FcGoogle fontSize={24} />}
-                size="large"
-              >
-                Google
-              </Button>
-              <Button
-                className="flex-1"
-                icon={<AiFillApple fontSize={24} />}
-                size="large"
-              >
-                Apple
-              </Button>
+            <div className="mt-auto">
+              <Typography.Text>{`© Company Name ${new Date().getFullYear()}`}</Typography.Text>
             </div>
-
-            <Divider className="mb-6" plain>
-              or
-            </Divider>
-
-            <Form
-              layout="vertical"
-              className="mb-10"
-              initialValues={{
-                email: "demo@example.com",
-                password: "zab#723",
-              }}
-            >
-              <Form.Item
-                name="email"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your email!",
-                  },
-                ]}
-              >
-                <Input placeholder="Email" size="large" />
-              </Form.Item>
-
-              <Form.Item
-                className="mb-2"
-                name="password"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your password!",
-                  },
-                ]}
-              >
-                <Input.Password placeholder="Password" size="large" />
-              </Form.Item>
-
-              <Link
-                className="block underline mb-5 text-sm"
-                to={"/auth/forgot-password"}
-              >
-                Forgot password?
-              </Link>
-
-              <Form.Item>
-                <Button block type="primary" htmlType="submit" size="large">
-                  Log in
-                </Button>
-              </Form.Item>
-            </Form>
-
-            <Typography.Text>
-              Don’t have an account?{" "}
-              <Link to={"/auth/signup-1"}>Create New Account</Link>
-            </Typography.Text>
-          </div>
-
-          <div className="mt-auto">
-            <Typography.Text>{`© Company Name ${currentYear}`}</Typography.Text>
           </div>
         </div>
-      </div>
 
-      {/* RIGHT IMAGE PANEL */}
-      <div className="lg:col-span-6 order-1 lg:order-2">
-        <Card
-          style={{ backgroundColor: token.colorPrimary }}
-          className="h-full"
-          classNames={{
-            body: "p-6 sm:p-8 text-white max-w-[700px] mx-auto flex flex-col justify-between h-full",
-          }}
-          bordered={false}
-        >
-          <div className="mb-5">
-            <Typography.Title className="text-white text-2xl sm:text-4xl font-light">
-              Build projects fast with ReactJS & AntD
-            </Typography.Title>
-            <Typography.Text className="text-white text-sm sm:text-xl font-light">
-              Save 50% of your time and cost
-            </Typography.Text>
-          </div>
-
-          <div className="mb-5">
-            <img
-              src={background2}
-              alt="signIn-img"
-              className="w-full h-auto object-cover rounded-md"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 text-lg">
-              <RiMastercardFill fontSize={20} />
-              <span>Mastercard</span>
+        {/* ขวา: รูปประกอบ */}
+        <div className="lg:col-span-6 order-1 lg:order-2">
+          <Card
+            style={{ backgroundColor: token.colorPrimary }}
+            className="h-full"
+            classNames={{
+              body: "p-6 sm:p-8 text-white max-w-[700px] mx-auto flex flex-col justify-between h-full",
+            }}
+            bordered={false}
+          >
+            <div className="mb-5">
+              <Typography.Title className="text-white text-2xl sm:text-4xl font-light">
+                Welcome to EV System
+              </Typography.Title>
+              <Typography.Text className="text-white text-sm sm:text-xl font-light">
+                โปรดเข้าสู่ระบบเพื่อเริ่มใช้งาน
+              </Typography.Text>
             </div>
-            <div className="flex items-center gap-2 text-lg">
-              <FaPaypal fontSize={20} />
-              <span>PayPal</span>
+
+            <div className="mb-5">
+              <img
+                src={background2}
+                alt="signIn-img"
+                className="w-full h-auto object-cover rounded-md"
+              />
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

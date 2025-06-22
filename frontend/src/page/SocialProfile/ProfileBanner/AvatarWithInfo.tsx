@@ -1,5 +1,4 @@
 import { Avatar } from "antd";
-import UserStatus from "./UserStatus";
 import  ASSET_AVATARS  from "../../../assets/admin/product1.jpg";
 
 export const AvatarWithInfo = () => {
@@ -12,7 +11,6 @@ export const AvatarWithInfo = () => {
           <div>Florida, USA</div>
         </div>
       </div>
-      <UserStatus />
     </div>
   );
 };

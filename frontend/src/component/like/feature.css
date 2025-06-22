@@ -1,0 +1,45 @@
+.normal-like{
+    font-size: 25px;
+    color: black;
+}
+
+.normal-dislike{
+    margin-left: 15px;
+    font-size: 25px;
+    color: black;
+}
+
+.button-blue{
+    font-size: 25px;
+    color: rgb(0, 153, 255);
+}
+
+.button-red{
+    margin-left: 15px;
+    font-size: 25px;
+    color: rgba(255, 68, 0, 0.816);
+}
+
+.box-thumup-like {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; 
+    margin-top: 0; 
+    padding-top: 0; 
+    margin-left: 20px;
+}
+
+.icon-and-count {
+    display: flex;
+    align-items: center; 
+    gap: 5px; 
+}
+
+.thank, .hekpful {
+    font-size: 14px;
+    margin-bottom: 5px; 
+    font-family: cursive;
+    margin-left: 24px;
+    color: #2c3548;
+}
+

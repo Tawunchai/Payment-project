@@ -1,16 +1,18 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { SlideLeft } from "./SlideLeft"; // แอนิเมชัน (คงไว้ถ้ามีอยู่แล้ว)
+import { SlideLeft } from "./SlideLeft";
 import { ListGetStarted, DeleteGettingByID } from "../../services/index";
 import type { GetstartedInterface } from "../../interface/IGetstarted";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaEdit } from "react-icons/fa";
 import { Trash2 } from "react-feather";
 import Modal from "../admin/getting/modal";
+import { useNavigate } from "react-router-dom";
 
 const Editor = () => {
   const [getstartedList, setGetstartedList] = useState<GetstartedInterface[]>([]);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const selectedRef = useRef<GetstartedInterface | null>(null);
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     const data = await ListGetStarted();
@@ -45,6 +47,16 @@ const Editor = () => {
     selectedRef.current = null;
   };
 
+  const handleEdit = (item: GetstartedInterface) => {
+    navigate("/admin/edit-editor", {
+      state: {
+        id: item.ID,
+        initialTitle: item.Title,
+        initialDescription: item.Description,
+      },
+    });
+  };
+
   return (
     <div className="bg-[#f9f9f9]">
       <div className="ContainerExtra py-24 paddings">
@@ -71,7 +83,15 @@ const Editor = () => {
                 whileInView="visible"
                 className="w-full space-y-2 p-6 rounded-xl shadow-[0_0_22px_0_rgba(0,0,0,0.15)] bg-white relative"
               >
+                {/* ปุ่มแก้ไขและลบ */}
                 <div className="absolute top-3 right-3 flex gap-2">
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="text-blue-500 hover:text-blue-700"
+                    title="แก้ไข"
+                  >
+                    <FaEdit />
+                  </button>
                   <button
                     onClick={() => openDeleteModal(item)}
                     className="text-red-500 hover:text-red-700"
@@ -81,6 +101,7 @@ const Editor = () => {
                   </button>
                 </div>
 
+                {/* เนื้อหา */}
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                     <img
