@@ -25,29 +25,8 @@ function Login() {
   const [signUpGenderID, setSignUpGenderID] = useState<number | undefined>(undefined);
 
   // Toggle between sign in and sign up mode
-  const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [isSignUpMode, setIsSignUpMode] = useState(false);// @ts-ignore
   const [fileList, setFileList] = useState<any[]>([]);
-
-  const onChange = ({ fileList: newFileList }: any) => {
-  setFileList(newFileList);
-};
-
-const onPreview = async (file: any) => {
-  let src = file.url;
-  if (!src) {
-    src = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file.originFileObj);
-      reader.onload = () => resolve(reader.result);
-    });
-  }
-  const image = new Image();
-  image.src = src;
-  const imgWindow = window.open(src);
-  imgWindow?.document.write(image.outerHTML);
-};
-
-  // --- Sign In Logic ---
 
   const clickLoginbt = async (datalogin: LoginInterface) => {
     const res = await AddLogin(datalogin);
@@ -125,9 +104,9 @@ const onPreview = async (file: any) => {
       Password: signUpPassword,
       FirstName: signUpFirstName,
       LastName: signUpLastName,
-      Phonenumber: signUpPhoneNumber,
-      GenderID: { ID: signUpGenderID },  
-      UserRoleID: { ID: 2, RoleName: "User" }, 
+      PhoneNumber: signUpPhoneNumber,
+      Gender: { ID: signUpGenderID },  
+      UserRole: { ID: 2, RoleName: "User" }, 
       Profile: "",
     };
 
