@@ -2,7 +2,7 @@ import { useState } from "react";
 import { message } from "antd";
 import { LoginInterface } from "../../interface/Login";
 import { AddLogin, GetEmployeeByUserID } from "../../services/httpLogin";
-import { CreateUser } from "../../services/index";  
+import { CreateUser } from "../../services/index";
 import { UsersInterface } from "../../interface/IUser";
 import Logo_Login from "../../assets/car_login.svg";
 import Logo_Regis from "../../assets/signup.svg";
@@ -30,6 +30,7 @@ function Login() {
 
   const clickLoginbt = async (datalogin: LoginInterface) => {
     const res = await AddLogin(datalogin);
+    console.log(res.data)
 
     if (res.status === 200) {
       localStorage.setItem("token", res.data.token);
@@ -38,6 +39,9 @@ function Login() {
       localStorage.setItem("roleName", res.data.UserRole.RoleName);
       localStorage.setItem("userid", res.data.UserID);
       localStorage.setItem("firstnameuser", res.data.FirstNameUser);
+      localStorage.setItem("email", res.data.Email || "");
+      localStorage.setItem("phonenumber", res.data.PhoneNumber || "");
+      localStorage.setItem("profile", res.data.Profile || "");
       localStorage.setItem("lastnameuser", res.data.LastNameUser);
 
       const RoleName = localStorage.getItem("roleName");
@@ -55,6 +59,8 @@ function Login() {
       }
 
       messageApi.success(`ท่านได้ทำการ เข้าสู่ระบบ ${RoleName} สำเร็จ`);
+
+      console.log("Login response:", res.data);
 
       setTimeout(() => {
         if (RoleName === "Admin") window.location.href = "/admin";
@@ -105,8 +111,8 @@ function Login() {
       FirstName: signUpFirstName,
       LastName: signUpLastName,
       PhoneNumber: signUpPhoneNumber,
-      Gender: { ID: signUpGenderID },  
-      UserRole: { ID: 2, RoleName: "User" }, 
+      Gender: { ID: signUpGenderID },
+      UserRole: { ID: 2, RoleName: "User" },
       Profile: "",
     };
 

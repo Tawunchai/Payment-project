@@ -21,6 +21,7 @@ import product4 from './product4.jpg';
 import product5 from './product5.jpg';
 import product6 from './product6.jpg';
 import product7 from './product7.jpg';
+import { AiOutlineUser } from 'react-icons/ai';
 
 export const gridOrderImage = (props: any) => (
   <div>
@@ -937,9 +938,11 @@ export const themeColors = [
   },
 ];
 
+
+
 export const userProfileData = [
   {
-    icon: <BsCurrencyDollar />,
+    icon: <AiOutlineUser />,
     title: 'My Profile',
     desc: 'Account Settings',
     iconColor: '#03C9D7',

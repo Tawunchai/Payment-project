@@ -270,3 +270,26 @@ func UpdateUserByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully", "user": user})
 }
+
+func ListUserByID(c *gin.Context) {
+	idParam := c.Param("id")
+	userID, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var user entity.User
+
+	result := config.DB().
+		Preload("UserRole").
+		Preload("Gender").
+		First(&user, userID)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}

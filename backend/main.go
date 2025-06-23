@@ -47,6 +47,7 @@ func main() {
 		//user and admin
 		public.GET("/employee/:userID", user.GetEmployeeByUserID)
 		public.GET("/uploads/*filename", user.ServeImage)
+		public.GET("/users/:id", user.ListUserByID)
 		public.POST("/create-user", user.CreateUser)
 		public.PATCH("/update-user/:id", user.UpdateUserByID)
 		public.DELETE("/delete-users/:id", user.DeleteUserByID)
@@ -56,6 +57,7 @@ func main() {
 		public.GET("/employees/user/:id", employee.GetEmployeeByUserID)
 		public.DELETE("/delete-admins/:id", employee.DeleteAdminByID)
 		public.PATCH("/update-boss-admins/:id", employee.UpdateAdminByID)
+		public.GET("employeebyid/:id", employee.ListEmployeeByID)
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)

@@ -57,6 +57,28 @@ const postRequestOptions = (body: any) => {
   };
 };
 
+export const getEmployeeByID = async (
+  id: number
+): Promise<EmployeeInterface | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/employeebyid/${id}`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data as EmployeeInterface;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching employee:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 export const ListReviews = async (): Promise<ReviewInterface[] | null> => {
   try {
     const response = await axios.get(`${apiUrl}/reviews`, {
@@ -136,6 +158,28 @@ export const onUnlikeButtonClick = async (reviewID: number, userID: number) => {
   } catch (error) {
     console.error("ข้อผิดพลาดในการยกเลิกไลค์:", error);
     return false;
+  }
+};
+
+export const getUserByID = async (
+  id: number
+): Promise<UsersInterface | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/users/${id}`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data as UsersInterface;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching user:", error.response?.data || error.message);
+    return null;
   }
 };
 

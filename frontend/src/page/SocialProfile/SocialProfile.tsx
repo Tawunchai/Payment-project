@@ -4,7 +4,7 @@ import { ProfileBanner } from "./ProfileBanner";
 
 const SocialProfile = () => {
   return (
-    <div className="paddings">
+    <div className="paddings mt-24 sm:mt-0">
       <ProfileBanner />
       <div className="grid grid-cols-12 gap-8 relative z-10">
         <div className="col-span-12 lg:col-span-8">

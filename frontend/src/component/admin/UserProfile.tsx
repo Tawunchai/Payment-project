@@ -4,19 +4,38 @@ import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { userProfileData } from '../../assets/admin/dummy';
 import { useStateContext } from '../../contexts/ContextProvider';
-import avatar from '../../assets/admin/avatar.jpg';
+import { useEffect, useState } from 'react';
+
+// ✅ Import service และ interface
+import { getEmployeeByID } from '../../services';
+import { EmployeeInterface } from '../../interface/IEmployee';
 
 const UserProfile = () => {
   const { currentColor } = useStateContext();
   const navigate = useNavigate();
 
+  // ✅ ใช้ข้อมูลที่ได้จาก backend
+  const [employee, setEmployee] = useState<EmployeeInterface | null>(null);
+
+  useEffect(() => {
+    const employeeID = localStorage.getItem("employeeid");
+    if (employeeID) {
+      getEmployeeByID(Number(employeeID))
+        .then((res) => {
+          if (res) {
+            setEmployee(res);
+            console.log("ข้อมูล employee:", res);
+          }
+        })
+        .catch((err) => {
+          console.error("ดึงข้อมูล employee ไม่สำเร็จ:", err);
+        });
+    }
+  }, []);
+
   const handleLogout = () => {
-    localStorage.removeItem("isLogin");
-    localStorage.removeItem("userRole");
     localStorage.clear();
-
     message.success("ออกจากระบบ");
-
     setTimeout(() => {
       navigate("/login");
     }, 3500);
@@ -37,13 +56,19 @@ const UserProfile = () => {
       <div className="flex gap-5 items-center mt-6 border-color border-b-1 pb-6">
         <img
           className="rounded-full h-24 w-24"
-          src={avatar}
+          src={`http://localhost:8000/${employee?.User?.Profile?? 'default-profile.png'}`}
           alt="user-profile"
         />
         <div>
-          <p className="font-semibold text-xl dark:text-gray-200"> Michael Roberts </p>
-          <p className="text-gray-500 text-sm dark:text-gray-400">  Administrator   </p>
-          <p className="text-gray-500 text-sm font-semibold dark:text-gray-400"> info@shop.com </p>
+          <p className="font-semibold text-xl dark:text-gray-200">
+            {employee?.User?.FirstName} {employee?.User?.LastName}
+          </p>
+          <p className="text-gray-500 text-sm dark:text-gray-400">
+            {employee?.User?.UserRole?.RoleName}
+          </p>
+          <p className="text-gray-500 text-sm font-semibold dark:text-gray-400">
+            {employee?.User?.Email}
+          </p>
         </div>
       </div>
       <div>
@@ -79,7 +104,6 @@ const UserProfile = () => {
         />
       </div>
     </div>
-
   );
 };
 

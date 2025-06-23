@@ -147,7 +147,7 @@ func SetupDatabase() {
 
 	eid1 := uint(4)
 	Employee1 := entity.Employee{
-		Bio:        "Admid ",
+		Bio:        "Admid Thailand",
 		Experience: "5 years of experience as a admin with Tesla company",
 		Education:  "Master degree of marketting at Harvard university",
 		Salary:     25000,

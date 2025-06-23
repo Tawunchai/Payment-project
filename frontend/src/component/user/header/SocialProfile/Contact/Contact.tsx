@@ -2,7 +2,7 @@ import { Card, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RiMailLine, RiPagesLine, RiPhoneLine } from "react-icons/ri";
-import { getEmployeeByID } from "../../../services"; // import service ที่สร้าง
+import { getUserByID } from "../../../../../services"; // import service ที่สร้าง
 
 const { Text, Link } = Typography;
 
@@ -10,17 +10,19 @@ const Contact = () => {
   const { t } = useTranslation();
   const [phone, setPhone] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const [employeeid, setEmployeeid] = useState<number>(
-      Number(localStorage.getItem("employeeid")) || 0
-    );
+  const [userid, setUserid] = useState<number>(
+    Number(localStorage.getItem("userid")) || 0
+  );
 
   useEffect(() => {
-    setEmployeeid(Number(localStorage.getItem("employeeid")));
+    setUserid(Number(localStorage.getItem("userid")));
     const fetchEmployeeData = async () => {
-      const employee = await getEmployeeByID(employeeid);
-      if (employee) {
-        setPhone(employee.User?.PhoneNumber || "");
-        setEmail(employee.User?.Email || "");
+      const id = userid;
+      const users = await getUserByID(id);
+      console.log(users)
+      if (users) {
+        setPhone(users.PhoneNumber || "");
+        setEmail(users.Email || "");
       }
     };
 

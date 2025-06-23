@@ -1,14 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AiOutlineMenu } from 'react-icons/ai';
 import { RiNotification3Line } from 'react-icons/ri';
 import { MdKeyboardArrowDown } from 'react-icons/md';
 import { TooltipComponent } from '@syncfusion/ej2-react-popups';
-
-import avatar from '../../assets/admin/avatar.jpg';
 import { Notification, UserProfile } from '.';
 import { useStateContext } from '../../contexts/ContextProvider';
+import { getEmployeeByID } from '../../services';
 
-const NavButton = ({ title, customFunc, icon, color, dotColor } : any) => (
+const NavButton = ({ title, customFunc, icon, color, dotColor }: any) => (
   <TooltipComponent content={title} position="BottomCenter">
     <button
       type="button"
@@ -26,13 +25,37 @@ const NavButton = ({ title, customFunc, icon, color, dotColor } : any) => (
 );
 
 const Navbar = () => {
-  const { currentColor, activeMenu, setActiveMenu, handleClick, isClicked, setScreenSize, screenSize } = useStateContext();
+  const {
+    currentColor,
+    activeMenu,
+    setActiveMenu,
+    handleClick,
+    isClicked,
+    setScreenSize,
+    screenSize,
+  } = useStateContext();
+
+  const [firstnameUser, setFirstnameUser] = useState<string>('');
+  const [profile, setProfile] = useState<string>('');
 
   useEffect(() => {
+    const employeeID = localStorage.getItem('employeeid');
+    if (employeeID) {
+      getEmployeeByID(Number(employeeID))
+        .then((employee) => {
+          if (employee) {
+            setFirstnameUser(employee.User?.FirstName || '');
+            setProfile(employee.User?.Profile || '');
+            console.log("ข้อมูลจาก getEmployeeByID:", employee);
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching employee:', error);
+        });
+    }
+
     const handleResize = () => setScreenSize(window.innerWidth);
-
     window.addEventListener('resize', handleResize);
-
     handleResize();
 
     return () => window.removeEventListener('resize', handleResize);
@@ -50,10 +73,22 @@ const Navbar = () => {
 
   return (
     <div className="flex justify-between p-2 md:ml-6 md:mr-6 relative">
+      <NavButton
+        title="Menu"
+        customFunc={handleActiveMenu}
+        color={currentColor}
+        icon={<AiOutlineMenu />}
+      />
 
-      <NavButton title="Menu" customFunc={handleActiveMenu} color={currentColor} icon={<AiOutlineMenu />} />
       <div className="flex">
-        <NavButton title="Notification" dotColor="rgb(254, 201, 15)" customFunc={() => handleClick('notification')} color={currentColor} icon={<RiNotification3Line />} />
+        <NavButton
+          title="Notification"
+          dotColor="rgb(254, 201, 15)"
+          customFunc={() => handleClick('notification')}
+          color={currentColor}
+          icon={<RiNotification3Line />}
+        />
+
         <TooltipComponent content="Profile" position="BottomCenter">
           <div
             className="flex items-center gap-2 cursor-pointer p-1 hover:bg-light-gray rounded-lg"
@@ -61,20 +96,20 @@ const Navbar = () => {
           >
             <img
               className="rounded-full w-8 h-8"
-              src={avatar}
+              src={`http://localhost:8000/${profile}`}
               alt="user-profile"
             />
             <p>
               <span className="text-gray-400 font-bold ml-1 text-14">
-                Michael
+                {firstnameUser}
               </span>
             </p>
             <MdKeyboardArrowDown className="text-gray-400 text-14" />
           </div>
         </TooltipComponent>
 
-        {isClicked.notification && (<Notification />)}
-        {isClicked.userProfile && (<UserProfile />)}
+        {isClicked.notification && <Notification />}
+        {isClicked.userProfile && <UserProfile />}
       </div>
     </div>
   );

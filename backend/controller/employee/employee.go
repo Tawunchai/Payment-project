@@ -92,3 +92,27 @@ func UpdateAdminByID(c *gin.Context) {
 		"data":    employee,
 	})
 }
+
+func ListEmployeeByID(c *gin.Context) {
+	idParam := c.Param("id")
+	employeeID, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
+		return
+	}
+
+	var employee entity.Employee
+
+	result := config.DB().
+		Preload("User").
+		Preload("User.UserRole").
+		Preload("User.Gender").
+		First(&employee, employeeID)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, employee)
+}

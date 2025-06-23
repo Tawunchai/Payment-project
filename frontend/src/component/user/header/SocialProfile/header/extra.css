@@ -1,0 +1,49 @@
+.ex-h-wrapper {
+    color: white;
+    background: var(--black);
+}
+
+.ex-h-container {
+    justify-content: space-between;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    color: var(--secondary);
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+.ex-h-menu {
+    gap: 1rem;
+}
+
+.ex-h-menu>*:hover {
+    cursor: pointer;
+}
+
+.ex-menu-icon {
+    display: none;
+}
+
+@media (max-width:768px) {
+    .ex-menu-icon {
+        display: block;
+    }
+
+    .ex-h-menu {
+        position: fixed;
+        top: 4rem;
+        right: 1rem;
+        background: white;
+        color: var(--black);
+        flex-direction: column;
+        font-weight: 500;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-radius: 10px;
+        align-items: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+}

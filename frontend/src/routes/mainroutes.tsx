@@ -2,11 +2,13 @@ import { lazy } from "react";
 import { useRoutes, RouteObject } from "react-router-dom";
 import Loadable from "../component/third-patry/Loadable";
 
-const Login = Loadable(lazy(() => import("../page/login/index")));
-const Register = Loadable(lazy(() => import("../page/signup/signup")));
+const Login = Loadable(lazy(() => import("../page/LoginForm1/LoginForm1")));
+const SignUp = Loadable(lazy(() => import("../page/Signup1/Signup2Form")));
+const ForgotPassword = Loadable(lazy(() => import("../page/ForgotPasswordForm/ForgotPasswordForm")));
 
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
+const Profile = Loadable(lazy(() => import("../component/user/header/SocialProfile/SocialProfile")));
 
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
@@ -44,6 +46,7 @@ const UserRoutes = (): RouteObject[] => [
     path: "/user",
     children: [
       { index: true, element: <User /> },
+      { path: "profile", element: <Profile /> },
     ],
   },
 ];
@@ -92,9 +95,10 @@ const MainRoutes = (): RouteObject[] => [
     path: "/",
     children: [
       { index: true, element: <Login /> },
-      { path: "/register", element: <Register /> },
+      { path: "/register", element: <SignUp /> },
       { path: "*", element: <Login /> },
-      { path: "/register", element: <Register /> },
+      { path: "/register", element: <SignUp /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
     ],
   },
 ];

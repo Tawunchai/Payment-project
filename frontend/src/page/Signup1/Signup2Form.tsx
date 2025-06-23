@@ -115,7 +115,7 @@ const Signup2Form = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button block type="primary" htmlType="submit" size="large">
+                <Button block type="primary" htmlType="submit" size="large" style={{backgroundColor:"var(--black)"}}>
                   Signup
                 </Button>
               </Form.Item>

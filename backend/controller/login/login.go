@@ -36,12 +36,15 @@ func AddLogin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token_type":    "Bearer",
-		"token":         signedToken,
-		"UserRole":      user.UserRole,
-		"UserID":        user.ID,
-		"FirstNameUser": user.FirstName,
-		"LastNameUser":  user.LastName,
-	})
-
+	"token_type":    "Bearer",
+	"token":         signedToken,
+	"UserRole":      user.UserRole,
+	"UserID":        user.ID,
+	"FirstNameUser": user.FirstName,
+	"LastNameUser":  user.LastName,
+	"Email":         user.Email,
+	"PhoneNumber":   user.PhoneNumber,
+	"GenderID":      user.GenderID,
+	"Profile":       user.Profile,
+})
 }
