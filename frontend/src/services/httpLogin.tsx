@@ -26,6 +26,64 @@ const getHeaders = (): Record<string, string> => {
   };
 };
 
+// สำหรับเช็ค email มีในระบบหรือไม่ (response แค่สถานะ)
+export interface CheckEmailResponse {
+  exists: boolean;
+  message: string;
+}
+
+// request สำหรับ reset password
+export interface ResetPasswordRequest {
+  email: string;
+  new_password: string;
+}
+
+// response reset password
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+// ฟังก์ชันเช็ค email
+export const checkEmailExists = async (
+  email: string
+): Promise<CheckEmailResponse | null> => {
+  try {
+    const response = await axios.post<CheckEmailResponse>(
+      `${apiUrl}/check-email`,
+      { email },
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    if (response.status === 200) {
+      return response.data;
+    }
+    return null;
+  } catch (error: any) {
+    console.error("Error checking email:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// ฟังก์ชัน reset password
+export const resetPassword = async (
+  data: ResetPasswordRequest
+): Promise<ResetPasswordResponse | null> => {
+  try {
+    const response = await axios.post<ResetPasswordResponse>(
+      `${apiUrl}/reset-password`,
+      data,
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    if (response.status === 200) {
+      return response.data;
+    }
+    return null;
+  } catch (error: any) {
+    console.error("Error resetting password:", error.response?.data || error.message);
+    return null;
+  }
+};
 
 async function AddLogin(data: LoginInterface) {
   return await axios  

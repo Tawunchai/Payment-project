@@ -184,15 +184,22 @@ export const getUserByID = async (
 };
 
 export const CreateUser = async (
-  userData: UsersInterface
+  userData: UsersInterface | FormData
 ): Promise<{ message: string; user: any } | null> => {
-    console.log(userData)
   try {
+    // กำหนด header ให้เหมาะสม
+    const headers = userData instanceof FormData
+      ? {
+          ...getAuthHeader(),
+          // ไม่ต้องตั้ง Content-Type เพราะ axios จะตั้งให้เป็น multipart/form-data อัตโนมัติ
+        }
+      : {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        };
+
     const response = await axios.post(`${apiUrl}/create-user`, userData, {
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeader(),
-      },
+      headers,
     });
 
     if (response.status === 201) {
@@ -206,7 +213,6 @@ export const CreateUser = async (
     return null;
   }
 };
-
 
 // News Services
 export const ListNews = async (): Promise<NewsInterface[] | null> => {

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/entity"
@@ -55,39 +56,86 @@ type CreateUserRequest struct {
 }
 
 func CreateUser(c *gin.Context) {
-	var req CreateUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// อ่านไฟล์รูปภาพ
+	file, err := c.FormFile("profile")
+	var filePath string
+
+	if err == nil && file != nil {
+		// เช็คชนิดไฟล์ (optional)
+		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
+		isValid := false
+		for _, t := range validTypes {
+			if file.Header.Get("Content-Type") == t {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็นไฟล์ .jpg, .png, .gif เท่านั้น"})
+			return
+		}
+
+		// สร้างโฟลเดอร์เก็บไฟล์
+		uploadDir := "uploads/user"
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างโฟลเดอร์เก็บไฟล์ได้"})
+			return
+		}
+
+		// สร้างชื่อไฟล์ใหม่ (ป้องกันชื่อซ้ำ)
+		ext := filepath.Ext(file.Filename)
+		newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+		filePath = filepath.Join(uploadDir, newFileName)
+
+		// บันทึกไฟล์
+		if err := c.SaveUploadedFile(file, filePath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	// รับข้อมูลอื่น ๆ จาก form
+	username := c.PostForm("username")
+	email := c.PostForm("email")
+	password := c.PostForm("password")
+	firstName := c.PostForm("firstname")
+	lastName := c.PostForm("lastname")
+	phone := c.PostForm("phone")
+	genderIDStr := c.PostForm("gender")
+	userRoleIDStr := c.PostForm("userRoleID")
+
+	if username == "" || email == "" || password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "กรอกข้อมูลให้ครบถ้วน"})
 		return
 	}
 
-	db := config.DB()
-
-	// เช็ค username ซ้ำ
+	// เช็คซ้ำ
 	var existingUser entity.User
-	if err := db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+	if err := config.DB().Where("username = ?", username).First(&existingUser).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
 		return
 	}
 
-	userRoleID := req.UserRoleID.ID
+	// แปลง ID
+	genderID, _ := strconv.Atoi(genderIDStr)
+	userRoleID, _ := strconv.Atoi(userRoleIDStr)
 	if userRoleID == 0 {
-		userRoleID = 2 // default
+		userRoleID = 2
 	}
 
 	user := entity.User{
-		Username:    req.Username,
-		Email:       req.Email,
-		FirstName:   req.FirstName,
-		LastName:    req.LastName,
-		PhoneNumber: req.PhoneNumber,
-		GenderID:    req.GenderID.ID,
-		UserRoleID:  userRoleID,
-		Profile:     req.Profile,
-		Password:    req.Password, // ควร hash ก่อนบันทึกจริง
+		Username:    username,
+		Email:       email,
+		Password:    password, // อย่าลืม hash จริง ๆ
+		FirstName:   firstName,
+		LastName:    lastName,
+		PhoneNumber: phone,
+		GenderID:    uint(genderID),
+		UserRoleID:  uint(userRoleID),
+		Profile:     filePath,
 	}
 
-	if err := db.Create(&user).Error; err != nil {
+	if err := config.DB().Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create user: %v", err)})
 		return
 	}
@@ -292,4 +340,70 @@ func ListUserByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+type EmailCheckRequest struct {
+    Email string `json:"email" binding:"required,email"`
+}
+
+func CheckEmailExists(c *gin.Context) {
+    var req EmailCheckRequest
+
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูล email ไม่ถูกต้อง"})
+        return
+    }
+
+    db := config.DB()
+    var user entity.User
+
+    err := db.Where("email = ?", req.Email).First(&user).Error
+    if err != nil {
+        if err == gorm.ErrRecordNotFound {
+            c.JSON(http.StatusOK, gin.H{"exists": false, "message": "ไม่พบ email นี้ในระบบ"})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในระบบ"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"exists": true, "message": "พบ email นี้ในระบบ"})
+}
+
+type ResetPasswordRequest struct {
+    Email       string `json:"email" binding:"required,email"`
+    NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+func ResetPassword(c *gin.Context) {
+    var req ResetPasswordRequest
+
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูลไม่ถูกต้อง หรือขาดข้อมูล"})
+        return
+    }
+
+    db := config.DB()
+
+    var user entity.User
+    err := db.Where("email = ?", req.Email).First(&user).Error
+    if err != nil {
+        if err == gorm.ErrRecordNotFound {
+            c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบ email ในระบบ"})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในระบบ"})
+        }
+        return
+    }
+
+    // TODO: Hash รหัสผ่านก่อนบันทึก (แนะนำ bcrypt)
+
+    user.Password = req.NewPassword
+
+    if err := db.Save(&user).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถอัปเดตรหัสผ่านได้"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "เปลี่ยนรหัสผ่านสำเร็จ"})
 }

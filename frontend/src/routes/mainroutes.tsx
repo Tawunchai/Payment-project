@@ -5,6 +5,7 @@ import Loadable from "../component/third-patry/Loadable";
 const Login = Loadable(lazy(() => import("../page/LoginForm1/LoginForm1")));
 const SignUp = Loadable(lazy(() => import("../page/Signup1/Signup2Form")));
 const ForgotPassword = Loadable(lazy(() => import("../page/ForgotPasswordForm/ForgotPasswordForm")));
+const ResetPassword = Loadable(lazy(() => import("../page/ResetPassword/ResetPassword")));
 
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
@@ -99,6 +100,7 @@ const MainRoutes = (): RouteObject[] => [
       { path: "*", element: <Login /> },
       { path: "/register", element: <SignUp /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/reset-password", element: <ResetPassword /> },
     ],
   },
 ];

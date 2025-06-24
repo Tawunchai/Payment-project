@@ -58,6 +58,8 @@ func main() {
 		public.DELETE("/delete-admins/:id", employee.DeleteAdminByID)
 		public.PATCH("/update-boss-admins/:id", employee.UpdateAdminByID)
 		public.GET("employeebyid/:id", employee.ListEmployeeByID)
+		public.POST("/check-email", user.CheckEmailExists)
+		public.POST("/reset-password", user.ResetPassword)
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)
@@ -72,7 +74,6 @@ func main() {
 		public.GET("/evs", charging.ListEVData)
 		public.DELETE("/delete-evchargings/:id", charging.DeleteEVByID)
 		public.PATCH("/update-evs/:id", charging.UpdateEVByID)
-
 
 		//gender
 		public.GET("/genders", gender.ListGenders)

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
 import background2 from "../../assets/EV Car.jpeg";
 import {
@@ -8,14 +9,58 @@ import {
   Input,
   theme,
   Typography,
+  message,
 } from "antd";
 import { IoPlayCircle } from "react-icons/io5";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { resetPassword } from "../../services/httpLogin";
+import { useSearchParams } from "react-router-dom";
 
 const { useToken } = theme;
 
 const ResetPasswordForm = () => {
   const { token } = useToken();
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+   const [searchParams] = useSearchParams();
+  const email = searchParams.get("email") || "";
+
+  const onFinish = async (values: any) => {
+  const { password, newpassword } = values;
+
+  if (password !== newpassword) {
+    message.error("New password and confirm password must be the same!");
+    return;
+  }
+
+  setLoading(true);
+
+  if (!email) {
+    message.error("Email ไม่ถูกต้อง หรือหมดเวลา กรุณาลองใหม่");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    console.log(email,newpassword)
+    const res = await resetPassword({
+      email: email,       
+      new_password: newpassword,
+    });
+
+    if (res) {
+      message.success("เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่");
+      navigate("/");
+    } else {
+      message.error("เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่");
+    }
+  } catch (error) {
+    message.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div
@@ -38,7 +83,7 @@ const ResetPasswordForm = () => {
                 src={ASSET_IMAGES}
                 alt="logo"
                 className="w-[70px] sm:w-[90px]"
-                style={{width:"150px"}}
+                style={{ width: "150px" }}
                 preview={false}
               />
             </Link>
@@ -54,36 +99,48 @@ const ResetPasswordForm = () => {
               Reset Password
             </Typography.Title>
 
-            <Form layout="vertical" className="mb-10">
+            <Form layout="vertical" className="mb-10" onFinish={onFinish}>
               <Form.Item
                 name="password"
+                label="New Password"
                 rules={[
                   {
                     required: true,
-                    message: "Please input your old password!",
+                    message: "Please input your new password!",
                   },
                 ]}
+                hasFeedback
               >
-                <Input.Password placeholder="Password" size="large" />
+                <Input.Password placeholder="New Password" size="large" />
               </Form.Item>
 
               <Form.Item
                 name="newpassword"
+                label="Confirm New Password"
+                dependencies={["password"]}
+                hasFeedback
                 rules={[
                   {
                     required: true,
-                    message: "Please input your new password",
+                    message: "Please confirm your new password!",
                   },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || getFieldValue("password") === value) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(
+                        new Error("Passwords do not match!")
+                      );
+                    },
+                  }),
                 ]}
               >
-                <Input.Password
-                  placeholder="Retype New Password"
-                  size="large"
-                />
+                <Input.Password placeholder="Retype New Password" size="large" />
               </Form.Item>
 
               <Form.Item>
-                <Button block type="primary" htmlType="submit" size="large">
+                <Button block type="primary" htmlType="submit" size="large" loading={loading}>
                   Reset
                 </Button>
               </Form.Item>

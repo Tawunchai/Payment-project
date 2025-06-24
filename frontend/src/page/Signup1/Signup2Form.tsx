@@ -1,6 +1,4 @@
-import { currentYear } from "./data";
-import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
-import background2 from "../../assets/EV Car.jpeg";
+import { useEffect, useState } from "react";
 import {
   Button,
   Card,
@@ -9,25 +7,100 @@ import {
   Form,
   Image,
   Input,
-  theme,
+  Select,
   Typography,
+  message,
+  theme,
+  Upload,
 } from "antd";
+import ImgCrop from "antd-img-crop";
+import { Link, useNavigate } from "react-router-dom";
 import { AiFillApple } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import { IoPlayCircle } from "react-icons/io5";
-import { Link } from "react-router-dom";
+import { PlusOutlined } from "@ant-design/icons";
+
+import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
+import background2 from "../../assets/EV Car.jpeg";
+import { currentYear } from "./data";
+import { ListGenders,CreateUser } from "../../services";
 
 const { useToken } = theme;
+const { Title, Text } = Typography;
 
 const Signup2Form = () => {
+  const [form] = Form.useForm();
   const { token } = useToken();
+  const navigate = useNavigate();
+  const [genderOptions, setGenderOptions] = useState<{ ID: number; Name: string }[]>([]);
+  const [fileList, setFileList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchGenders = async () => {
+      const res = await ListGenders();
+      if (res) {
+        const mapped = res.map((g) => ({
+          ID: g.ID ?? 0,
+          Name: g.Gender ?? "",
+        }));
+        setGenderOptions(mapped);
+      }
+    };
+    fetchGenders();
+  }, []);
+
+  const onChange = ({ fileList: newFileList }: any) => {
+    setFileList(newFileList);
+  };
+
+  const onPreview = async (file: any) => {
+    let src = file.url;
+    if (!src) {
+      src = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file.originFileObj);
+        reader.onload = () => resolve(reader.result as string);
+      });
+    }
+    const imgWindow = window.open(src);
+    imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
+  };
+
+  const onFinish = async (values: any) => {
+  if (fileList.length === 0) {
+    message.error("กรุณาอัพโหลดรูปภาพก่อนสมัคร");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("username", values.username);
+  formData.append("email", values.email);
+  formData.append("password", values.password);
+  formData.append("firstname", values.firstname || "");
+  formData.append("lastname", values.lastname || "");
+  formData.append("phone", values.phone || "");
+  formData.append("gender", values.gender);
+  formData.append("userRoleID", "2");
+  formData.append("profile", fileList[0].originFileObj);
+
+  try {
+    const res = await CreateUser(formData); // เรียกใช้งาน CreateUser จาก service
+    if (res) {
+      message.success("User created successfully!");
+      navigate("/auth/login-2");
+    } else {
+      message.error("Failed to create user.");
+    }
+  } catch (err) {
+    message.error("Error occurred while creating user.");
+  }
+};
 
   return (
     <div
       className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full min-h-screen p-4 md:p-8 xl:p-20"
       style={{ backgroundColor: token.colorBgLayout }}
     >
-      {/* Right Column (Form) */}
       <div className="col-span-12 lg:col-span-6 flex justify-center lg:order-2">
         <Card
           className="h-full w-full"
@@ -36,46 +109,29 @@ const Signup2Form = () => {
           }}
           bordered={false}
         >
-          {/* Logo */}
           <div className="mb-8">
-            <Link to={"#"}>
-              <Image
-                src={ASSET_IMAGES}
-                alt="logo"
-                style={{width:"150px"}}
-                preview={false}
-              />
+            <Link to="#">
+              <Image src={ASSET_IMAGES} alt="logo" style={{ width: "150px" }} preview={false} />
             </Link>
           </div>
 
-          {/* Form content */}
           <div className="mb-4">
             <div className="mb-10">
-              <Typography.Title
+              <Title
                 level={2}
                 className="text-3xl sm:text-4xl font-semibold mb-2.5"
                 style={{ color: token.colorTextHeading }}
               >
                 Get Started Now
-              </Typography.Title>
-              <Typography.Text>
-                Enter your credentials to create your account
-              </Typography.Text>
+              </Title>
+              <Text>Enter your credentials to create your account</Text>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-              <Button
-                className="flex-1"
-                icon={<FcGoogle fontSize={24} />}
-                size="large"
-              >
+              <Button className="flex-1" icon={<FcGoogle fontSize={24} />} size="large">
                 Google
               </Button>
-              <Button
-                className="flex-1"
-                icon={<AiFillApple fontSize={24} />}
-                size="large"
-              >
+              <Button className="flex-1" icon={<AiFillApple fontSize={24} />} size="large">
                 Apple
               </Button>
             </div>
@@ -84,74 +140,152 @@ const Signup2Form = () => {
               or
             </Divider>
 
-            <Form layout="vertical" className="mb-10">
+            <Form
+              layout="vertical"
+              form={form}
+              onFinish={onFinish}
+              className="mb-10"
+              encType="multipart/form-data"
+            >
+              {/* Upload รูปโปรไฟล์ แบบวงกลม */}
               <Form.Item
-                name="name"
-                rules={[{ required: true, message: "Please input your username!" }]}
+                label="Profile Picture"
+                name="profile"
+                valuePropName="fileList"
+                getValueFromEvent={({ fileList }) => fileList}
+                rules={[
+                  {
+                    validator: () =>
+                      fileList.length > 0
+                        ? Promise.resolve()
+                        : Promise.reject(new Error("กรุณาอัพโหลดรูป")),
+                  },
+                ]}
+                style={{ textAlign: "center" }}
               >
-                <Input placeholder="Name" size="large" />
-              </Form.Item>
-              <Form.Item
-                name="email"
-                rules={[{ required: true, message: "Please input your email!" }]}
-              >
-                <Input placeholder="Email" size="large" />
-              </Form.Item>
-              <Form.Item
-                name="password"
-                rules={[{ required: true, message: "Please input your password!" }]}
-              >
-                <Input.Password placeholder="Password" size="large" />
+                <ImgCrop rotationSlider>
+                  <Upload
+                    fileList={fileList}
+                    onChange={onChange}
+                    onPreview={onPreview}
+                    beforeUpload={(file) => {
+                      const isImage = file.type.startsWith("image/");
+                      if (!isImage) {
+                        message.error("กรุณาอัปโหลดไฟล์รูปภาพ");
+                        return Upload.LIST_IGNORE;
+                      }
+                      setFileList([file]);
+                      return false;
+                    }}
+                    maxCount={1}
+                    listType="picture-circle"
+                    style={{ margin: "0 auto" }}
+                  >
+                    {fileList.length < 1 && (
+                      <div>
+                        <PlusOutlined style={{ fontSize: 32 }} />
+                        <div style={{ marginTop: 8 }}>Upload</div>
+                      </div>
+                    )}
+                  </Upload>
+                </ImgCrop>
               </Form.Item>
 
-              <Form.Item>
+              {/* Input ฟิลด์อื่น ๆ */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Form.Item
+                  name="username"
+                  rules={[{ required: true, message: "Please input your username!" }]}
+                >
+                  <Input placeholder="Username" size="large" />
+                </Form.Item>
+
+                <Form.Item
+                  name="email"
+                  rules={[{ required: true, message: "Please input your email!" }]}
+                >
+                  <Input placeholder="Email" size="large" />
+                </Form.Item>
+
+                <Form.Item
+                  name="password"
+                  rules={[{ required: true, message: "Please input your password!" }]}
+                >
+                  <Input.Password placeholder="Password" size="large" />
+                </Form.Item>
+
+                <Form.Item name="phone">
+                  <Input placeholder="Phone Number" size="large" />
+                </Form.Item>
+
+                <Form.Item name="firstname">
+                  <Input placeholder="First Name" size="large" />
+                </Form.Item>
+
+                <Form.Item name="lastname">
+                  <Input placeholder="Last Name" size="large" />
+                </Form.Item>
+
+                <Form.Item
+                  name="gender"
+                  rules={[{ required: true, message: "Please select your gender!" }]}
+                >
+                  <Select placeholder="Select Gender" size="large">
+                    {genderOptions.map((g) => (
+                      <Select.Option key={g.ID} value={g.ID}>
+                        {g.Name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </div>
+
+              <Form.Item className="mt-4">
                 <Checkbox>
-                  <Typography.Text>
-                    I agree to the{" "}
-                    <Link to={"#"}>Terms & Conditions</Link> and{" "}
-                    <Link to={"#"}>Privacy policies</Link>.
-                  </Typography.Text>
+                  I agree to the <Link to="#">Terms & Conditions</Link> and{" "}
+                  <Link to="#">Privacy policies</Link>.
                 </Checkbox>
               </Form.Item>
 
               <Form.Item>
-                <Button block type="primary" htmlType="submit" size="large" style={{backgroundColor:"var(--black)"}}>
+                <Button
+                  block
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
+                  style={{ backgroundColor: "var(--black)" }}
+                >
                   Signup
                 </Button>
               </Form.Item>
             </Form>
 
-            <Typography.Text>
-              Already have an account?{" "}
-              <Link to={"/auth/login-2"}>Login here</Link>
-            </Typography.Text>
+            <Text>
+              Already have an account? <Link to="/auth/login-2">Login here</Link>
+            </Text>
           </div>
 
           <div className="mt-6">
-            <Typography.Text>
-              © Company Name {currentYear}
-            </Typography.Text>
+            <Text>© Company Name {currentYear}</Text>
           </div>
         </Card>
       </div>
 
-      {/* Left Column (Image & Text) */}
       <div className="col-span-12 lg:col-span-6 lg:order-1">
         <div className="flex flex-col h-full justify-center items-center">
           <div className="w-full max-w-2xl px-4 sm:px-8 lg:space-y-16">
             <div className="mb-5">
-              <Typography.Title
+              <Title
                 level={3}
                 className="text-2xl sm:text-3xl lg:text-4xl"
                 style={{ color: token.colorPrimary }}
               >
                 Bring your idea to life
-              </Typography.Title>
-              <Typography.Text className="text-base sm:text-xl font-light">
+              </Title>
+              <Text className="text-base sm:text-xl font-light">
                 Right tools to give your next project a kickstart it needs
-              </Typography.Text>
+              </Text>
             </div>
-
             <div className="mb-5">
               <img
                 src={background2}
@@ -159,11 +293,9 @@ const Signup2Form = () => {
                 className="w-full h-auto object-contain rounded-md"
               />
             </div>
-
-            <Link className="block text-primary" to={"#"}>
+            <Link className="block text-primary" to="#">
               <span className="inline-flex items-center gap-2 text-base">
-                <IoPlayCircle />
-                How it works
+                <IoPlayCircle /> How it works
               </span>
             </Link>
           </div>
