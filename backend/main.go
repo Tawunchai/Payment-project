@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/controller/calendar"
@@ -12,6 +14,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/like"
 	"github.com/Tawunchai/work-project/controller/login"
 	"github.com/Tawunchai/work-project/controller/new"
+	"github.com/Tawunchai/work-project/controller/omise"
 	"github.com/Tawunchai/work-project/controller/report"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/role"
@@ -20,6 +23,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/user"
 	"github.com/Tawunchai/work-project/middlewares"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 const PORT = "8000"
@@ -29,6 +33,15 @@ func main() {
 	config.ConnectionDB()
 
 	config.SetupDatabase()
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: .env file not found or failed to load")
+	}
+
+	if os.Getenv("OMISE_SECRET_KEY") == "" {
+		log.Println("Warning: OMISE_SECRET_KEY is not set")
+	}
 
 	r := gin.Default()
 
@@ -44,8 +57,16 @@ func main() {
 
 	public := r.Group("")
 	{
+
+		//Omise Payment
+		public.POST("/api/charge", omise.CreateCharge)
+		public.POST("/api/create-promptpay-charge", omise.CreatePromptPayCharge)
+		public.POST("/webhook/omise", omise.OmiseWebhook)
+		public.GET("/api/status/:chargeId", omise.GetChargeStatus)
+		public.POST("/api/confirm-charge/:chargeId", omise.ConfirmCharge)
 		//user and admin
 		public.GET("/employee/:userID", user.GetEmployeeByUserID)
+		public.POST("/create-employees", employee.CreateEmployeeByAdmin)
 		public.GET("/uploads/*filename", user.ServeImage)
 		public.GET("/users/:id", user.ListUserByID)
 		public.POST("/create-user", user.CreateUser)
@@ -74,6 +95,7 @@ func main() {
 		public.GET("/evs", charging.ListEVData)
 		public.DELETE("/delete-evchargings/:id", charging.DeleteEVByID)
 		public.PATCH("/update-evs/:id", charging.UpdateEVByID)
+		public.POST("/create-evs", charging.CreateEV)
 
 		//gender
 		public.GET("/genders", gender.ListGenders)

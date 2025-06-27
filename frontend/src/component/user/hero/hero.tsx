@@ -6,6 +6,7 @@ import { ListEVCharging } from "../../../services/index";
 import { ListUsers } from "../../../services/index";
 import { EVchargingInterface } from "../../../interface/IEV";
 import { UsersInterface } from "../../../interface/IUser";
+import { useNavigate } from "react-router-dom";
 
 type HeaderProps = {
   scrollToValue: () => void;
@@ -14,6 +15,7 @@ type HeaderProps = {
 const Hero = ({ scrollToValue }: HeaderProps) => {
   const [evList, setEVList] = useState<EVchargingInterface[]>([]);
   const [userList, setUserList] = useState<UsersInterface[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,7 +56,7 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
           </div>
 
           <div className="flexCenter search-bar">
-            <button className="button">Power Charg</button>
+            <button className="button" onClick={() => navigate("/user/payment")}>Power Charg</button>
             <button className="button" onClick={scrollToValue}>Learn More</button>
           </div>
 

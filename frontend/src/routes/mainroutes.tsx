@@ -10,6 +10,10 @@ const ResetPassword = Loadable(lazy(() => import("../page/ResetPassword/ResetPas
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
 const Profile = Loadable(lazy(() => import("../component/user/header/SocialProfile/SocialProfile")));
+const PaymentUser = Loadable(lazy(() => import("../component/user/payment")));
+const PaymentQr = Loadable(lazy(() => import("../component/user/payment/QRCode")));
+const PaymentCredit = Loadable(lazy(() => import("../component/user/payment/CreditCard/test")));
+const CreateReview = Loadable(lazy(() => import("../component/user/review/create")));
 
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
@@ -48,6 +52,10 @@ const UserRoutes = (): RouteObject[] => [
     children: [
       { index: true, element: <User /> },
       { path: "profile", element: <Profile /> },
+      { path: "payment", element: <PaymentUser /> },
+      { path: "payment-by-qrcode", element: <PaymentQr /> },
+      { path: "credit-card", element: <PaymentCredit /> },
+      { path: "review", element: <CreateReview /> },
     ],
   },
 ];

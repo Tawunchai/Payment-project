@@ -95,6 +95,53 @@ func UpdateEVByID(c *gin.Context) {
 	})
 }
 
+func CreateEV(c *gin.Context) {
+	var input struct {
+		Name       string  `json:"name" binding:"required"`
+		Voltage    float64 `json:"voltage" binding:"required"`
+		Current    float64 `json:"current" binding:"required"`
+		Price      float64 `json:"price" binding:"required"`
+		EmployeeID *uint   `json:"employeeID"`  
+		StatusID   uint    `json:"statusID" binding:"required"`
+		TypeID     uint    `json:"typeID" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูลที่ส่งมาไม่ถูกต้อง", "detail": err.Error()})
+		return
+	}
+
+	ev := entity.EVcharging{
+		Name:       input.Name,
+		Voltage:    input.Voltage,
+		Current:    input.Current,
+		Price:      input.Price,
+		EmployeeID: input.EmployeeID,
+		StatusID:   input.StatusID,
+		TypeID:     input.TypeID,
+	}
+
+	if err := config.DB().Create(&ev).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถบันทึกข้อมูล EV Charging ได้", "detail": err.Error()})
+		return
+	}
+
+	// preload ความสัมพันธ์หลังสร้าง
+	if err := config.DB().
+		Preload("Employee.User").
+		Preload("Employee").
+		Preload("Status").
+		Preload("Type").
+		First(&ev, ev.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "โหลดข้อมูลหลังบันทึกไม่สำเร็จ"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "สร้างข้อมูล EV Charging สำเร็จ",
+		"data":    ev,
+	})
+}
 
 
 func DeleteEVByID(c *gin.Context) {

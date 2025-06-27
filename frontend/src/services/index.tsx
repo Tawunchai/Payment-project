@@ -3,8 +3,8 @@ import { ReviewInterface } from "../interface/IReview";
 import { UsersInterface } from "../interface/IUser";
 import { NewsInterface } from "../interface/INews";
 import { GetstartedInterface } from "../interface/IGetstarted";
-import { EVchargingInterface } from "../interface/IEV";
-import { EmployeeInterface } from "../interface/IEmployee";
+import { EVchargingInterface,CreateEVInput } from "../interface/IEV";
+import { EmployeeInterface,CreateEmployeeInput } from "../interface/IEmployee";
 import { CalendarInterface } from "../interface/ICalendar";
 import { GendersInterface } from "../interface/IGender";
 import { UserroleInterface } from "../interface/IUserrole";
@@ -55,6 +55,92 @@ const postRequestOptions = (body: any) => {
     },
     body: JSON.stringify(body),
   };
+};
+
+export interface PromptPayChargeRequest {
+  amount: number; // จำนวนเงินเป็น "บาท"
+}
+
+export interface PromptPayChargeResponse {
+  // สามารถปรับได้ตามโครงสร้างที่ backend ส่งกลับ เช่น Omise charge object
+  [key: string]: any;
+}
+
+export const createPromptPayCharge = async (
+  chargeData: PromptPayChargeRequest
+): Promise<PromptPayChargeResponse | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/api/create-promptpay-charge`, chargeData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data as PromptPayChargeResponse;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating PromptPay charge:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export interface ChargeRequest {
+  amount: number;  // จำนวนเงินเป็นบาท เช่น 100
+  token: string;   // Omise token ที่ได้จาก Omise.js ฝั่ง client
+}
+
+export interface ChargeResponse {
+  // โครงสร้าง response จาก Omise API อาจจะยืดหยุ่น จึงใช้ any
+  [key: string]: any;
+}
+
+export const createCharge = async (
+  chargeData: ChargeRequest
+): Promise<ChargeResponse | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/api/charge`, chargeData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data as ChargeResponse;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating charge:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const createEmployeeByAdmin = async (
+  employeeData: CreateEmployeeInput
+): Promise<EmployeeInterface | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-employees`, employeeData, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 201) {
+      return response.data.employee as EmployeeInterface;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating employee:", error.response?.data || error.message);
+    return null;
+  }
 };
 
 export const getEmployeeByID = async (
@@ -589,6 +675,29 @@ export const ListEVCharging = async (): Promise<EVchargingInterface[] | null> =>
     }
   } catch (error) {
     console.error("Error fetching EV charging data:", error);
+    return null;
+  }
+};
+
+export const CreateEV = async (
+  evData: CreateEVInput
+): Promise<{ message: string; data: EVchargingInterface } | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-evs`, evData, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating EVcharging:", error.response?.data || error.message);
     return null;
   }
 };

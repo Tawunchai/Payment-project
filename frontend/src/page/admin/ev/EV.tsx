@@ -15,11 +15,17 @@ import { SelectionSettingsModel } from "@syncfusion/ej2-react-grids";
 
 import { Header } from "../../../component/admin";
 import { EVGrid } from "../../../assets/admin/dummy";
-import { ListEVCharging, DeleteEVcharging, ListStatus, ListTypeEV } from "../../../services/index";
+import {
+  ListEVCharging,
+  DeleteEVcharging,
+  ListStatus,
+  ListTypeEV,
+} from "../../../services/index";
 import Modal from "../getting/modal";
 import { Trash2 } from "react-feather";
 
-import EditEVModal from "./edit/index"; // ปรับ path ตามจริง
+import EditEVModal from "./edit";
+import CreateEVModal from "./create";
 
 const EV = () => {
   const [evData, setEVData] = useState<any[]>([]);
@@ -30,9 +36,10 @@ const EV = () => {
   const gridRef = useRef<any>(null);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
 
-  // State สำหรับ modal edit
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingEV, setEditingEV] = useState<any>(null);
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const selectionsettings: SelectionSettingsModel = {
     persistSelection: true,
@@ -40,7 +47,11 @@ const EV = () => {
     mode: "Row",
   };
 
-  const toolbarOptions = [{ text: "Delete", id: "customDelete", prefixIcon: "e-delete" }];
+  const toolbarOptions = [
+    { text: "CREATE", id: "customCreate", prefixIcon: "e-add" },
+    { text: "DELETE", id: "customDelete", prefixIcon: "e-delete" },
+  ];
+
   const editing = { allowDeleting: true, allowEditing: true };
 
   useEffect(() => {
@@ -51,7 +62,6 @@ const EV = () => {
 
   const fetchEVData = async () => {
     const evs = await ListEVCharging();
-    console.log(evs)
     if (evs) {
       const formatted = evs.map((ev: any) => ({
         ID: ev.ID,
@@ -102,6 +112,8 @@ const EV = () => {
     if (args.item.id === "customDelete") {
       if (selectedRowsRef.current.length === 0) return;
       setOpenConfirmModal(true);
+    } else if (args.item.id === "customCreate") {
+      setCreateModalOpen(true);
     }
   };
 
@@ -129,19 +141,17 @@ const EV = () => {
     }
   };
 
-  // แก้ไข: เปิด modal แก้ไข EV
   const handleEdit = (rowData: any) => {
     setEditingEV(rowData);
     setEditModalOpen(true);
   };
 
-  // เมื่อบันทึกข้อมูลใน modal เสร็จ
   const onSaveEdit = async () => {
-  setEditModalOpen(false);
-  setEditingEV(null);
-  await new Promise((r) => setTimeout(r, 300)); // รอ 300 ms
-  fetchEVData();
-};
+    setEditModalOpen(false);
+    setEditingEV(null);
+    await new Promise((r) => setTimeout(r, 300));
+    fetchEVData();
+  };
 
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white rounded-3xl">
@@ -184,7 +194,7 @@ const EV = () => {
         <Inject services={[Page, Selection, Toolbar, Edit, Sort, Filter]} />
       </GridComponent>
 
-      {/* Modal Confirm Delete */}
+      {/* Modal ยืนยันการลบ */}
       <Modal open={openConfirmModal} onClose={() => setOpenConfirmModal(false)}>
         <div className="text-center w-56">
           <Trash2 size={56} className="mx-auto text-red-500" />
@@ -205,12 +215,24 @@ const EV = () => {
         </div>
       </Modal>
 
-      {/* Modal แก้ไข EV Charging */}
+      {/* Modal แก้ไข EV */}
       <EditEVModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         evCharging={editingEV}
         onSaved={onSaveEdit}
+        statusList={statusList}
+        typeList={typeList}
+      />
+
+      {/* Modal สร้าง EV */}
+      <CreateEVModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSaved={async () => {
+          setCreateModalOpen(false);
+          await fetchEVData();
+        }}
         statusList={statusList}
         typeList={typeList}
       />

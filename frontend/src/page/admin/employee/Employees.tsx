@@ -19,22 +19,27 @@ import {
   ListUsersByRoleAdmin,
   GetEmployeeByUserID,
   DeleteAdmin,
-  ListUserRoles,  
+  ListUserRoles,
+  createEmployeeByAdmin,
 } from "../../../services/index";
 
 import Modal from "../getting/modal";
 import { Trash2 } from "react-feather";
-import EditAdminModal from "./edit/index"; 
+import EditAdminModal from "./edit/index";
+import CreateAdminModal from "./create";
+
+import { CreateEmployeeInput } from "../../../interface/IEmployee"; // import type จริง
 
 const Employees = () => {
   const [employeeData, setEmployeeData] = useState<any[]>([]);
-  const [userRoles, setUserRoles] = useState<any[]>([]);  // เก็บ roles
+  const [userRoles, setUserRoles] = useState<any[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
 
   const selectedRowsRef = useRef<number[]>([]);
   const gridRef = useRef<any>(null);
-  const [openConfirmModal, setOpenConfirmModal] = useState(false);
 
   const selectionsettings: SelectionSettingsModel = {
     persistSelection: true,
@@ -42,7 +47,10 @@ const Employees = () => {
     mode: "Row",
   };
 
-  const toolbarOptions = [{ text: "Delete", id: "customDelete", prefixIcon: "e-delete" }];
+  const toolbarOptions = [
+    { text: "Create", id: "customCreate", prefixIcon: "e-add" },
+    { text: "Delete", id: "customDelete", prefixIcon: "e-delete" },
+  ];
   const editing = { allowDeleting: true, allowEditing: true };
 
   useEffect(() => {
@@ -100,6 +108,8 @@ const Employees = () => {
     if (args.item.id === "customDelete") {
       if (selectedRowsRef.current.length === 0) return;
       setOpenConfirmModal(true);
+    } else if (args.item.id === "customCreate") {
+      setCreateModalOpen(true);
     }
   };
 
@@ -126,17 +136,25 @@ const Employees = () => {
     selectedRowsRef.current = [];
   };
 
-  // แก้ไข: เปิด modal แก้ไขข้อมูล admin
   const handleEdit = (rowData: any) => {
     setEditingEmployee(rowData);
     setEditModalOpen(true);
   };
 
-  // เมื่อบันทึกข้อมูลใน modal เสร็จ
   const onSaveEdit = () => {
     setEditModalOpen(false);
     setEditingEmployee(null);
-    fetchAdmins(); // รีโหลดข้อมูลหลังแก้ไข
+    fetchAdmins();
+  };
+
+  const handleCreateEmployee = async (data: CreateEmployeeInput) => {
+    const result = await createEmployeeByAdmin(data);
+    if (result) {
+      setCreateModalOpen(false);
+      fetchAdmins();
+    } else {
+      alert("สร้างพนักงานใหม่ไม่สำเร็จ");
+    }
   };
 
   return (
@@ -210,6 +228,14 @@ const Employees = () => {
         onClose={() => setEditModalOpen(false)}
         employee={editingEmployee}
         onSaved={onSaveEdit}
+        userRoles={userRoles}
+      />
+
+      {/* Modal สร้างพนักงานใหม่ */}
+      <CreateAdminModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreated={handleCreateEmployee}
         userRoles={userRoles}
       />
     </div>

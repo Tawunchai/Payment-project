@@ -10,11 +10,9 @@ import {
   theme,
 } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import { AiFillApple } from "react-icons/ai";
 import { FaPaypal } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
 import { RiMastercardFill } from "react-icons/ri";
-
+import "./login.css"
 import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
 import backgroundImage from "../../assets/EV Car.jpeg";
 
@@ -98,26 +96,7 @@ const LoginForm1 = () => {
                 </Typography.Text>
               </div>
 
-              <div className="flex max-sm:flex-col sm:items-center gap-3 mb-6">
-                <Button
-                  className="flex-1"
-                  icon={<FcGoogle fontSize={24} />}
-                  size="large"
-                >
-                  Sign in with Google
-                </Button>
-                <Button
-                  className="flex-1"
-                  icon={<AiFillApple fontSize={24} />}
-                  size="large"
-                >
-                  Sign in with Apple
-                </Button>
-              </div>
-
-              <Divider className="mb-6" plain>
-                or
-              </Divider>
+              <Divider className="mb-6" plain></Divider>
 
               <Form
                 layout="vertical"
@@ -187,10 +166,10 @@ const LoginForm1 = () => {
             bordered={false}
           >
             <div className="mb-5 hidden lg:block">
-              <Typography.Title className="text-white text-3xl lg:text-4xl font-light" style={{color:"white"}}>
-                Build your React & AntD projects faster
+              <Typography.Title className="title-sigin text-white text-3xl lg:text-4xl font-light" style={{color:"white"}}>
+                The simplest way to build your projects with ReactJS
               </Typography.Title>
-              <Typography.Text className="text-white text-base lg:text-2xl font-light">
+              <Typography.Text className="title-sigin text-white text-base lg:text-2xl font-light">
                 Save up to 50% of your time and cost with our system
               </Typography.Text>
             </div>

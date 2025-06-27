@@ -7,6 +7,7 @@ import (
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/entity"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func GetEmployeeByUserID(c *gin.Context) {
@@ -115,4 +116,62 @@ func ListEmployeeByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, employee)
+}
+
+type CreateEmployeeWithUserInput struct {
+	Username  string  `json:"username" binding:"required"`
+	Password  string  `json:"password" binding:"required"`
+	FirstName string  `json:"firstName" binding:"required"`
+	LastName  string  `json:"lastName" binding:"required"`
+	Email     string  `json:"email" binding:"required,email"`
+	Salary    float64 `json:"salary" binding:"required"`
+}
+
+func CreateEmployeeByAdmin(c *gin.Context) {
+	var input CreateEmployeeWithUserInput
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถเข้ารหัสรหัสผ่านได้"})
+		return
+	}
+
+	user := entity.User{
+		Username:  input.Username,
+		Password:  string(hashedPassword),
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Email:     input.Email,
+		UserRoleID: 1, 
+	}
+
+	db := config.DB()
+
+	if err := db.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้าง User ใหม่ได้"})
+		return
+	}
+
+	// สร้าง Employee ที่เชื่อมกับ User.ID
+	employee := entity.Employee{
+		Salary: input.Salary,
+		UserID: &user.ID,
+		// Bio, Experience, Education ไม่ใส่ (เป็นค่า default หรือ null ได้)
+	}
+
+	if err := db.Create(&employee).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้าง Employee ใหม่ได้"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message":  "สร้าง User และ Employee สำเร็จ",
+		"user":     user,
+		"employee": employee,
+	})
 }
