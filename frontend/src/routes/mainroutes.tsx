@@ -12,7 +12,7 @@ const User = Loadable(lazy(() => import("../page/user/index")));
 const Profile = Loadable(lazy(() => import("../component/user/header/SocialProfile/SocialProfile")));
 const EVInputUser = Loadable(lazy(() => import("../component/user/evs")));
 const PaymentUser = Loadable(lazy(() => import("../component/user/payment")));
-const PaymentQr = Loadable(lazy(() => import("../component/user/payment/QRCode")));
+const PaymentQr = Loadable(lazy(() => import("../component/user/payment/QRCode/test")));
 const PaymentCredit = Loadable(lazy(() => import("../component/user/payment/CreditCard/test")));
 const CreateReview = Loadable(lazy(() => import("../component/user/review/create")));
 
