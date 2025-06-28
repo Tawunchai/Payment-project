@@ -56,7 +56,7 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
           </div>
 
           <div className="flexCenter search-bar">
-            <button className="button" onClick={() => navigate("/user/payment")}>Power Charg</button>
+            <button className="button" onClick={() => navigate("/user/evs-selector")}>Power Charg</button>
             <button className="button" onClick={scrollToValue}>Learn More</button>
           </div>
 

@@ -10,6 +10,7 @@ type EVcharging struct {
 	Voltage float64
 	Current float64
 	Price   float64
+	Picture string
 
 	EmployeeID *uint
 	Employee   Employee `gorm:"foreignKey:EmployeeID"`

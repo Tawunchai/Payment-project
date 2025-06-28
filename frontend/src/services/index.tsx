@@ -3,8 +3,8 @@ import { ReviewInterface } from "../interface/IReview";
 import { UsersInterface } from "../interface/IUser";
 import { NewsInterface } from "../interface/INews";
 import { GetstartedInterface } from "../interface/IGetstarted";
-import { EVchargingInterface,CreateEVInput } from "../interface/IEV";
-import { EmployeeInterface,CreateEmployeeInput } from "../interface/IEmployee";
+import { EVchargingInterface } from "../interface/IEV";
+import { EmployeeInterface, CreateEmployeeInput } from "../interface/IEmployee";
 import { CalendarInterface } from "../interface/ICalendar";
 import { GendersInterface } from "../interface/IGender";
 import { UserroleInterface } from "../interface/IUserrole";
@@ -276,13 +276,13 @@ export const CreateUser = async (
     // กำหนด header ให้เหมาะสม
     const headers = userData instanceof FormData
       ? {
-          ...getAuthHeader(),
-          // ไม่ต้องตั้ง Content-Type เพราะ axios จะตั้งให้เป็น multipart/form-data อัตโนมัติ
-        }
+        ...getAuthHeader(),
+        // ไม่ต้องตั้ง Content-Type เพราะ axios จะตั้งให้เป็น multipart/form-data อัตโนมัติ
+      }
       : {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        };
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      };
 
     const response = await axios.post(`${apiUrl}/create-user`, userData, {
       headers,
@@ -470,7 +470,7 @@ export const DeleteReportByID = async (
     });
 
     if (response.status === 200) {
-      return response.data; 
+      return response.data;
     } else {
       console.error("Unexpected status:", response.status);
       return null;
@@ -491,7 +491,7 @@ export const ListGetStarted = async (): Promise<GetstartedInterface[] | null> =>
     });
 
     if (response.status === 200) {
-      return response.data; 
+      return response.data;
     } else {
       console.error("Unexpected status:", response.status);
       return null;
@@ -680,12 +680,12 @@ export const ListEVCharging = async (): Promise<EVchargingInterface[] | null> =>
 };
 
 export const CreateEV = async (
-  evData: CreateEVInput
+  formData: FormData
 ): Promise<{ message: string; data: EVchargingInterface } | null> => {
   try {
-    const response = await axios.post(`${apiUrl}/create-evs`, evData, {
+    const response = await axios.post(`${apiUrl}/create-evs`, formData, {
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "multipart/form-data",
         ...getAuthHeader(),
       },
     });
@@ -704,12 +704,12 @@ export const CreateEV = async (
 
 export const UpdateEVByID = async (
   id: number,
-  data: Partial<EVchargingInterface>
+  formData: FormData
 ): Promise<{ message: string; data: EVchargingInterface } | null> => {
   try {
-    const response = await axios.patch(`${apiUrl}/update-evs/${id}`, data, {
+    const response = await axios.patch(`${apiUrl}/update-evs/${id}`, formData, {
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "multipart/form-data",
         ...getAuthHeader(),
       },
     });

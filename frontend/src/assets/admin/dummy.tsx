@@ -504,13 +504,13 @@ export const EVGrid = [
     width: "120",
     textAlign: "Center",
   },
-  {
+  /*{
     field: "EmployeeName",
     headerText: "Responsible Employee",
     width: "180",
     textAlign: "Center",
     template: gridEVProfile,
-  },
+  },*/
 ];
 
 

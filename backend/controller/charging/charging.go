@@ -1,11 +1,16 @@
 package charging
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/entity"
+	"github.com/gin-gonic/gin"
 )
 
 func ListEVData(c *gin.Context) {
@@ -35,113 +40,156 @@ func UpdateEVByID(c *gin.Context) {
 		return
 	}
 
-	type UpdateEVInput struct {
-		Name       *string  `json:"name"`
-		Voltage    *float64 `json:"voltage"`
-		Current    *float64 `json:"current"`
-		Price      *float64 `json:"price"`
-		EmployeeID *uint    `json:"employeeID"`
-		StatusID   *uint    `json:"statusID"`
-		TypeID     *uint    `json:"typeID"`
+	// อ่านไฟล์ใหม่ ถ้ามีการส่งเข้ามา
+	file, err := c.FormFile("picture")
+	if err == nil && file != nil {
+		// ตรวจสอบชนิด
+		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
+		isValid := false
+		for _, t := range validTypes {
+			if file.Header.Get("Content-Type") == t {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็น .jpg, .png, .gif เท่านั้น"})
+			return
+		}
+
+		uploadDir := "uploads/evcharging"
+		os.MkdirAll(uploadDir, os.ModePerm)
+		ext := filepath.Ext(file.Filename)
+		newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+		filePath := filepath.Join(uploadDir, newFileName)
+
+		if err := c.SaveUploadedFile(file, filePath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "บันทึกรูปไม่สำเร็จ"})
+			return
+		}
+		ev.Picture = filePath
 	}
 
-	var input UpdateEVInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูล JSON ไม่ถูกต้อง"})
-		return
+	// อ่านข้อมูลอื่นจาก form
+	if name := c.PostForm("name"); name != "" {
+		ev.Name = name
+	}
+	if voltage := c.PostForm("voltage"); voltage != "" {
+		if v, err := strconv.ParseFloat(voltage, 64); err == nil {
+			ev.Voltage = v
+		}
+	}
+	if current := c.PostForm("current"); current != "" {
+		if v, err := strconv.ParseFloat(current, 64); err == nil {
+			ev.Current = v
+		}
+	}
+	if price := c.PostForm("price"); price != "" {
+		if v, err := strconv.ParseFloat(price, 64); err == nil {
+			ev.Price = v
+		}
+	}
+	if statusID := c.PostForm("statusID"); statusID != "" {
+		if v, err := strconv.ParseUint(statusID, 10, 64); err == nil {
+			ev.StatusID = uint(v)
+		}
+	}
+	if typeID := c.PostForm("typeID"); typeID != "" {
+		if v, err := strconv.ParseUint(typeID, 10, 64); err == nil {
+			ev.TypeID = uint(v)
+		}
+	}
+	if employeeID := c.PostForm("employeeID"); employeeID != "" {
+		if v, err := strconv.ParseUint(employeeID, 10, 64); err == nil {
+			temp := uint(v)
+			ev.EmployeeID = &temp
+		}
 	}
 
-	if input.Name != nil {
-		ev.Name = *input.Name
-	}
-	if input.Voltage != nil {
-		ev.Voltage = *input.Voltage
-	}
-	if input.Current != nil {
-		ev.Current = *input.Current
-	}
-	if input.Price != nil {
-		ev.Price = *input.Price
-	}
-	if input.EmployeeID != nil {
-		ev.EmployeeID = input.EmployeeID
-	}
-	if input.StatusID != nil {
-		ev.StatusID = *input.StatusID
-	}
-	if input.TypeID != nil {
-		ev.TypeID = *input.TypeID
-	}
-
-	// บันทึก
 	if err := config.DB().Save(&ev).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถอัปเดตข้อมูล EV Charging ได้"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "อัปเดตไม่สำเร็จ"})
 		return
 	}
 
-	// โหลดข้อมูลความสัมพันธ์ใหม่
-	if err := config.DB().
-		Preload("Employee").
-		Preload("Status").
-		Preload("Type").
-		First(&ev, id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "โหลดข้อมูล EV Charging หลังอัปเดตไม่สำเร็จ"})
-		return
-	}
+	config.DB().Preload("Employee").Preload("Status").Preload("Type").First(&ev, id)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "อัปเดตข้อมูล EV Charging สำเร็จ",
-		"data":    ev,
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "อัปเดตข้อมูล EV Charging สำเร็จ", "data": ev})
 }
 
 func CreateEV(c *gin.Context) {
-	var input struct {
-		Name       string  `json:"name" binding:"required"`
-		Voltage    float64 `json:"voltage" binding:"required"`
-		Current    float64 `json:"current" binding:"required"`
-		Price      float64 `json:"price" binding:"required"`
-		EmployeeID *uint   `json:"employeeID"`  
-		StatusID   uint    `json:"statusID" binding:"required"`
-		TypeID     uint    `json:"typeID" binding:"required"`
+	file, err := c.FormFile("picture")
+	var filePath string
+
+	if err == nil && file != nil {
+		// ตรวจสอบชนิดไฟล์
+		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
+		isValid := false
+		for _, t := range validTypes {
+			if file.Header.Get("Content-Type") == t {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็นไฟล์ .jpg, .png, .gif เท่านั้น"})
+			return
+		}
+
+		uploadDir := "uploads/evcharging"
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างโฟลเดอร์เก็บไฟล์ได้"})
+			return
+		}
+
+		ext := filepath.Ext(file.Filename)
+		newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+		filePath = filepath.Join(uploadDir, newFileName)
+
+		if err := c.SaveUploadedFile(file, filePath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถบันทึกรูปภาพได้"})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "กรุณาอัปโหลดรูปภาพ"})
+		return
 	}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูลที่ส่งมาไม่ถูกต้อง", "detail": err.Error()})
-		return
+	// รับข้อมูลจาก form
+	name := c.PostForm("name")
+	voltage, _ := strconv.ParseFloat(c.PostForm("voltage"), 64)
+	current, _ := strconv.ParseFloat(c.PostForm("current"), 64)
+	price, _ := strconv.ParseFloat(c.PostForm("price"), 64)
+	statusID, _ := strconv.ParseUint(c.PostForm("statusID"), 10, 64)
+	typeID, _ := strconv.ParseUint(c.PostForm("typeID"), 10, 64)
+
+	var employeeID *uint
+	if empStr := c.PostForm("employeeID"); empStr != "" {
+		empParsed, _ := strconv.ParseUint(empStr, 10, 64)
+		temp := uint(empParsed)
+		employeeID = &temp
 	}
 
 	ev := entity.EVcharging{
-		Name:       input.Name,
-		Voltage:    input.Voltage,
-		Current:    input.Current,
-		Price:      input.Price,
-		EmployeeID: input.EmployeeID,
-		StatusID:   input.StatusID,
-		TypeID:     input.TypeID,
+		Name:       name,
+		Voltage:    voltage,
+		Current:    current,
+		Price:      price,
+		Picture:    filePath,
+		EmployeeID: employeeID,
+		StatusID:   uint(statusID),
+		TypeID:     uint(typeID),
 	}
 
 	if err := config.DB().Create(&ev).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถบันทึกข้อมูล EV Charging ได้", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างข้อมูล EV Charging ได้"})
 		return
 	}
 
-	// preload ความสัมพันธ์หลังสร้าง
-	if err := config.DB().
-		Preload("Employee.User").
-		Preload("Employee").
-		Preload("Status").
-		Preload("Type").
-		First(&ev, ev.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "โหลดข้อมูลหลังบันทึกไม่สำเร็จ"})
-		return
-	}
+	config.DB().Preload("Employee.User").Preload("Status").Preload("Type").First(&ev, ev.ID)
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "สร้างข้อมูล EV Charging สำเร็จ",
-		"data":    ev,
-	})
+	c.JSON(http.StatusCreated, gin.H{"message": "สร้างข้อมูล EV Charging สำเร็จ", "data": ev})
 }
+
 
 
 func DeleteEVByID(c *gin.Context) {

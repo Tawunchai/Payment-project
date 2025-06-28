@@ -11,6 +11,10 @@ export interface EVchargingInterface {
   Employee?: EmployeeInterface;
   Status?: StatusInterface;
   Type?: TypeInterface;
+
+  EmployeeID?: number;
+  StatusID?: number;
+  TypeID?: number;
 }
 
 export interface CreateEVInput {

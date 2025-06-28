@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import Modal from "../../getting/modal";
+import { Upload, message } from "antd";
+import ImgCrop from "antd-img-crop";
+import { PlusOutlined } from "@ant-design/icons";
 import { StatusInterface } from "../../../../interface/IStatus";
 import { TypeInterface } from "../../../../interface/IType";
-import { CreateEVInput } from "../../../../interface/IEV";
 import { CreateEV } from "../../../../services/index";
 
 interface CreateEVModalProps {
@@ -23,11 +25,11 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
   const [name, setName] = useState<string>("");
   const [voltage, setVoltage] = useState<string>("");
   const [current, setCurrent] = useState<string>("");
-  const [price, setPrice] = useState<number | string>("");
+  const [price, setPrice] = useState<string>("");
   const [statusID, setStatusID] = useState<number | "">("");
   const [typeID, setTypeID] = useState<number | "">("");
+  const [fileList, setFileList] = useState<any[]>([]); // antd ใช้ fileList
 
-  // reset ค่าเมื่อเปิด modal ใหม่
   useEffect(() => {
     if (open) {
       setName("");
@@ -36,38 +38,86 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
       setPrice("");
       setStatusID("");
       setTypeID("");
+      setFileList([]);
     }
   }, [open]);
 
   const handleSubmit = async () => {
-    if (!name || !voltage || !current || !price || !statusID || !typeID) {
-      alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+    if (
+      !name ||
+      !voltage ||
+      !current ||
+      !price ||
+      !statusID ||
+      !typeID ||
+      fileList.length === 0
+    ) {
+      message.error("กรุณากรอกข้อมูลให้ครบถ้วนและเลือกรูปภาพ");
       return;
     }
 
-    const payload: CreateEVInput = {
-      Name: name,
-      Voltage: parseFloat(voltage),
-      Current: parseFloat(current),
-      Price: typeof price === "string" ? parseFloat(price) : price,
-      EmployeeID: 1,
-      StatusID: Number(statusID),
-      TypeID: Number(typeID),
-    };
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("voltage", voltage);
+    formData.append("current", current);
+    formData.append("price", price);
+    formData.append("statusID", statusID.toString());
+    formData.append("typeID", typeID.toString());
+    formData.append("employeeID", "1"); // ปรับได้ตามระบบ auth
+    formData.append("picture", fileList[0].originFileObj); // แนบไฟล์จริง
 
-    const result = await CreateEV(payload);
+    const result = await CreateEV(formData);
     if (result) {
+      message.success("สร้างข้อมูลสำเร็จ");
       onSaved();
       onClose();
+    } else {
+      message.error("ไม่สามารถสร้างข้อมูลได้");
     }
   };
 
-  if (!open) return null;
+  const onPreview = async (file: any) => {
+    let src = file.url;
+    if (!src && file.originFileObj) {
+      src = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file.originFileObj);
+        reader.onload = () => resolve(reader.result as string);
+      });
+    }
+    const imgWindow = window.open(src);
+    imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
+  };
 
   return (
     <Modal open={open} onClose={onClose}>
       <div className="space-y-4 w-[300px] sm:w-[400px]">
         <h2 className="text-xl font-bold">เพิ่มข้อมูล EV Charging</h2>
+
+        <ImgCrop rotationSlider>
+          <Upload
+            listType="picture-card"
+            fileList={fileList}
+            onChange={({ fileList: newList }) => setFileList(newList)}
+            onPreview={onPreview}
+            beforeUpload={(file) => {
+              const isImage = file.type.startsWith("image/");
+              if (!isImage) {
+                message.error("กรุณาอัปโหลดเฉพาะไฟล์รูปภาพ");
+                return Upload.LIST_IGNORE;
+              }
+              return false; // ไม่ให้อัปโหลดทันที
+            }}
+            maxCount={1}
+          >
+            {fileList.length < 1 && (
+              <div>
+                <PlusOutlined />
+                <div style={{ marginTop: 8 }}>Upload</div>
+              </div>
+            )}
+          </Upload>
+        </ImgCrop>
 
         <input
           className="border rounded w-full p-2"
@@ -104,10 +154,9 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
         <select
           className="border rounded w-full p-2"
           value={statusID}
-          onChange={(e) => {
-            const val = e.target.value;
-            setStatusID(val === "" ? "" : Number(val));
-          }}
+          onChange={(e) =>
+            setStatusID(e.target.value === "" ? "" : Number(e.target.value))
+          }
         >
           <option value="">เลือกสถานะ</option>
           {statusList.map((status) => (
@@ -120,10 +169,9 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
         <select
           className="border rounded w-full p-2"
           value={typeID}
-          onChange={(e) => {
-            const val = e.target.value;
-            setTypeID(val === "" ? "" : Number(val));
-          }}
+          onChange={(e) =>
+            setTypeID(e.target.value === "" ? "" : Number(e.target.value))
+          }
         >
           <option value="">เลือกประเภท</option>
           {typeList.map((type) => (

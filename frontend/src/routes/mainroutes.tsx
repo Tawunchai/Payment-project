@@ -10,6 +10,7 @@ const ResetPassword = Loadable(lazy(() => import("../page/ResetPassword/ResetPas
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
 const Profile = Loadable(lazy(() => import("../component/user/header/SocialProfile/SocialProfile")));
+const EVInputUser = Loadable(lazy(() => import("../component/user/evs")));
 const PaymentUser = Loadable(lazy(() => import("../component/user/payment")));
 const PaymentQr = Loadable(lazy(() => import("../component/user/payment/QRCode")));
 const PaymentCredit = Loadable(lazy(() => import("../component/user/payment/CreditCard/test")));
@@ -52,6 +53,7 @@ const UserRoutes = (): RouteObject[] => [
     children: [
       { index: true, element: <User /> },
       { path: "profile", element: <Profile /> },
+      { path: "evs-selector", element: <EVInputUser /> },
       { path: "payment", element: <PaymentUser /> },
       { path: "payment-by-qrcode", element: <PaymentQr /> },
       { path: "credit-card", element: <PaymentCredit /> },

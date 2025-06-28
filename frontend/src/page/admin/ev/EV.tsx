@@ -26,6 +26,7 @@ import { Trash2 } from "react-feather";
 
 import EditEVModal from "./edit";
 import CreateEVModal from "./create";
+import { Image } from "antd";
 
 const EV = () => {
   const [evData, setEVData] = useState<any[]>([]);
@@ -79,6 +80,7 @@ const EV = () => {
         EmployeeID: ev.EmployeeID,
         StatusID: ev.StatusID,
         TypeID: ev.TypeID,
+        Picture: ev.Picture ?? "",
       }));
       setEVData(formatted);
     }
@@ -174,6 +176,18 @@ const EV = () => {
         <ColumnsDirective>
           <ColumnDirective type="checkbox" width="50" />
           <ColumnDirective field="ID" isPrimaryKey={true} visible={false} />
+          <ColumnDirective
+            headerText="Picture"
+            textAlign="Center"
+            width="120"
+            template={(props: any) => (
+              <Image
+                src={`http://localhost:8000/${props.Picture}`}
+                alt="EV"
+                className="w-6 h-6 object-cover mx-auto rounded"
+              />
+            )}
+          />
           {EVGrid.map((item: any, index: number) => (
             <ColumnDirective key={index} {...item} />
           ))}

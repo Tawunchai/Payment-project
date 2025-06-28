@@ -38,7 +38,6 @@ func DB() *gorm.DB {
 	return db
 }
 
-
 func ConnectionDB() {
 	database, err := gorm.Open(sqlite.Open("work.db?cache=shared"), &gorm.Config{
 		Logger: &CustomLogger{},
@@ -257,6 +256,7 @@ func SetupDatabase() {
 		Voltage:    400,
 		Current:    200,
 		Price:      15.50,
+		Picture:    "uploads/evcharging/product1.jpg",
 		EmployeeID: &ev_eid,
 		StatusID:   status1.ID,
 		TypeID:     type1.ID,
@@ -267,6 +267,7 @@ func SetupDatabase() {
 		Voltage:    240,
 		Current:    100,
 		Price:      10.75,
+		Picture:    "uploads/evcharging/product2.jpg",
 		EmployeeID: &ev_eid,
 		StatusID:   status2.ID,
 		TypeID:     type2.ID,
@@ -303,7 +304,7 @@ func SetupDatabase() {
 	userID3 := uint(3)
 
 	report1 := &entity.Report{
-		Picture:     "uploads/reports/avatar1.jpg", 
+		Picture:     "uploads/reports/avatar1.jpg",
 		Description: "พบว่าสัตว์ในสวนสัตว์มีสุขภาพดีและได้รับการดูแลอย่างดี มีการจัดแสดงที่น่าสนใจมากมาย",
 		Status:      "Pending",
 		UserID:      &userID1,
@@ -311,7 +312,7 @@ func SetupDatabase() {
 	}
 
 	report2 := &entity.Report{
-		Picture:     "uploads/reports/avatar2.jpg", 
+		Picture:     "uploads/reports/avatar2.jpg",
 		Description: "สวนสัตว์สะอาดและปลอดภัย แต่ควรเพิ่มพื้นที่สำหรับสัตว์บางชนิดให้มากขึ้น",
 		Status:      "Pending",
 		UserID:      &userID2,
@@ -319,7 +320,7 @@ func SetupDatabase() {
 	}
 
 	report3 := &entity.Report{
-		Picture:     "uploads/reports/avatar3.png", 
+		Picture:     "uploads/reports/avatar3.png",
 		Description: "สถานที่และอุปกรณ์บางส่วนเริ่มทรุดโทรม ควรได้รับการปรับปรุงเพื่อความปลอดภัย",
 		Status:      "Pending",
 		UserID:      &userID3,
