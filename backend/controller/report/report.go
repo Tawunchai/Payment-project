@@ -27,7 +27,7 @@ func ListReport(c *gin.Context) {
 }
 
 func CreateReport(c *gin.Context) {
-	// อ่านไฟล์รูปภาพ
+	// อ่านไฟล์รูปภาพ (ไม่บังคับว่าต้องมี)
 	file, err := c.FormFile("picture")
 	var filePath string
 
@@ -64,8 +64,8 @@ func CreateReport(c *gin.Context) {
 			return
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "กรุณาอัปโหลดรูปภาพ"})
-		return
+		// ถ้าไม่มีไฟล์แนบ ก็ให้ filePath เป็นค่าว่าง
+		filePath = ""
 	}
 
 	// รับค่าจากฟอร์ม
@@ -85,9 +85,9 @@ func CreateReport(c *gin.Context) {
 	var employeeID *uint = nil
 
 	report := entity.Report{
-		Picture:     filePath,
+		Picture:     filePath,     // ค่าว่างได้ถ้าไม่แนบ
 		Description: description,
-		Status:      "pending",
+		Status:      "Pending",
 		UserID:      userID,
 		EmployeeID:  employeeID,
 	}
@@ -102,6 +102,7 @@ func CreateReport(c *gin.Context) {
 		"data":    report,
 	})
 }
+
 
 func UpdateReport(c *gin.Context) {
 	var report entity.Report

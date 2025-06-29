@@ -18,7 +18,14 @@ func AddLogin(c *gin.Context) {
 	db := config.DB()
 
 	var user entity.User
-	if err := db.Preload("UserRole").Where("username = ? AND password = ?", loginData.Username, loginData.Password).First(&user).Error; err != nil {
+	// ค้นหาจาก username อย่างเดียว
+	if err := db.Preload("UserRole").Where("username = ?", loginData.Username).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+
+	// ตรวจสอบ password กับ hash ที่เก็บใน database
+	if !config.CheckPasswordHash([]byte(loginData.Password), []byte(user.Password)) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
@@ -36,15 +43,15 @@ func AddLogin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-	"token_type":    "Bearer",
-	"token":         signedToken,
-	"UserRole":      user.UserRole,
-	"UserID":        user.ID,
-	"FirstNameUser": user.FirstName,
-	"LastNameUser":  user.LastName,
-	"Email":         user.Email,
-	"PhoneNumber":   user.PhoneNumber,
-	"GenderID":      user.GenderID,
-	"Profile":       user.Profile,
-})
+		"token_type":    "Bearer",
+		"token":         signedToken,
+		"UserRole":      user.UserRole,
+		"UserID":        user.ID,
+		"FirstNameUser": user.FirstName,
+		"LastNameUser":  user.LastName,
+		"Email":         user.Email,
+		"PhoneNumber":   user.PhoneNumber,
+		"GenderID":      user.GenderID,
+		"Profile":       user.Profile,
+	})
 }

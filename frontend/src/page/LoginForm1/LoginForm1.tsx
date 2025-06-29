@@ -10,8 +10,7 @@ import {
   theme,
 } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import { FaPaypal } from "react-icons/fa";
-import { RiMastercardFill } from "react-icons/ri";
+import { FaCreditCard, FaQrcode } from 'react-icons/fa';
 import "./login.css"
 import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
 import backgroundImage from "../../assets/EV Car.jpeg";
@@ -57,7 +56,7 @@ const LoginForm1 = () => {
       messageApi.success(`Successfully logged in as ${roleName}`);
 
       setTimeout(() => {
-        if (roleName === "Admin") navigate("/admin");
+        if (roleName === "Admin" || roleName === "Employee") navigate("/admin");
         else if (roleName === "User") navigate("/user");
       }, 100);
     } else {
@@ -166,7 +165,7 @@ const LoginForm1 = () => {
             bordered={false}
           >
             <div className="mb-5 hidden lg:block">
-              <Typography.Title className="title-sigin text-white text-3xl lg:text-4xl font-light" style={{color:"white"}}>
+              <Typography.Title className="title-sigin text-white text-3xl lg:text-4xl font-light" style={{ color: "white" }}>
                 The simplest way to build your projects with ReactJS
               </Typography.Title>
               <Typography.Text className="title-sigin text-white text-base lg:text-2xl font-light">
@@ -184,12 +183,12 @@ const LoginForm1 = () => {
 
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-xl">
-                <RiMastercardFill fontSize={20} />
-                <span>Mastercard</span>
+                <FaCreditCard fontSize={20} />
+                <span>Credit Card</span>
               </div>
               <div className="flex items-center gap-2 text-xl">
-                <FaPaypal fontSize={20} />
-                <span>PayPal</span>
+                <FaQrcode fontSize={20} />
+                <span>PromptPay</span>
               </div>
             </div>
           </Card>

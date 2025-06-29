@@ -132,6 +132,7 @@ function ConfigRoutes() {
   if (isLoggedIn) {
     switch (roleName) {
       case 'Admin':
+      case 'Employee':
         routes = AdminRoutes();
         break;
       case 'User':

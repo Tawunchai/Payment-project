@@ -64,6 +64,9 @@ func SetupDatabase() {
 		&entity.New{},
 		&entity.Status{},
 		&entity.Type{},
+		&entity.Payment{},
+		&entity.Method{},
+		&entity.EVChargingPayment{},
 	)
 
 	GenderMale := entity.Genders{Gender: "Male"}
@@ -72,22 +75,35 @@ func SetupDatabase() {
 	db.FirstOrCreate(&GenderMale, &entity.Genders{Gender: "Male"})
 	db.FirstOrCreate(&GenderFemale, &entity.Genders{Gender: "Female"})
 
+	Method1 := entity.Method{Medthod: "QR Payment"}
+	Method2 := entity.Method{Medthod: "Credit Card"}
+
+	db.FirstOrCreate(&Method1, &entity.Method{Medthod: "QR Payment"})
+	db.FirstOrCreate(&Method2, &entity.Method{Medthod: "Credit Card"})
+
 	AdminRole := entity.UserRoles{RoleName: "Admin"}
+	Employee := entity.UserRoles{RoleName: "Employee"}
 	UserRole := entity.UserRoles{RoleName: "User"}
 
 	db.FirstOrCreate(&AdminRole, &entity.UserRoles{RoleName: "Admin"})
+	db.FirstOrCreate(&Employee, &entity.UserRoles{RoleName: "Employee"})
 	db.FirstOrCreate(&UserRole, &entity.UserRoles{RoleName: "User"})
+
+	hashedPassword, err := HashPassword("123")
+	if err != nil {
+		log.Fatalf("failed to hash password: %v", err)
+	}
 
 	User1 := entity.User{
 		Username:    "user1",
 		FirstName:   "Janis",
 		LastName:    "Green",
 		Email:       "janis.green@example.com",
-		Password:    "123",
+		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0935096372",
 		GenderID:    1,
-		UserRoleID:  2,
+		UserRoleID:  3,
 	}
 	db.FirstOrCreate(&User1, entity.User{Username: "user1"})
 
@@ -96,11 +112,11 @@ func SetupDatabase() {
 		FirstName:   "Chris",
 		LastName:    "Taylor",
 		Email:       "chris.taylor@example.com",
-		Password:    "123",
+		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar2.jpg",
 		PhoneNumber: "0895845671",
 		GenderID:    2,
-		UserRoleID:  2,
+		UserRoleID:  3,
 	}
 	db.FirstOrCreate(&User2, entity.User{Username: "user2"})
 
@@ -109,11 +125,11 @@ func SetupDatabase() {
 		FirstName:   "Alex",
 		LastName:    "Smith",
 		Email:       "alex.smith@example.com",
-		Password:    "123",
+		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar3.png",
 		PhoneNumber: "0938473272",
 		GenderID:    1,
-		UserRoleID:  2,
+		UserRoleID:  3,
 	}
 	db.FirstOrCreate(&User3, entity.User{Username: "user3"})
 
@@ -122,27 +138,43 @@ func SetupDatabase() {
 		FirstName:   "Kanyapron",
 		LastName:    "KD",
 		Email:       "Kanyapron@gmail.com",
-		Password:    "123",
+		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar4.jpg",
 		PhoneNumber: "0981183502",
 		GenderID:    1,
 		UserRoleID:  1,
 	}
+	db.FirstOrCreate(&Admin1, entity.User{Username: "admin1"})
 
 	Admin2 := entity.User{
 		Username:    "admin2",
 		FirstName:   "JoJo",
 		LastName:    "Smoke",
 		Email:       "Smoke@gmail.com",
-		Password:    "123",
+		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0981183502",
 		GenderID:    2,
 		UserRoleID:  1,
 	}
+	db.FirstOrCreate(&Admin2, entity.User{Username: "admin2"})
+
+	EmployeeUser := entity.User{
+		Username:    "employee1",
+		FirstName:   "JoJo",
+		LastName:    "Smoke",
+		Email:       "Smoke@gmail.com",
+		Password:    hashedPassword,
+		Profile:     "uploads/user/avatar1.jpg",
+		PhoneNumber: "0981183502",
+		GenderID:    2,
+		UserRoleID:  2,
+	}
+	db.FirstOrCreate(&EmployeeUser, entity.User{Username: "employee1"})
 
 	db.FirstOrCreate(&Admin1, entity.User{Username: "admin1"})
 	db.FirstOrCreate(&Admin2, entity.User{Username: "admin2"})
+	db.FirstOrCreate(&EmployeeUser, entity.User{Username: "employee1"})
 
 	eid1 := uint(4)
 	Employee1 := entity.Employee{
@@ -162,8 +194,18 @@ func SetupDatabase() {
 		UserID:     &eid2,
 	}
 
+	eid3 := uint(6)
+	Employee3 := entity.Employee{
+		Bio:        "Admid Thailand",
+		Experience: "5 years of experience as a admin with Tesla company",
+		Education:  "Master degree of marketting at Harvard university",
+		Salary:     25000,
+		UserID:     &eid3,
+	}
+
 	db.FirstOrCreate(&Employee1, entity.Employee{UserID: &eid1})
 	db.FirstOrCreate(&Employee2, entity.Employee{UserID: &eid2})
+	db.FirstOrCreate(&Employee3, entity.Employee{UserID: &eid3})
 
 	getting1 := entity.GettingStarted{
 		Title:       "Best interest rates on the market",
@@ -332,4 +374,71 @@ func SetupDatabase() {
 	db.FirstOrCreate(report2, entity.Report{UserID: &userID2})
 	db.FirstOrCreate(report3, entity.Report{UserID: &userID3})
 
+	userID := uint(1)
+	methodID := uint(1)
+	if err := SeedPayments(db, userID, methodID); err != nil {
+		log.Fatalf("Seed payments failed: %v", err)
+	}
+
 }
+
+func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
+	var count int64
+	if err := db.Model(&entity.Payment{}).Count(&count).Error; err != nil {
+		return fmt.Errorf("failed to count payments: %w", err)
+	}
+
+	if count > 0 {
+		fmt.Println("Payments already seeded, skipping creation.")
+		return nil
+	}
+
+	for month := 1; month <= 12; month++ {
+		for day := 1; day <= 10; day++ {
+			createdAt := time.Date(2025, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+
+			// กำหนด Price แบบแตกต่าง (ตัวอย่างใช้สูตรง่ายๆ)
+			price1 := 50 + day*2       // เช่น 52, 54, 56, ...
+			price2 := 100 + month*3    // เช่น 103, 106, 109, ...
+
+			amount := price1 + price2  // รวมราคา
+
+			payment := entity.Payment{
+				Date:     createdAt,
+				Amount:   float64(amount),
+				UserID:   &userID,
+				MethodID: &methodID,
+			}
+
+			if err := db.Create(&payment).Error; err != nil {
+				return fmt.Errorf("failed to create payment: %w", err)
+			}
+
+			evcp1 := entity.EVChargingPayment{
+				EVchargingID: 1,
+				PaymentID:    payment.ID,
+				Price:        float64(price1),
+			}
+			if err := db.FirstOrCreate(&evcp1, entity.EVChargingPayment{
+				EVchargingID: 1,
+				PaymentID:    payment.ID,
+			}).Error; err != nil {
+				return fmt.Errorf("failed to create evchargingpayment 1: %w", err)
+			}
+
+			evcp2 := entity.EVChargingPayment{
+				EVchargingID: 2,
+				PaymentID:    payment.ID,
+				Price:        float64(price2),
+			}
+			if err := db.FirstOrCreate(&evcp2, entity.EVChargingPayment{
+				EVchargingID: 2,
+				PaymentID:    payment.ID,
+			}).Error; err != nil {
+				return fmt.Errorf("failed to create evchargingpayment 2: %w", err)
+			}
+		}
+	}
+	return nil
+}
+

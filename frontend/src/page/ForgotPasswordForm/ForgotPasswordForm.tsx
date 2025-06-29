@@ -58,7 +58,7 @@ const ForgotPasswordForm = () => {
               <Image
                 src={Logo}
                 alt="wieldy-logo"
-                style={{ width: "100px" }}
+                style={{ width: "150px" }}
                 preview={false}
               />
             </Link>

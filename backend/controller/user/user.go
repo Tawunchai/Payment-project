@@ -116,6 +116,13 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// แปลงรหัสผ่านด้วย bcrypt
+	hashedPassword, err := config.HashPassword(password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
 	// แปลง ID
 	genderID, _ := strconv.Atoi(genderIDStr)
 	userRoleID, _ := strconv.Atoi(userRoleIDStr)
@@ -126,7 +133,7 @@ func CreateUser(c *gin.Context) {
 	user := entity.User{
 		Username:    username,
 		Email:       email,
-		Password:    password, // อย่าลืม hash จริง ๆ
+		Password:    hashedPassword, // ใส่ hashed password แทน
 		FirstName:   firstName,
 		LastName:    lastName,
 		PhoneNumber: phone,
@@ -155,6 +162,7 @@ func CreateUser(c *gin.Context) {
 		},
 	})
 }
+
 
 // DeleteUserByID ลบ User ตาม ID
 func DeleteUserByID(c *gin.Context) {
@@ -396,9 +404,14 @@ func ResetPassword(c *gin.Context) {
         return
     }
 
-    // TODO: Hash รหัสผ่านก่อนบันทึก (แนะนำ bcrypt)
+    // ทำการ hash รหัสผ่านใหม่ก่อนบันทึก
+    hashedPassword, err := config.HashPassword(req.NewPassword)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในการเข้ารหัสรหัสผ่าน"})
+        return
+    }
 
-    user.Password = req.NewPassword
+    user.Password = hashedPassword
 
     if err := db.Save(&user).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถอัปเดตรหัสผ่านได้"})

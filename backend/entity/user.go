@@ -26,4 +26,6 @@ type User struct {
 	Report []Report `gorm:"foreignKey:UserID"`
 
 	Review []Review `gorm:"foreignKey:UserID"`
+
+	Payment []Payment `gorm:"foreignKey:UserID"`
 }

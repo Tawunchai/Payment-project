@@ -1,4 +1,3 @@
-// Modal.tsx
 import { X } from "react-feather";
 
 type ModalProps = {
@@ -8,29 +7,26 @@ type ModalProps = {
 };
 
 export default function Modal({ open, onClose, children }: ModalProps) {
+  if (!open) return null;
+
   return (
     <div
       onClick={onClose}
-      className={`
-        fixed inset-0 flex justify-center items-center transition-colors
-        ${open ? "visible bg-black/20" : "invisible"}
-      `}
-      style={{ zIndex: 9999 }}
+      className="paddings fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm"
+      aria-modal="true"
+      role="dialog"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`
-          relative bg-white rounded-xl shadow p-6 transition-all
-          ${open ? "scale-100 opacity-100" : "scale-125 opacity-0"}
-          text-gray-900
-        `}
+        className="relative w-full max-w-lg rounded-lg bg-white p-8 shadow-xl
+                   transform transition-transform duration-300 scale-100"
       >
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 p-1 rounded-lg text-gray-400 bg-white hover:bg-gray-50 hover:text-gray-600"
           aria-label="Close modal"
+          className="absolute right-4 top-4 rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
         >
-          <X />
+          <X size={20} />
         </button>
         {children}
       </div>

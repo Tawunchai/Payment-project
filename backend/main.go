@@ -15,6 +15,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/login"
 	"github.com/Tawunchai/work-project/controller/new"
 	"github.com/Tawunchai/work-project/controller/omise"
+	"github.com/Tawunchai/work-project/controller/payment"
 	"github.com/Tawunchai/work-project/controller/report"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/role"
@@ -81,6 +82,9 @@ func main() {
 		public.GET("employeebyid/:id", employee.ListEmployeeByID)
 		public.POST("/check-email", user.CheckEmailExists)
 		public.POST("/reset-password", user.ResetPassword)
+
+		//payment
+		public.GET("/payments", payment.ListPayment)
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)

@@ -11,6 +11,7 @@ import { UserroleInterface } from "../interface/IUserrole";
 import { TypeInterface } from "../interface/IType";
 import { StatusInterface } from "../interface/IStatus";
 import { ReportInterface } from "../interface/IReport";
+import { PaymentsInterface } from "../interface/IPayment";
 
 const apiUrl = "http://localhost:8000";
 
@@ -273,11 +274,9 @@ export const CreateUser = async (
   userData: UsersInterface | FormData
 ): Promise<{ message: string; user: any } | null> => {
   try {
-    // กำหนด header ให้เหมาะสม
     const headers = userData instanceof FormData
       ? {
         ...getAuthHeader(),
-        // ไม่ต้องตั้ง Content-Type เพราะ axios จะตั้งให้เป็น multipart/form-data อัตโนมัติ
       }
       : {
         "Content-Type": "application/json",
@@ -1004,6 +1003,27 @@ export const ListUserRoles = async (): Promise<UserroleInterface[] | null> => {
     return null;
   } catch (error) {
     console.error("Error fetching user roles:", error);
+    return null;
+  }
+};
+
+export const ListPayments = async (): Promise<PaymentsInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/payments`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching payments list:", error);
     return null;
   }
 };

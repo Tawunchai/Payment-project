@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Button,
   Card,
-  Checkbox,
-  Divider,
   Form,
   Image,
   Input,
@@ -15,15 +13,12 @@ import {
 } from "antd";
 import ImgCrop from "antd-img-crop";
 import { Link, useNavigate } from "react-router-dom";
-import { AiFillApple } from "react-icons/ai";
-import { FcGoogle } from "react-icons/fc";
 import { IoPlayCircle } from "react-icons/io5";
 import { PlusOutlined } from "@ant-design/icons";
-
 import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
 import background2 from "../../assets/EV Car.jpeg";
 import { currentYear } from "./data";
-import { ListGenders,CreateUser } from "../../services";
+import { ListGenders, CreateUser } from "../../services";
 
 const { useToken } = theme;
 const { Title, Text } = Typography;
@@ -67,34 +62,34 @@ const Signup2Form = () => {
   };
 
   const onFinish = async (values: any) => {
-  if (fileList.length === 0) {
-    message.error("กรุณาอัพโหลดรูปภาพก่อนสมัคร");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("username", values.username);
-  formData.append("email", values.email);
-  formData.append("password", values.password);
-  formData.append("firstname", values.firstname || "");
-  formData.append("lastname", values.lastname || "");
-  formData.append("phone", values.phone || "");
-  formData.append("gender", values.gender);
-  formData.append("userRoleID", "2");
-  formData.append("profile", fileList[0].originFileObj);
-
-  try {
-    const res = await CreateUser(formData); // เรียกใช้งาน CreateUser จาก service
-    if (res) {
-      message.success("User created successfully!");
-      navigate("/auth/login-2");
-    } else {
-      message.error("Failed to create user.");
+    if (fileList.length === 0) {
+      message.error("กรุณาอัพโหลดรูปภาพก่อนสมัคร");
+      return;
     }
-  } catch (err) {
-    message.error("Error occurred while creating user.");
-  }
-};
+
+    const formData = new FormData();
+    formData.append("username", values.username);
+    formData.append("email", values.email);
+    formData.append("password", values.password);
+    formData.append("firstname", values.firstname || "");
+    formData.append("lastname", values.lastname || "");
+    formData.append("phone", values.phone || "");
+    formData.append("gender", values.gender);
+    formData.append("userRoleID", "3");
+    formData.append("profile", fileList[0].originFileObj);
+
+    try {
+      const res = await CreateUser(formData); // เรียกใช้งาน CreateUser จาก service
+      if (res) {
+        message.success("User created successfully!");
+        navigate("/auth/login-2");
+      } else {
+        message.error("Failed to create user.");
+      }
+    } catch (err) {
+      message.error("Error occurred while creating user.");
+    }
+  };
 
   return (
     <div
@@ -127,19 +122,6 @@ const Signup2Form = () => {
               <Text>Enter your credentials to create your account</Text>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-              <Button className="flex-1" icon={<FcGoogle fontSize={24} />} size="large">
-                Google
-              </Button>
-              <Button className="flex-1" icon={<AiFillApple fontSize={24} />} size="large">
-                Apple
-              </Button>
-            </div>
-
-            <Divider className="mb-6" plain>
-              or
-            </Divider>
-
             <Form
               layout="vertical"
               form={form}
@@ -148,48 +130,48 @@ const Signup2Form = () => {
               encType="multipart/form-data"
             >
               {/* Upload รูปโปรไฟล์ แบบวงกลม */}
-              <Form.Item
-                label="Profile Picture"
-                name="profile"
-                valuePropName="fileList"
-                getValueFromEvent={({ fileList }) => fileList}
-                rules={[
-                  {
-                    validator: () =>
-                      fileList.length > 0
-                        ? Promise.resolve()
-                        : Promise.reject(new Error("กรุณาอัพโหลดรูป")),
-                  },
-                ]}
-                style={{ textAlign: "center" }}
-              >
-                <ImgCrop rotationSlider>
-                  <Upload
-                    fileList={fileList}
-                    onChange={onChange}
-                    onPreview={onPreview}
-                    beforeUpload={(file) => {
-                      const isImage = file.type.startsWith("image/");
-                      if (!isImage) {
-                        message.error("กรุณาอัปโหลดไฟล์รูปภาพ");
-                        return Upload.LIST_IGNORE;
-                      }
-                      setFileList([file]);
-                      return false;
-                    }}
-                    maxCount={1}
-                    listType="picture-circle"
-                    style={{ margin: "0 auto" }}
-                  >
-                    {fileList.length < 1 && (
-                      <div>
-                        <PlusOutlined style={{ fontSize: 32 }} />
-                        <div style={{ marginTop: 8 }}>Upload</div>
-                      </div>
-                    )}
-                  </Upload>
-                </ImgCrop>
-              </Form.Item>
+              <div className="flex justify-center">
+                <Form.Item
+                  label="Profile Picture"
+                  name="profile"
+                  valuePropName="fileList"
+                  getValueFromEvent={({ fileList }) => fileList}
+                  rules={[
+                    {
+                      validator: () =>
+                        fileList.length > 0
+                          ? Promise.resolve()
+                          : Promise.reject(new Error("กรุณาอัพโหลดรูป")),
+                    },
+                  ]}
+                >
+                  <ImgCrop rotationSlider>
+                    <Upload
+                      fileList={fileList}
+                      onChange={onChange}
+                      onPreview={onPreview}
+                      beforeUpload={(file) => {
+                        const isImage = file.type.startsWith("image/");
+                        if (!isImage) {
+                          message.error("กรุณาอัปโหลดไฟล์รูปภาพ");
+                          return Upload.LIST_IGNORE;
+                        }
+                        setFileList([file]);
+                        return false;
+                      }}
+                      maxCount={1}
+                      listType="picture-circle"
+                    >
+                      {fileList.length < 1 && (
+                        <div>
+                          <PlusOutlined style={{ fontSize: 32 }} />
+                          <div style={{ marginTop: 8 }}>Upload</div>
+                        </div>
+                      )}
+                    </Upload>
+                  </ImgCrop>
+                </Form.Item>
+              </div>
 
               {/* Input ฟิลด์อื่น ๆ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -202,7 +184,10 @@ const Signup2Form = () => {
 
                 <Form.Item
                   name="email"
-                  rules={[{ required: true, message: "Please input your email!" }]}
+                  rules={[
+                    { required: true, message: "Please input your email!" },
+                    { type: "email", message: "กรุณาใส่อีเมลที่ถูกต้อง" },
+                  ]}
                 >
                   <Input placeholder="Email" size="large" />
                 </Form.Item>
@@ -214,15 +199,30 @@ const Signup2Form = () => {
                   <Input.Password placeholder="Password" size="large" />
                 </Form.Item>
 
-                <Form.Item name="phone">
-                  <Input placeholder="Phone Number" size="large" />
+                <Form.Item
+                  name="phone"
+                  rules={[
+                    { required: true, message: "Please input your phone number!" },
+                    {
+                      pattern: /^0\d{9}$/,
+                      message: "เบอร์โทรต้องเป็นเลข 10 ตัว",
+                    },
+                  ]}
+                >
+                  <Input placeholder="Phone Number" size="large" maxLength={10} />
                 </Form.Item>
 
-                <Form.Item name="firstname">
+                <Form.Item
+                  name="firstname"
+                  rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}
+                >
                   <Input placeholder="First Name" size="large" />
                 </Form.Item>
 
-                <Form.Item name="lastname">
+                <Form.Item
+                  name="lastname"
+                  rules={[{ required: true, message: "กรุณากรอกนามสกุล" }]}
+                >
                   <Input placeholder="Last Name" size="large" />
                 </Form.Item>
 
@@ -239,13 +239,6 @@ const Signup2Form = () => {
                   </Select>
                 </Form.Item>
               </div>
-
-              <Form.Item className="mt-4">
-                <Checkbox>
-                  I agree to the <Link to="#">Terms & Conditions</Link> and{" "}
-                  <Link to="#">Privacy policies</Link>.
-                </Checkbox>
-              </Form.Item>
 
               <Form.Item>
                 <Button
