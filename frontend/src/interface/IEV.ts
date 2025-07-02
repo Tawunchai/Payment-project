@@ -8,6 +8,7 @@ export interface EVchargingInterface {
   Voltage: number;
   Current: number;
   Price: number;
+  Picture: string;
   Employee?: EmployeeInterface;
   Status?: StatusInterface;
   Type?: TypeInterface;

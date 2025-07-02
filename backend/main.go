@@ -19,6 +19,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/report"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/role"
+	"github.com/Tawunchai/work-project/controller/slip"
 	"github.com/Tawunchai/work-project/controller/status"
 	types "github.com/Tawunchai/work-project/controller/type"
 	"github.com/Tawunchai/work-project/controller/user"
@@ -53,11 +54,13 @@ func main() {
 	authorized := r.Group("")
 	authorized.Use(middlewares.Authorizes())
 	{
-
+		
 	}
 
 	public := r.Group("")
 	{
+		//CheckSlip
+		public.POST("/api/check-slip", slip.CheckSlipThunder)
 
 		//Omise Payment
 		public.POST("/api/charge", omise.CreateCharge)
@@ -82,6 +85,7 @@ func main() {
 		public.GET("employeebyid/:id", employee.ListEmployeeByID)
 		public.POST("/check-email", user.CheckEmailExists)
 		public.POST("/reset-password", user.ResetPassword)
+		public.PUT("/users/update-coin", user.UpdateCoins)
 
 		//payment
 		public.GET("/payments", payment.ListPayment)
@@ -106,6 +110,7 @@ func main() {
 
 		//review
 		public.GET("/reviews", review.ListReview)
+		public.POST("/reviews-create", review.CreateReview)
 
 		//new
 		public.GET("/news", new.ListNew)

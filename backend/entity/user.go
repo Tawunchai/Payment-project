@@ -14,6 +14,7 @@ type User struct {
 	LastName    string
 	Profile     string
 	PhoneNumber string
+	Coin float64
 
 	UserRoleID uint
 	UserRole   *UserRoles `gorm:"foreignKey: UserRoleID"`

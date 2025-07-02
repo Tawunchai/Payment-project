@@ -7,18 +7,19 @@ import { useState, CSSProperties, useEffect } from "react";
 import OutsideClickHandler from "react-outside-click-handler";
 import ReportModal from "./report/index"; // import modal report form ที่จะสร้าง
 import { TooltipComponent } from '@syncfusion/ej2-react-popups';
-import { getUserByID } from "../../../services";  
+import { getUserByID } from "../../../services";
 import { UsersInterface } from "../../../interface/IUser";
+import { GiTwoCoins } from "react-icons/gi";
 
 type HeaderProps = {
   scrollToValue: () => void;
   scrollToNew: () => void;
 };
 
-const Header = ({ scrollToValue, scrollToNew }: HeaderProps) => {
+const Header = ({ scrollToNew }: HeaderProps) => {
   const [menuOpened, setMenuOpened] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);  // state เปิดปิด modal
-  const [profile, setProfile] = useState<UsersInterface | null>(null);
+  const [users, setUSers] = useState<UsersInterface | null>(null);
 
   useEffect(() => {
     const userIDString = localStorage.getItem("userid");
@@ -28,7 +29,7 @@ const Header = ({ scrollToValue, scrollToNew }: HeaderProps) => {
         .then((user) => {
           if (user) {
             console.log("ข้อมูลผู้ใช้ที่ได้จาก getUserByID:", user);
-            setProfile(user);
+            setUSers(user);
           }
         })
         .catch((error) => {
@@ -78,9 +79,20 @@ const Header = ({ scrollToValue, scrollToNew }: HeaderProps) => {
 
         <OutsideClickHandler onOutsideClick={() => setMenuOpened(false)}>
           <div className="flexCenter h-menu" style={getMenuStyles(menuOpened)}>
-            <a onClick={scrollToValue} style={{ cursor: "pointer" }}>Getting Started</a>
             <a onClick={scrollToNew} style={{ cursor: "pointer" }}>Announcement</a>
             <a onClick={openReportModal} style={{ cursor: "pointer" }}>Report</a>
+            {users && (
+              <div
+                onClick={() => navigate("/user/my-coins")}
+                className="flex items-center gap-2 px-4 py-1 bg-white border border-yellow-300 rounded-xl shadow-lg text-yellow-700 font-semibold hover:bg-yellow-50 hover:scale-105 cursor-pointer transition"
+                title="ดูรายละเอียดเหรียญของคุณ"
+              >
+                <GiTwoCoins className="text-yellow-500 drop-shadow" size={22} />
+                <span className="text-sm">
+                  My Coins: <span className="text-yellow-600">{users.Coin}</span>
+                </span>
+              </div>
+            )}
             <button className="button" onClick={handleLogout}>
               <a href="">Logout</a>
             </button>
@@ -91,7 +103,7 @@ const Header = ({ scrollToValue, scrollToNew }: HeaderProps) => {
               >
                 <img
                   className="rounded-full w-10 h-10"
-                  src={`http://localhost:8000/${profile?.Profile}`}
+                  src={`http://localhost:8000/${users?.Profile}`}
                   alt="user-profile"
                 />
               </div>

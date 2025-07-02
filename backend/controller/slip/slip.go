@@ -1,0 +1,81 @@
+package slip
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+const ThunderAuthToken = "0e163198-4d01-4ebe-8bab-1985348d41a9"
+
+func CheckSlipThunder(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ไม่พบไฟล์ในคำขอ"})
+		return
+	}
+
+	f, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "เปิดไฟล์ไม่ได้"})
+		return
+	}
+	defer f.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("file", file.Filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง form file ไม่ได้"})
+		return
+	}
+
+	_, err = io.Copy(part, f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "เขียนไฟล์ลง form ไม่ได้"})
+		return
+	}
+
+	err = writer.Close()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ปิด writer ไม่ได้"})
+		return
+	}
+
+	req, err := http.NewRequest("POST", "https://api.thunder.in.th/v1/verify", body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง request ไม่ได้"})
+		return
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Authorization", "Bearer "+ThunderAuthToken)
+
+	fmt.Println("Authorization header:", req.Header.Get("Authorization"))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ส่งคำขอไป Thunder API ไม่สำเร็จ"})
+		return
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "อ่าน response ไม่ได้"})
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.JSON(resp.StatusCode, gin.H{"error": "Thunder API error", "detail": string(respBody)})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/json", respBody)
+}

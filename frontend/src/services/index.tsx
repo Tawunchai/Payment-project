@@ -58,6 +58,33 @@ const postRequestOptions = (body: any) => {
   };
 };
 
+export const uploadSlip = async (file: File): Promise<any | null> => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await axios.post(`${apiUrl}/api/check-slip`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        // ถ้า backend ไม่มี auth middleware ลบ Authorization ออกได้เลย
+        // หากมีระบบ login ให้เพิ่ม token ใน header นี้
+        // Authorization: `Bearer ${yourToken}`
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error uploading slip:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+
 export interface PromptPayChargeRequest {
   amount: number; // จำนวนเงินเป็น "บาท"
 }
@@ -163,6 +190,32 @@ export const getEmployeeByID = async (
   } catch (error: any) {
     console.error("Error fetching employee:", error.response?.data || error.message);
     return null;
+  }
+};
+
+export interface UpdateCoinInput {
+  user_id: number;
+  coin: number;
+}
+
+export const UpdateCoin = async (data: UpdateCoinInput): Promise<boolean> => {
+  try {
+    const response = await axios.put(`${apiUrl}/users/update-coin`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return true;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error updating coin:", error);
+    return false;
   }
 };
 
@@ -1025,5 +1078,41 @@ export const ListPayments = async (): Promise<PaymentsInterface[] | null> => {
   } catch (error) {
     console.error("Error fetching payments list:", error);
     return null;
+  }
+};
+
+export const CreateReview = async (
+  reviewData: {
+    rating: number;
+    comment: string;
+    user_id: number;
+  }
+): Promise<any | false> => {
+  try {
+    const Authorization = localStorage.getItem("token");
+    const Bearer = localStorage.getItem("token_type");
+
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${Bearer} ${Authorization}`,
+      },
+      body: JSON.stringify(reviewData),
+    };
+
+    const response = await fetch(`${apiUrl}/reviews-create`, requestOptions);
+
+    if (!response.ok) {
+      console.error("Response status:", response.status);
+      throw new Error("Invalid response from server");
+    }
+
+    const data = await response.json();
+    console.log("Response data:", data);
+    return data;
+  } catch (error) {
+    console.error("Error creating review:", error);
+    return false;
   }
 };

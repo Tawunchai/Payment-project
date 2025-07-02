@@ -10,6 +10,7 @@ export interface UsersInterface {
     LastName?: string;
     Profile?: string ;
     PhoneNumber?: string;
+    Coin?:number;
     UserRole?: UserroleInterface;
     Gender?: GendersInterface;
   }

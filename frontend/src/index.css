@@ -105,6 +105,36 @@ a {
   transform: scale(1.1);
 }
 
+@layer utilities {
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  @keyframes ping-slow {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  .animate-ping-slow {
+    animation: ping-slow 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}
+
 /* media queries */
 @media (min-width: 1536px) {
   .innerWidth {

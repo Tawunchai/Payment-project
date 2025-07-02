@@ -15,6 +15,8 @@ const PaymentUser = Loadable(lazy(() => import("../component/user/payment")));
 const PaymentQr = Loadable(lazy(() => import("../component/user/payment/QRCode/test")));
 const PaymentCredit = Loadable(lazy(() => import("../component/user/payment/CreditCard/test")));
 const CreateReview = Loadable(lazy(() => import("../component/user/review/create")));
+const ChargingEV = Loadable(lazy(() => import("../component/user/charge/index")));
+const MyCoins = Loadable(lazy(() => import("../component/user/money/index")));
 
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
@@ -57,7 +59,9 @@ const UserRoutes = (): RouteObject[] => [
       { path: "payment", element: <PaymentUser /> },
       { path: "payment-by-qrcode", element: <PaymentQr /> },
       { path: "credit-card", element: <PaymentCredit /> },
-      { path: "review", element: <CreateReview /> },
+      //{ path: "review", element: <CreateReview/> },
+      { path: "charging", element: <ChargingEV/> },
+      { path: "my-coins", element: <MyCoins/> },
     ],
   },
 ];

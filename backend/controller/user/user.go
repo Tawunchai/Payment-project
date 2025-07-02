@@ -420,3 +420,32 @@ func ResetPassword(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"message": "เปลี่ยนรหัสผ่านสำเร็จ"})
 }
+
+func UpdateCoins(c *gin.Context) {
+	var input struct {
+		UserID uint    `json:"user_id"`
+		Coin   float64 `json:"coin"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
+		return
+	}
+
+	db := config.DB()
+	var user entity.User
+
+	if err := db.First(&user, input.UserID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	user.Coin = input.Coin
+
+	if err := db.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update coin"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Coin updated successfully", "user": user})
+}

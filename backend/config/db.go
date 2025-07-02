@@ -76,10 +76,10 @@ func SetupDatabase() {
 	db.FirstOrCreate(&GenderFemale, &entity.Genders{Gender: "Female"})
 
 	Method1 := entity.Method{Medthod: "QR Payment"}
-	Method2 := entity.Method{Medthod: "Credit Card"}
+	Method2 := entity.Method{Medthod: "Coin  Payment"}
 
 	db.FirstOrCreate(&Method1, &entity.Method{Medthod: "QR Payment"})
-	db.FirstOrCreate(&Method2, &entity.Method{Medthod: "Credit Card"})
+	db.FirstOrCreate(&Method2, &entity.Method{Medthod: "Coin Payment"})
 
 	AdminRole := entity.UserRoles{RoleName: "Admin"}
 	Employee := entity.UserRoles{RoleName: "Employee"}
@@ -102,6 +102,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0935096372",
+		Coin: 0,
 		GenderID:    1,
 		UserRoleID:  3,
 	}
@@ -115,6 +116,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar2.jpg",
 		PhoneNumber: "0895845671",
+		Coin: 0,
 		GenderID:    2,
 		UserRoleID:  3,
 	}
@@ -128,6 +130,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar3.png",
 		PhoneNumber: "0938473272",
+		Coin: 0,
 		GenderID:    1,
 		UserRoleID:  3,
 	}
@@ -141,6 +144,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar4.jpg",
 		PhoneNumber: "0981183502",
+		Coin: 0,
 		GenderID:    1,
 		UserRoleID:  1,
 	}
@@ -154,6 +158,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0981183502",
+		Coin: 0,
 		GenderID:    2,
 		UserRoleID:  1,
 	}
@@ -167,6 +172,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0981183502",
+		Coin: 0,
 		GenderID:    2,
 		UserRoleID:  2,
 	}
