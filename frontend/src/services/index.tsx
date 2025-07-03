@@ -11,7 +11,8 @@ import { UserroleInterface } from "../interface/IUserrole";
 import { TypeInterface } from "../interface/IType";
 import { StatusInterface } from "../interface/IStatus";
 import { ReportInterface } from "../interface/IReport";
-import { PaymentsInterface } from "../interface/IPayment";
+import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface } from "../interface/IPayment";
+import { MethodInterface } from "../interface/IMethod";
 
 const apiUrl = "http://localhost:8000";
 
@@ -1060,6 +1061,27 @@ export const ListUserRoles = async (): Promise<UserroleInterface[] | null> => {
   }
 };
 
+export const ListMethods = async (): Promise<MethodInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/methods`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(), // ถ้ามี auth
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching methods list:", error);
+    return null;
+  }
+};
+
 export const ListPayments = async (): Promise<PaymentsInterface[] | null> => {
   try {
     const response = await axios.get(`${apiUrl}/payments`, {
@@ -1114,5 +1136,60 @@ export const CreateReview = async (
   } catch (error) {
     console.error("Error creating review:", error);
     return false;
+  }
+};
+
+
+export const CreateEVChargingPayment = async (
+  paymentData: EVChargingPaymentInterface
+): Promise<EVChargingPaymentInterface | null> => {
+  try {
+    const response = await axios.post(
+      `${apiUrl}/create-evchargingpayments`,
+      paymentData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      return response.data; // ข้อมูล EVChargingPayment ที่ถูกสร้างจาก backend
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating EVChargingPayment:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const CreatePayment = async (
+  paymentData: PaymentCreateInterface
+): Promise<PaymentInterface | null> => {
+  try {
+    const response = await axios.post(
+      `${apiUrl}/create-payments`,
+      paymentData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      return response.data as PaymentInterface;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating Payment:", error.response?.data || error.message);
+    return null;
   }
 };

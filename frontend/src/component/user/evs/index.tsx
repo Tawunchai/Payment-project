@@ -31,6 +31,7 @@ const Index = () => {
   const selectedData = evChargers.map((charger) => {
     const power = powerMap[charger.ID] || 0;
     return {
+      id: charger.ID,          // เพิ่ม id (หรือตามชื่อที่ backend ต้องการ)
       name: charger.Name,
       power,
       total: charger.Price * power,

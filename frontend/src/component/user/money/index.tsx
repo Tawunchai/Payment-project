@@ -145,7 +145,7 @@ const AddMoneyCoin: React.FC = () => {
                     <p className="text-center text-gray-600 mt-4 font-medium tracking-wide">
                         SCAN ME TO PAY
                         <br />
-                        <span className="text-orange-600 text-xl md:text-2xl font-semibold">
+                        <span className="text-orange-600 text-xl md:text-2xl font-semibold ml-2">
                             ฿{totalAmount.toFixed(2)}
                         </span>
                     </p>

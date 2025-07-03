@@ -12,4 +12,5 @@ type EVChargingPayment struct {
 	Payment   Payment `gorm:"foreignKey:PaymentID"`
 
 	Price float64
+	Quantity float64
 }

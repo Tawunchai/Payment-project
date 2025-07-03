@@ -1,14 +1,11 @@
 import React from "react";
-import { Form, Input, Button, message, Upload } from "antd";
 import ReactDOM from "react-dom";
-import { ReviewInterface } from "../../../../interface/IReview";
-import { CreateReview } from "../../../../services";
+import { Form, Input, message, Tooltip } from "antd";
 import { useNavigate } from "react-router-dom";
+import { CreateReview } from "../../../../services";
 import StarRating from "../../../../feature/star";
-import "../review.css";
-import { PlusOutlined } from "@ant-design/icons";
-import ImgCrop from "antd-img-crop";
-import type { UploadFile, UploadProps } from "antd";
+import { ReviewInterface } from "../../../../interface/IReview";
+import { FaStar, FaTimes, FaCommentDots } from "react-icons/fa";
 
 interface ModalProps {
   open: boolean;
@@ -25,201 +22,202 @@ const ModalCreate: React.FC<ModalProps> = ({
 }) => {
   if (!open) return null;
 
-  const navigate = useNavigate();
   const [form] = Form.useForm();
-  const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = React.useState(false);
   const [rating, setRating] = React.useState<number | undefined>(undefined);
-  const [fileList, setFileList] = React.useState<UploadFile[]>([]);
-
-  const onChange: UploadProps["onChange"] = ({ fileList: newFileList }) => {
-    setFileList(newFileList);
-  };
-
-  const onPreview = async (file: UploadFile) => {
-    let src = file.url as string;
-    if (!src) {
-      src = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file.originFileObj as File);
-        reader.onload = () => resolve(reader.result as string);
-      });
-    }
-    const image = new Image();
-    image.src = src;
-    const imgWindow = window.open(src);
-    imgWindow?.document.write(image.outerHTML);
-  };
+  const [messageApi, contextHolder] = message.useMessage();
+  const navigate = useNavigate();
 
   const onFinish = async (values: ReviewInterface) => {
     if (rating === undefined || rating < 1 || rating > 5) {
-      messageApi.open({
-        type: "warning",
-        content: "กรุณาให้คะแนนสวนสัตว์",
-      });
+      messageApi.warning("กรุณาให้คะแนนสวนสัตว์");
       return;
     }
 
-    if (values.Comment === undefined) {
-      messageApi.open({
-        type: 'warning',
-        content: 'กรุณากรอกข้อความรีวิวให้ถูกต้อง',
-      });
+    const trimmedComment = values.Comment?.trim() || "";
+    if (trimmedComment.length === 0 || trimmedComment.length > 500) {
+      messageApi.warning("กรุณากรอกข้อความรีวิวให้ถูกต้อง (1-500 ตัวอักษร)");
       return;
     }
 
-    const trimmedComment = values.Comment.trim();
-    if (trimmedComment.length === 0) {
-      messageApi.open({
-        type: "warning",
-        content: "กรุณากรอกข้อความรีวิวให้ถูกต้อง",
-      });
-      return;
-    }
-
-    if (!values.Comment || values.Comment.length > 500) {
-      messageApi.open({
-        type: "warning",
-        content: "กรุณาเขียนรีวิวไม่เกิน 500 ตัวอักษร",
-      });
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("rating", rating.toString());
-    formData.append("userID", UserID.toString());
-    formData.append("comment", values.Comment || "");
-
-    if (fileList.length > 0 && fileList[0].originFileObj) {
-      formData.append("imageproduct", fileList[0].originFileObj as File);
-    }
-
-    const validImageTypes = ["image/jpeg", "image/png", "image/gif"];
-    const isValidImages = fileList.every(
-      (file) => file.type && validImageTypes.includes(file.type)
-    );
-
-    if (!isValidImages) {
-      message.error("ไม่สามารถสร้างข้อมูลได้ กรุณาอัพโหลดเฉพาะไฟล์รูปภาพ");
-      return;
-    }
+    const reviewData = {
+      rating,
+      comment: trimmedComment,
+      user_id: UserID,
+    };
 
     setLoading(true);
     try {
-      const res = await CreateReview(formData);
+      const res = await CreateReview(reviewData);
       if (res) {
-        messageApi.open({
-          type: "success",
-          content: "การรีวิวสำเร็จ",
-          duration: 5,
-        });
+        messageApi.success("การรีวิวสำเร็จ");
         setTimeout(() => {
           onClose();
           onReviewCreated(res.id);
-          console.log(res.id);
-          navigate("/user/myticket");
-        }, 5000);
+          navigate("/user");
+        }, 1500);
       } else {
-        messageApi.open({
-          type: "error",
-          content: "การรีวิวไม่สำเร็จ",
-        });
+        messageApi.error("การรีวิวไม่สำเร็จ");
       }
-    } catch (error) {
-      messageApi.open({
-        type: "error",
-        content: "An error occurred!",
-      });
+    } catch (err) {
+      messageApi.error("เกิดข้อผิดพลาดขณะส่งรีวิว");
     } finally {
       setLoading(false);
     }
   };
 
-  const onFinishFailed = () => {
-    message.warning("กรุณากรอกข้อมูลรีวิวให้ถูกต้อง");
+  // ฟังก์ชันปิด modal พร้อมไปหน้า /user (สำหรับปุ่ม "รีวิวทีหลัง")
+  const handleReviewLater = () => {
+    onClose();
+    navigate("/user");
   };
 
   return ReactDOM.createPortal(
     <>
       {contextHolder}
-      <div className="overlay" />
-      <div className="modal">
-        <div>
-          <p className="header-reviewszoo">Review Zoo</p>
+
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40"
+        onClick={onClose}
+      />
+
+      {/* Modal Container */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div
+          className="bg-gradient-to-tr from-orange-50 via-white to-orange-100 rounded-2xl shadow-md p-8 w-full max-w-md sm:max-w-xl lg:max-w-2xl mx-auto relative overflow-y-auto max-h-[90vh] border border-orange-200
+          animate-softFadeIn scale-97 transition-transform duration-350 ease-in-out"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute top-5 right-5 text-orange-400 hover:text-orange-600 transition"
+            aria-label="Close modal"
+          >
+            <FaTimes size={22} />
+          </button>
+
+          {/* หัวข้อแบบ Soft */}
+          <h2
+            className="text-3xl font-semibold text-center mb-6 text-orange-400 flex items-center justify-center gap-3 select-none"
+            style={{
+              textShadow:
+                "0 0 5px rgba(251, 191, 36, 0.4), 0 0 10px rgba(251, 191, 36, 0.3)",
+              fontWeight: 500,
+            }}
+          >
+            รีวิวการชาร์จไฟฟ้า EV
+          </h2>
+
           <Form
             form={form}
-            name="reviewForm"
-            onFinish={onFinish}
-            onFinishFailed={onFinishFailed}
             layout="vertical"
+            onFinish={onFinish}
+            className="space-y-5"
           >
-            <br />
-            <Form.Item label="Picture" name="Profile" valuePropName="fileList">
-              <ImgCrop>
-                <Upload
-                  fileList={fileList}
-                  onChange={onChange}
-                  onPreview={onPreview}
-                  beforeUpload={(file) => {
-                    const isImage = file.type.startsWith("image/");
-                    if (!isImage) {
-                      message.warning("กรุณาอัปโหลดไฟล์รูปภาพ");
-                      return Upload.LIST_IGNORE;
-                    }
-                    setFileList([...fileList, file]);
-                    return false;
-                  }}
-                  maxCount={1}
-                  multiple={false}
-                  listType="picture-card"
-                >
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Upload</div>
-                  </div>
-                </Upload>
-              </ImgCrop>
-            </Form.Item>
-
-            <Form.Item>
+            <Form.Item
+              label={
+                <span className="flex items-center gap-2 font-medium text-orange-600 select-none">
+                  <FaStar className="text-yellow-300" /> ให้คะแนน
+                </span>
+              }
+            >
               <StarRating rating={rating ?? 0} onRatingChange={setRating} />
             </Form.Item>
 
             <Form.Item
               name="Comment"
-              label="Review"
+              label={
+                <span className="flex items-center gap-2 font-medium text-orange-600 select-none">
+                  <FaCommentDots className="text-orange-400" /> รีวิวของคุณ
+                </span>
+              }
               rules={[
-                { required: true, message: "Please enter your review!" },
-                {
-                  min: 1,
-                  max: 499,
-                  message: "Your review must be between 1 and 500 characters!",
-                },
+                { required: true, message: "กรุณาเขียนรีวิว" },
+                { max: 500, message: "ไม่เกิน 500 ตัวอักษร" },
               ]}
             >
               <Input.TextArea
-                rows={4}
-                style={{ width: "400px" }}
+                rows={6}
                 maxLength={500}
+                placeholder="เขียนรีวิวของคุณที่นี่..."
+                className="resize-none rounded-lg border border-orange-200 focus:border-orange-400 shadow-sm focus:shadow-md transition"
               />
             </Form.Item>
 
-            <Form.Item className="box-button-reviews">
-              <Button type="default" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                style={{ marginLeft: "8px" }}
-                loading={loading}
-              >
-                Submit
-              </Button>
-            </Form.Item>
+            <div className="flex justify-end gap-4 pt-4">
+              <Tooltip title="รีวิวทีหลัง">
+                <button
+                  type="button"
+                  onClick={handleReviewLater}
+                  className="flex items-center gap-2 bg-gray-100 text-gray-600 px-6 py-2 rounded-full hover:bg-gray-200 shadow-sm transition"
+                >
+                  <FaTimes /> รีวิวทีหลัง
+                </button>
+              </Tooltip>
+
+              <Tooltip title={loading ? "กำลังส่งรีวิว กรุณารอ..." : "ส่งรีวิว"}>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`flex items-center gap-2 px-6 py-2 rounded-full font-semibold text-white transition shadow-sm
+                    ${
+                      loading
+                        ? "bg-orange-200 cursor-not-allowed"
+                        : "bg-gradient-to-r from-orange-400 to-orange-500 hover:opacity-90 shadow-md"
+                    }`}
+                >
+                  {loading ? (
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    <FaStar />
+                  )}
+                  {loading ? "กำลังส่ง..." : "ส่งรีวิว"}
+                </button>
+              </Tooltip>
+            </div>
           </Form>
         </div>
       </div>
+
+      {/* Animation keyframes */}
+      <style>
+        {`
+          @keyframes softFadeIn {
+            from {
+              opacity: 0;
+              transform: scale(0.97);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+          .animate-softFadeIn {
+            animation: softFadeIn 0.3s ease-in-out forwards;
+          }
+        `}
+      </style>
     </>,
     document.body
   );

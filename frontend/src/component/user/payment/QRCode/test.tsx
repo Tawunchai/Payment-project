@@ -3,7 +3,7 @@ import { FaPaypal, FaUpload, FaPaperPlane, FaTimes } from "react-icons/fa";
 import { message, QRCode, Image } from "antd";
 import generatePayload from "promptpay-qr";
 import { useLocation, useNavigate } from "react-router-dom";
-import { uploadSlip } from "../../../../services/index";
+import { uploadSlip, CreatePayment, CreateEVChargingPayment } from "../../../../services/index";
 import { FileImageOutlined } from "@ant-design/icons";
 
 const PayPalCard: React.FC = () => {
@@ -11,8 +11,11 @@ const PayPalCard: React.FC = () => {
   const [qrCode, setQrCode] = useState<string>("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const location = useLocation();
-  const { totalAmount } = location.state || { totalAmount: "0.00" };
+  const { totalAmount, userID, chargers, MethodID } = location.state || {};
   const amountNumber = Number(totalAmount) || 0;
+  console.log(userID)
+  console.log(chargers)
+  console.log(MethodID)
 
   const navigate = useNavigate();
 
@@ -53,11 +56,52 @@ const PayPalCard: React.FC = () => {
 
     try {
       const result = await uploadSlip(uploadedFile);
-      console.log(result)
       if (result) {
         message.success("ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว");
+
+        // สร้าง Payment object
+        const paymentData = {
+          date: new Date().toISOString(),
+          amount: Number(totalAmount),
+          user_id: 1,
+          method_id: MethodID,
+        };
+
+        // สร้าง Payment
+        const paymentResult = await CreatePayment(paymentData);
+
+        if (paymentResult && paymentResult.ID) {
+          message.success("สร้าง Payment เรียบร้อยแล้ว");
+
+          // ถ้า chargers เป็น array ให้ loop สร้าง EVChargingPayment ทีละตัว
+          if (Array.isArray(chargers)) {
+            for (const charger of chargers) {
+              // สมมุติ charger มี ID, power, total
+              const evChargingPaymentData = {
+                evcharging_id: charger.id,
+                payment_id: paymentResult.ID,
+                price: charger.total,
+                quantity: charger.power,
+              };
+
+              console.log(evChargingPaymentData)
+
+              const evPaymentResult = await CreateEVChargingPayment(evChargingPaymentData);
+              if (evPaymentResult) {
+                console.log("สร้าง EVChargingPayment เรียบร้อย", evPaymentResult);
+              } else {
+                message.error(`สร้าง EVChargingPayment สำหรับ charger ${charger.name} ล้มเหลว`);
+              }
+            }
+          } else {
+            message.error("ไม่มีข้อมูล chargers ที่ถูกต้อง");
+          }
+        } else {
+          message.error("สร้าง Payment ล้มเหลว");
+        }
+
         setTimeout(() => {
-          navigate("/user/charging"); 
+          navigate("/user/charging");
         }, 2000);
       } else {
         message.error("ส่งหลักฐานล้มเหลว");
@@ -66,6 +110,7 @@ const PayPalCard: React.FC = () => {
       message.error("เกิดข้อผิดพลาดในการส่งหลักฐาน");
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">

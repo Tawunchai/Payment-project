@@ -13,6 +13,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/getstarted"
 	"github.com/Tawunchai/work-project/controller/like"
 	"github.com/Tawunchai/work-project/controller/login"
+	"github.com/Tawunchai/work-project/controller/method"
 	"github.com/Tawunchai/work-project/controller/new"
 	"github.com/Tawunchai/work-project/controller/omise"
 	"github.com/Tawunchai/work-project/controller/payment"
@@ -89,6 +90,9 @@ func main() {
 
 		//payment
 		public.GET("/payments", payment.ListPayment)
+		public.POST("/create-payments", payment.CreatePayment)
+		public.POST("/create-evchargingpayments", payment.CreateEVChargingPayment)
+
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)
@@ -107,6 +111,9 @@ func main() {
 
 		//gender
 		public.GET("/genders", gender.ListGenders)
+
+		//Method
+		public.GET("/methods", method.ListMethods)
 
 		//review
 		public.GET("/reviews", review.ListReview)

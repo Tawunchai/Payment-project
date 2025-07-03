@@ -1,5 +1,5 @@
 export interface MethodInterface {
     ID?: number;
-    Method?: string;
+    Medthod?: string;
 }
   

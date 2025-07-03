@@ -102,7 +102,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0935096372",
-		Coin: 0,
+		Coin:        0,
 		GenderID:    1,
 		UserRoleID:  3,
 	}
@@ -116,7 +116,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar2.jpg",
 		PhoneNumber: "0895845671",
-		Coin: 0,
+		Coin:        0,
 		GenderID:    2,
 		UserRoleID:  3,
 	}
@@ -130,7 +130,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar3.png",
 		PhoneNumber: "0938473272",
-		Coin: 0,
+		Coin:        0,
 		GenderID:    1,
 		UserRoleID:  3,
 	}
@@ -144,7 +144,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar4.jpg",
 		PhoneNumber: "0981183502",
-		Coin: 0,
+		Coin:        0,
 		GenderID:    1,
 		UserRoleID:  1,
 	}
@@ -158,7 +158,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0981183502",
-		Coin: 0,
+		Coin:        0,
 		GenderID:    2,
 		UserRoleID:  1,
 	}
@@ -172,7 +172,7 @@ func SetupDatabase() {
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
 		PhoneNumber: "0981183502",
-		Coin: 0,
+		Coin:        0,
 		GenderID:    2,
 		UserRoleID:  2,
 	}
@@ -303,7 +303,7 @@ func SetupDatabase() {
 		Name:       "Charger A1",
 		Voltage:    400,
 		Current:    200,
-		Price:      15.50,
+		Price:      10,
 		Picture:    "uploads/evcharging/product1.jpg",
 		EmployeeID: &ev_eid,
 		StatusID:   status1.ID,
@@ -314,7 +314,7 @@ func SetupDatabase() {
 		Name:       "Charger B2",
 		Voltage:    240,
 		Current:    100,
-		Price:      10.75,
+		Price:      20,
 		Picture:    "uploads/evcharging/product2.jpg",
 		EmployeeID: &ev_eid,
 		StatusID:   status2.ID,
@@ -403,11 +403,9 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 		for day := 1; day <= 10; day++ {
 			createdAt := time.Date(2025, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 
-			// กำหนด Price แบบแตกต่าง (ตัวอย่างใช้สูตรง่ายๆ)
-			price1 := 50 + day*2       // เช่น 52, 54, 56, ...
-			price2 := 100 + month*3    // เช่น 103, 106, 109, ...
-
-			amount := price1 + price2  // รวมราคา
+			price1 := 50 + day*2      // เช่น 52, 54, 56, ...
+			price2 := 100 + month*3   // เช่น 103, 106, 109, ...
+			amount := price1 + price2 // รวมราคา
 
 			payment := entity.Payment{
 				Date:     createdAt,
@@ -420,10 +418,24 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				return fmt.Errorf("failed to create payment: %w", err)
 			}
 
+			// ดึงข้อมูลราคาต่อหน่วยจาก EVcharging
+			var ev1, ev2 entity.EVcharging
+			if err := db.First(&ev1, 1).Error; err != nil {
+				return fmt.Errorf("failed to find EVcharging 1: %w", err)
+			}
+			if err := db.First(&ev2, 2).Error; err != nil {
+				return fmt.Errorf("failed to find EVcharging 2: %w", err)
+			}
+
+			// คำนวณ quantity = price / rate
+			quantity1 := float64(price1) / ev1.Price
+			quantity2 := float64(price2) / ev2.Price
+
 			evcp1 := entity.EVChargingPayment{
 				EVchargingID: 1,
 				PaymentID:    payment.ID,
 				Price:        float64(price1),
+				Quantity:     quantity1,
 			}
 			if err := db.FirstOrCreate(&evcp1, entity.EVChargingPayment{
 				EVchargingID: 1,
@@ -436,6 +448,7 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				EVchargingID: 2,
 				PaymentID:    payment.ID,
 				Price:        float64(price2),
+				Quantity:     quantity2,
 			}
 			if err := db.FirstOrCreate(&evcp2, entity.EVChargingPayment{
 				EVchargingID: 2,
@@ -447,4 +460,3 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 	}
 	return nil
 }
-
