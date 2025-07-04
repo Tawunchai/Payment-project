@@ -35,7 +35,7 @@ const Edit_New = Loadable(lazy(() => import("../page/admin/New/edit")));
 const Modal = Loadable(lazy(() => import("../component/modal")));
 
 {/* charts  */ }
-const Area = Loadable(lazy(() => import("../page/admin/charts/Area")));
+const Area = Loadable(lazy(() => import("../page/admin/test")));
 const Bar = Loadable(lazy(() => import("../page/admin/charts/Bar")));
 const Financial = Loadable(lazy(() => import("../page/admin/charts/Financial")));
 const Line = Loadable(lazy(() => import("../page/SocialProfile/SocialProfile")));

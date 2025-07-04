@@ -56,6 +56,7 @@ const PayPalCard: React.FC = () => {
 
     try {
       const result = await uploadSlip(uploadedFile);
+      console.log(result)
       if (result) {
         message.success("ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว");
 

@@ -11,6 +11,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/employee"
 	"github.com/Tawunchai/work-project/controller/gender"
 	"github.com/Tawunchai/work-project/controller/getstarted"
+	"github.com/Tawunchai/work-project/controller/inverter"
 	"github.com/Tawunchai/work-project/controller/like"
 	"github.com/Tawunchai/work-project/controller/login"
 	"github.com/Tawunchai/work-project/controller/method"
@@ -62,6 +63,7 @@ func main() {
 	{
 		//CheckSlip
 		public.POST("/api/check-slip", slip.CheckSlipThunder)
+		public.GET("/inverter", inverter.GetInverterStatus)
 
 		//Omise Payment
 		public.POST("/api/charge", omise.CreateCharge)

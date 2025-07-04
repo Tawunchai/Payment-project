@@ -13,6 +13,7 @@ import { StatusInterface } from "../interface/IStatus";
 import { ReportInterface } from "../interface/IReport";
 import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface } from "../interface/IPayment";
 import { MethodInterface } from "../interface/IMethod";
+import {InverterStatus} from "../interface/IInverterStatus"
 
 const apiUrl = "http://localhost:8000";
 
@@ -57,6 +58,27 @@ const postRequestOptions = (body: any) => {
     },
     body: JSON.stringify(body),
   };
+};
+
+export const GetInverterStatus = async (): Promise<InverterStatus | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/inverter`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(), // ถ้ามีการ auth ด้วย token
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data; // เป็น InverterStatus
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching inverter status:", error);
+    return null;
+  }
 };
 
 export const uploadSlip = async (file: File): Promise<any | null> => {
