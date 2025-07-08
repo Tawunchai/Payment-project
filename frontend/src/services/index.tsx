@@ -15,7 +15,7 @@ import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, 
 import { MethodInterface } from "../interface/IMethod";
 import {InverterStatus} from "../interface/IInverterStatus"
 
-const apiUrl = "http://localhost:8000";
+const apiUrl = "http://10.0.14.228:8000";
 
 const getAuthHeader = () => {
   const token = localStorage.getItem("token");

@@ -2,7 +2,7 @@ import axios from "axios";
 import { LoginInterface } from "../interface/Login"
 import { EmployeeInterface } from "../interface/IEmployee";
 
-const apiUrl = "http://localhost:8000";
+const apiUrl = "http://10.0.14.228:8000";
 
 function getAuthHeaders() {
   const token = localStorage.getItem("token");
