@@ -13,6 +13,7 @@ export const AvatarWithInfo = () => {
     setEmployeeid(Number(localStorage.getItem("employeeid")));
     const fetchEmployee = async () => {
       const emp = await getEmployeeByID(employeeid); 
+      console.log(emp)
       if (emp) {
         setEmployee(emp);
       }
@@ -30,7 +31,7 @@ export const AvatarWithInfo = () => {
         />
         <div className="flex-1 sm:pl-4 max-sm:mt-4">
           <div className="text-xl mb-1">
-            {employee ? `${employee.User?.FirstName || ""} ${employee.User?.LastName || ""}` : "Loading..."}
+            {employee?.User?.FirstName} {employee?.User?.LastName} 
           </div>
           <div>{employee?.User?.UserRole?.RoleName || ""}</div>
         </div>

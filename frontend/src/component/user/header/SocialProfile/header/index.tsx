@@ -7,7 +7,7 @@ import "./extra.css";
 import OutsideClickHandler from "react-outside-click-handler";
 import ReportModal from "../../report/index";
 import { TooltipComponent } from "@syncfusion/ej2-react-popups";
-import { getUserByID } from "../../../../../services";  
+import { getUserByID,apiUrlPicture } from "../../../../../services";  
 import {UsersInterface} from "../../../../../interface/IUser"
 
 const Header = () => {
@@ -86,7 +86,7 @@ const Header = () => {
                 {profile ? (
                   <img
                     className="rounded-full w-10 h-10"
-                    src={`http://localhost:8000/${profile.Profile}`}
+                    src={`${apiUrlPicture}${profile.Profile}`}
                     alt="user-profile"
                   />
                 ) : (
