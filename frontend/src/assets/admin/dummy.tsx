@@ -22,6 +22,7 @@ import product5 from './product5.jpg';
 import product6 from './product6.jpg';
 import product7 from './product7.jpg';
 import { AiOutlineUser } from 'react-icons/ai';
+import {apiUrlPicture} from "../../services/index"
 
 export const gridOrderImage = (props: any) => (
   <div>
@@ -117,7 +118,7 @@ const customerGridImage = (props: any) => (
   <div className="image flex gap-4 items-center">
     <img
       className="rounded-full w-10 h-10"
-      src={`http://localhost:8000/${props.CustomerImage}`}
+      src={`${apiUrlPicture}${props.CustomerImage}`}
       alt="employee"
     />
     <div>
@@ -402,7 +403,7 @@ const gridEmployeeProfile = (props: any) => (
   <div className="image flex items-center gap-4">
     <img
       className="rounded-full w-10 h-10"
-      src={`http://localhost:8000/${props.ProfileImage}`}
+      src={`${apiUrlPicture}${props.ProfileImage}`}
       alt="employee"
     />
     <div>
@@ -412,19 +413,6 @@ const gridEmployeeProfile = (props: any) => (
   </div>
 );
 
-const gridEVProfile = (props: any) => (
-  <div className="image flex items-center gap-4">
-    <img
-      className="rounded-full w-10 h-10"
-      src={`http://localhost:8000/${props.ProfileImage}`}
-      alt="employee"
-    />
-    <div>
-      <p>{props.EmployeeName}</p>
-      <p className="text-gray-500 text-sm">{props.Email}</p>
-    </div>
-  </div>
-);
 
 export const customersGrid = [
   {
@@ -504,13 +492,6 @@ export const EVGrid = [
     width: "120",
     textAlign: "Center",
   },
-  /*{
-    field: "EmployeeName",
-    headerText: "Responsible Employee",
-    width: "180",
-    textAlign: "Center",
-    template: gridEVProfile,
-  },*/
 ];
 
 

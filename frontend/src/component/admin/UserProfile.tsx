@@ -5,9 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { userProfileData } from '../../assets/admin/dummy';
 import { useStateContext } from '../../contexts/ContextProvider';
 import { useEffect, useState } from 'react';
-
-// ✅ Import service และ interface
-import { getEmployeeByID } from '../../services';
+import { getEmployeeByID,apiUrlPicture } from '../../services';
 import { EmployeeInterface } from '../../interface/IEmployee';
 
 const UserProfile = () => {
@@ -56,7 +54,7 @@ const UserProfile = () => {
       <div className="flex gap-5 items-center mt-6 border-color border-b-1 pb-6">
         <img
           className="rounded-full h-24 w-24"
-          src={`http://localhost:8000/${employee?.User?.Profile?? 'default-profile.png'}`}
+          src={`${apiUrlPicture}${employee?.User?.Profile?? 'default-profile.png'}`}
           alt="user-profile"
         />
         <div>

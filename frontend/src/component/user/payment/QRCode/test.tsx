@@ -3,7 +3,7 @@ import { FaPaypal, FaUpload, FaPaperPlane, FaTimes } from "react-icons/fa";
 import { message, QRCode, Image } from "antd";
 import generatePayload from "promptpay-qr";
 import { useLocation, useNavigate } from "react-router-dom";
-import { uploadSlip, CreatePayment, CreateEVChargingPayment } from "../../../../services/index";
+import { uploadSlipOK, CreatePayment, CreateEVChargingPayment } from "../../../../services/index";
 import { FileImageOutlined } from "@ant-design/icons";
 
 const PayPalCard: React.FC = () => {
@@ -55,7 +55,7 @@ const PayPalCard: React.FC = () => {
     }
 
     try {
-      const result = await uploadSlip(uploadedFile);
+      const result = await uploadSlipOK(uploadedFile);
       console.log(result)
       if (result) {
         message.success("ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว");

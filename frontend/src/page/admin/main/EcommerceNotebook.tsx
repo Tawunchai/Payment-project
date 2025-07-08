@@ -25,7 +25,7 @@ const DropDown = ({ currentMode }: any) => (
 );
 
 const Ecommerce = () => {
-  const { currentColor, currentMode } = useStateContext();
+  const { currentColor, currentMode } = useStateContext(); //@ts-ignore
   const [payments, setPayments] = useState<PaymentsInterface[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [userCount, setUserCount] = useState<number>(0);
@@ -108,7 +108,7 @@ const Ecommerce = () => {
     const rows = res.map((payment) => [
       payment.ID,
       payment.User?.FirstName ?? "",
-      payment.Method?.Method ?? "",
+      payment.Method?.Medthod ?? "",
       payment.Amount ?? 0,
       new Date(payment.Date).toLocaleString(),
     ]);

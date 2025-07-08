@@ -145,7 +145,6 @@ const Index = () => {
             <div className="new-right">
               <div className="image-wrapper">
                 <img src={BackgroundImage} className="contact-img" alt="Contact" />
-                {/* SVGs */}
                 <div className="wave-wrap">
                   <svg
                     className="wave"

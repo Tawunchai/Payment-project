@@ -5,7 +5,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Like from "../../like/like"
 import { ReviewInterface } from "../../../interface/IReview";
-import { ListReviews } from "../../../services/index";
+import { ListReviews,apiUrlPicture } from "../../../services/index";
 
 const Review = () => {
   const [reviews, setReviews] = useState<ReviewInterface[]>([]);
@@ -66,7 +66,7 @@ const Review = () => {
           {reviews.map((item) => {
             console.log("User Profile:", item?.User?.Profile);
             const imageSrc = item?.User?.Profile
-              ? `http://localhost:8000/${item.User.Profile}`
+              ? `${apiUrlPicture}${item.User.Profile}`
               : Profile;
 
             return (

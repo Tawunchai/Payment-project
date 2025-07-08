@@ -5,9 +5,9 @@ import Logo from "../../../assets/picture/Direct_Energy_logo.svg.png";
 import "./header.css";
 import { useState, CSSProperties, useEffect } from "react";
 import OutsideClickHandler from "react-outside-click-handler";
-import ReportModal from "./report/index"; // import modal report form ที่จะสร้าง
+import ReportModal from "./report/index"; 
 import { TooltipComponent } from '@syncfusion/ej2-react-popups';
-import { getUserByID } from "../../../services";
+import { getUserByID,apiUrlPicture } from "../../../services";
 import { UsersInterface } from "../../../interface/IUser";
 import { GiTwoCoins } from "react-icons/gi";
 
@@ -103,7 +103,7 @@ const Header = ({ scrollToNew }: HeaderProps) => {
               >
                 <img
                   className="rounded-full w-10 h-10"
-                  src={`http://localhost:8000/${users?.Profile}`}
+                  src={`${apiUrlPicture}${users?.Profile}`}
                   alt="user-profile"
                 />
               </div>

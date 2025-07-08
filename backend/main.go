@@ -61,6 +61,8 @@ func main() {
 
 	public := r.Group("")
 	{
+		//SlipOK
+		public.POST("/api/check-slipok", slip.CheckSlipOI)
 		//CheckSlip
 		public.POST("/api/check-slip", slip.CheckSlipThunder)
 		public.GET("/inverter", inverter.GetInverterStatus)

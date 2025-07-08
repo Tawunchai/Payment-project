@@ -20,6 +20,7 @@ import {
   DeleteEVcharging,
   ListStatus,
   ListTypeEV,
+  apiUrlPicture
 } from "../../../services/index";
 import Modal from "../getting/modal";
 import { Trash2 } from "react-feather";
@@ -182,7 +183,7 @@ const EV = () => {
             width="120"
             template={(props: any) => (
               <Image
-                src={`http://localhost:8000/${props.Picture}`}
+                src={`${apiUrlPicture}${props.Picture}`}
                 alt="EV"
                 className="w-6 h-6 object-cover mx-auto rounded"
               />

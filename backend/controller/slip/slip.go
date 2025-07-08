@@ -2,6 +2,7 @@ package slip
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -78,4 +79,49 @@ func CheckSlipThunder(c *gin.Context) {
 	}
 
 	c.Data(http.StatusOK, "application/json", respBody)
+}
+
+
+type SlipRequest struct {
+	Img string `json:"img"`
+}
+
+func CheckSlipOI(c *gin.Context) {
+	var req SlipRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพไม่ถูกต้อง"})
+		return
+	}
+
+	// ❌ ไม่ใช้ amount แล้ว
+	apiURL := "https://slip-c.oiioioiiioooioio.download/api/slip"
+
+	// เตรียม JSON payload
+	payload, err := json.Marshal(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "แปลงข้อมูลล้มเหลว"})
+		return
+	}
+
+	// POST ไปยัง OIIO API
+	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(payload))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "เชื่อมต่อกับระบบตรวจสลิปล้มเหลว"})
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "อ่านข้อมูลตอบกลับล้มเหลว"})
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.JSON(resp.StatusCode, gin.H{"error": "ตรวจสอบสลิปล้มเหลว", "detail": string(body)})
+		return
+	}
+
+	// สำเร็จ
+	c.Data(http.StatusOK, "application/json", body)
 }

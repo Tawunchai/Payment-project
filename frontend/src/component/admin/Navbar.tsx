@@ -5,7 +5,7 @@ import { MdKeyboardArrowDown } from 'react-icons/md';
 import { TooltipComponent } from '@syncfusion/ej2-react-popups';
 import { Notification, UserProfile } from '.';
 import { useStateContext } from '../../contexts/ContextProvider';
-import { getEmployeeByID } from '../../services';
+import { getEmployeeByID,apiUrlPicture } from '../../services';
 
 const NavButton = ({ title, customFunc, icon, color, dotColor }: any) => (
   <TooltipComponent content={title} position="BottomCenter">
@@ -96,7 +96,7 @@ const Navbar = () => {
           >
             <img
               className="rounded-full w-8 h-8"
-              src={`http://localhost:8000/${profile}`}
+              src={`${apiUrlPicture}${profile}`}
               alt="user-profile"
             />
             <p>

@@ -13,7 +13,7 @@ import {
 } from "antd";
 import generatePayload from "promptpay-qr";
 import {
-    uploadSlip,
+    uploadSlipOK,
     UpdateCoin,
     getUserByID,
 } from "../../../services";
@@ -85,7 +85,7 @@ const AddMoneyCoin: React.FC = () => {
         }
 
         try {
-            const result = await uploadSlip(uploadedFile);
+            const result = await uploadSlipOK(uploadedFile);
             if (result) {
                 const newTotalCoin = userCoin + coinAmount;
                 const updateResult = await UpdateCoin({

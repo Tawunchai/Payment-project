@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { SlideLeft } from "./SlideLeft";
-import { ListNews, DeleteNews } from "../../../services";
+import { ListNews, DeleteNews,apiUrlPicture } from "../../../services";
 import type { NewsInterface } from "../../../interface/INews";
 import { FaTrash, FaEdit } from "react-icons/fa";
 import { Trash2 } from "react-feather";
@@ -104,7 +104,7 @@ const New = () => {
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                     <img
-                      src={`http://localhost:8000/${item.Picture}`}
+                      src={`${apiUrlPicture}${item.Picture}`}
                       alt="news icon"
                       className="w-full h-full object-cover"
                     />

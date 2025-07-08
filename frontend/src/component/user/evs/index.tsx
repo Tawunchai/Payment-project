@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ListEVCharging } from "../../../services/index";
+import { ListEVCharging,apiUrlPicture } from "../../../services/index";
 import { EVchargingInterface } from "../../../interface/IEV";
 import logo from "../../../assets/picture/Direct_Energy_logo.svg.png";
 import { Divider, Slider, ConfigProvider } from "antd";
@@ -68,7 +68,7 @@ const Index = () => {
                     <div key={charger.ID}>
                       <div className="flex gap-4 mb-4">
                         <img
-                          src={`http://localhost:8000/${charger.Picture}`}
+                          src={`${apiUrlPicture}${charger.Picture}`}
                           alt={charger.Name}
                           className="w-24 h-24 object-cover rounded"
                         />

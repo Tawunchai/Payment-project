@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FaBolt } from 'react-icons/fa';
 import { message } from 'antd';
-import ModalCreate from '../review/create'; // ✅ import modal
-// หมายเหตุ: ตรวจสอบ path import ให้ตรงกับไฟล์จริงของคุณ
+import ModalCreate from '../review/create'; 
 const ChargingEV = () => {
   const [charging, setCharging] = useState(false);
   const [energy, setEnergy] = useState(0);

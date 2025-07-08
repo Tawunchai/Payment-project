@@ -2,7 +2,7 @@ import "./new.css";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { SlideUp } from "./animation";
-import { ListNews } from "../../../services/index";
+import { ListNews,apiUrlPicture } from "../../../services/index";
 import { NewsInterface } from "../../../interface/INews";
 
 const New = () => {
@@ -39,7 +39,7 @@ const New = () => {
                   initial={{ opacity: 0, scale: 0.5 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
-                  src={`http://localhost:8000/${item.Picture}`}
+                  src={`${apiUrlPicture}${item.Picture}`}
                   alt=""
                   className="image h-full object-cover w-[400px] rounded-xl shadow-md"
                 />

@@ -15,6 +15,8 @@ import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, 
 import { MethodInterface } from "../interface/IMethod";
 import {InverterStatus} from "../interface/IInverterStatus"
 
+export const apiUrlPicture = "http://localhost:8000/";
+
 const apiUrl = "http://localhost:8000";
 
 const getAuthHeader = () => {
@@ -105,6 +107,38 @@ export const uploadSlip = async (file: File): Promise<any | null> => {
     console.error("Error uploading slip:", error.response?.data || error.message);
     return null;
   }
+};
+
+export const uploadSlipOK = async (file: File): Promise<any | null> => {
+  try {
+    const base64 = await convertToBase64(file);
+    if (!base64) throw new Error("ไม่สามารถแปลงไฟล์เป็น base64");
+
+    // ส่งไปยัง backend แบบไม่ต้องมี amount ใน URL
+    const response = await axios.post(`${apiUrl}/api/check-slipok`, {
+      img: base64, // ส่ง base64 พร้อม prefix
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error checking slip:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// ฟังก์ชันช่วยแปลงไฟล์ภาพเป็น base64
+const convertToBase64 = (file: File): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => resolve(null);
+  });
 };
 
 

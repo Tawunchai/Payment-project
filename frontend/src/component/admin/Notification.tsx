@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { MdOutlineCancel } from "react-icons/md";
 import { FaTrash } from "react-icons/fa";
 import { Button } from ".";
-import { ListReports, UpdateReportByID, DeleteReportByID } from "../../services/index";
+import { ListReports, UpdateReportByID, DeleteReportByID,apiUrlPicture } from "../../services/index";
 import { ReportInterface } from "../../interface/IReport";
 import { Image } from "antd";
 
@@ -75,7 +75,7 @@ const Notification = () => {
           >
             <img
               className="rounded-full h-10 w-10 object-cover"
-              src={`http://localhost:8000/${item.User?.Profile}`}
+              src={`${apiUrlPicture}${item.User?.Profile}`}
               alt={`${item.User?.FirstName} ${item.User?.LastName}`}
             />
             <div className="flex flex-col w-full">
@@ -87,7 +87,7 @@ const Notification = () => {
                   className="rounded-md object-cover"
                   width={40}
                   height={40}
-                  src={`http://localhost:8000/${item.Picture}`}
+                  src={`${apiUrlPicture}${item.Picture}`}
                   alt="Report"
                   preview={true}
                 />

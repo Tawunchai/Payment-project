@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตรวจสอบสลิปอัตโนมัติ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Adjust alignment to prevent content from being too high */
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        #slipForm, #resultContainer {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 500px;
+        }
+        input[type="text"], input[type="number"] {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: #3b82f6; /* Blue-500 */
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        button {
+            border-radius: 8px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover:enabled {
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .file-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 2.5rem 1.5rem;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .file-upload-area:hover {
+            border-color: #9ca3af; /* Gray-400 */
+            background-color: #f9fafb; /* Gray-50 */
+        }
+        #imagePreview {
+            border-radius: 8px;
+            object-fit: contain;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        #status.success {
+            background-color: #dcfce7; /* Green-100 */
+            border-color: #22c55e; /* Green-500 */
+            color: #166534; /* Green-800 */
+            font-weight: 600;
+        }
+        #status.error {
+            background-color: #fee2e2; /* Red-100 */
+            border-color: #ef4444; /* Red-500 */
+            color: #991b1b; /* Red-800 */
+            font-weight: 600;
+        }
+        #status.info {
+            background-color: #e0f2fe; /* Blue-100 */
+            border-color: #3b82f6; /* Blue-500 */
+            color: #1e40af; /* Blue-800 */
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-6">
+
+  <div class="w-full max-w-lg space-y-8">
+    <!-- ฟอร์มตรวจสอบ -->
+    <form id="slipForm" class="bg-white rounded-xl shadow-lg p-8 space-y-6" onsubmit="return false;">
+      <h2 class="text-3xl font-extrabold text-gray-900 text-center mb-6">ตรวจสอบสลิป</h2>
+
+     <label class="block">
+        <span class="mb-2 block text-sm font-medium text-gray-700">รหัสธนาคารผู้รับ (เช่น 014 สำหรับ SCB) <span class="text-red-500">*</span></span>
+        <input id="bank_receive" type="text" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="ตัวอย่าง: 014" required>
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-gray-700">ชื่อบัญชีผู้รับ <span class="text-red-500">*</span></span>
+        <input id="account_name" type="text" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="ชื่อบัญชีปลายทาง" required>
+      </label>
+      <label class="block">
+        <span class="mb-2 block text-sm font-medium text-gray-700">จำนวนเงิน <span class="text-red-500">*</span></span>
+        <input id="amount" type="number" min="0" step="0.01" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="ระบุจำนวนเงินที่โอน" required>
+      </label>
+
+
+      <div>
+        <input id="imageInput" type="file" accept="image/*" class="sr-only">
+        <div onclick="document.getElementById('imageInput').click()" class="file-upload-area flex flex-col items-center justify-center gap-4 text-center cursor-pointer border-2 border-dashed border-gray-300 p-6 rounded-lg bg-gray-50">
+          <i class="fas fa-cloud-upload-alt text-5xl text-blue-500"></i>
+          <p class="text-gray-700 font-medium">คลิกหรือลากรูปภาพสลิปมาวางที่นี่</p>
+          <p class="text-sm text-gray-500">รองรับไฟล์ JPG, PNG</p>
+          <img id="imagePreview" class="mt-4 max-h-64 hidden object-contain transition-all duration-300 ease-in-out" alt="รูปสลิปตัวอย่าง">
+        </div>
+      </div>
+
+      <button id="submitBtn" onclick="checkSlip()" disabled class="w-full bg-blue-600 py-3 text-white font-semibold text-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300">
+        ตรวจสอบสลิป
+      </button>
+
+      <div id="loading" class="hidden text-center mt-4">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-600"></i>
+        <p class="text-gray-600 mt-2">กำลังตรวจสอบข้อมูลสลิป...</p>
+      </div>
+    </form>
+
+    <!-- ผลลัพธ์ -->
+    <div id="resultContainer" class="hidden bg-white rounded-xl shadow-lg p-8 mt-6">
+      <div id="status" class="mb-5 p-4 rounded-lg text-center font-semibold text-lg border-2"></div>
+      <div id="summaryBox" class="mb-5 text-gray-800 text-sm leading-relaxed whitespace-pre-wrap"></div>
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">รายละเอียดข้อมูลสลิปที่ได้:</h3>
+      <pre id="result" class="whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-4 text-sm text-gray-800 border border-gray-200"></pre>
+    </div>
+  </div>
+
+  <!-- Axios -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <script>
+    const imgInput = document.getElementById('imageInput');
+    const imgPreview = document.getElementById('imagePreview');
+    const submitBtn = document.getElementById('submitBtn');
+
+    imgInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        imgPreview.src = evt.target.result;
+        imgPreview.classList.remove('hidden');
+        submitBtn.disabled = false;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    async function checkSlip() {
+      const img = imgPreview.src;
+      const amountInput = document.getElementById('amount').value.trim();
+      const bankReceiveInput = document.getElementById('bank_receive').value.trim();
+      const accountNameInput = document.getElementById('account_name').value.trim();
+      const loading = document.getElementById('loading');
+      const statusBox = document.getElementById('status');
+      const resultBox = document.getElementById('result');
+      const resultContainer = document.getElementById('resultContainer');
+      const summaryBox = document.getElementById('summaryBox');
+
+      if (!img) return;
+
+      loading.classList.remove('hidden');
+      submitBtn.disabled = true;
+      resultContainer.classList.add('hidden');
+      summaryBox.innerText = '';
+
+      let endpoint = 'https://slip-c.oiioioiiioooioio.download/api/slip';
+      if (amountInput) endpoint += `/${amountInput}`;
+
+      try {
+        const response = await axios.post(endpoint, { img });
+        const slip = response.data.data;
+
+        let isValid = true;
+        let reasons = [];
+
+        // ตรวจสอบจำนวนเงิน
+        if (amountInput) {
+          const expected = parseFloat(amountInput);
+          const received = parseFloat(slip.amount);
+          if (Math.abs(expected - received) > 0.01) {
+            isValid = false;
+            reasons.push(`💰 ยอดเงินไม่ตรงกัน (กรอก: ${expected} / สลิป: ${received})`);
+          }
+        }
+
+        // ตรวจสอบรหัสธนาคาร
+        if (bankReceiveInput && slip.receiver_bank !== bankReceiveInput) {
+          isValid = false;
+          reasons.push(`🏦 รหัสธนาคารไม่ตรงกัน (กรอก: ${bankReceiveInput} / สลิป: ${slip.receiver_bank})`);
+        }
+
+        // ตรวจสอบชื่อบัญชีผู้รับ
+        if (accountNameInput && slip.receiver_name.toLowerCase() !== accountNameInput.toLowerCase()) {
+          isValid = false;
+          reasons.push(`👤 ชื่อบัญชีไม่ตรงกัน (กรอก: ${accountNameInput} / สลิป: ${slip.receiver_name})`);
+        }
+
+        statusBox.className = 'mb-5 p-4 rounded-lg text-center font-semibold text-lg border-2';
+
+        if (isValid) {
+          statusBox.classList.add('bg-green-100', 'text-green-800', 'border-green-500');
+          statusBox.textContent = '✅ ตรวจสอบสำเร็จ: สลิปถูกต้อง';
+
+          const dateObj = new Date(slip.date);
+          const dateStr = dateObj.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' });
+          const timeStr = dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+          summaryBox.innerText = [
+            `ชำระเงินสำเร็จ`,
+            `วันที่: ${dateStr}`,
+            `เวลา: ${timeStr} น.`,
+            `จาก: ${slip.sender_name}`,
+            ``,
+            `ไปยัง: ${slip.receiver_name}`,
+            `ธนาคาร: ${slip.receiver_bank_details?.name || '-'}`,
+            `จำนวนเงิน: ${Number(slip.amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`
+          ].join('\n');
+        } else {
+          statusBox.classList.add('bg-red-100', 'text-red-800', 'border-red-500');
+          statusBox.innerHTML = `❌ ตรวจสอบไม่ผ่าน:<br><span class="text-sm font-normal">${reasons.join('<br>')}</span>`;
+          summaryBox.innerText = '';
+        }
+
+        resultBox.textContent = JSON.stringify(slip, null, 2);
+
+      } catch (err) {
+        statusBox.className = 'mb-5 p-4 rounded-lg text-center font-semibold text-lg border-2 bg-yellow-100 text-yellow-800 border-yellow-500';
+        statusBox.textContent = err.response?.data?.error || '⚠️ เกิดข้อผิดพลาดในการตรวจสอบสลิป';
+        resultBox.textContent = '';
+        summaryBox.innerText = '';
+      } finally {
+        loading.classList.add('hidden');
+        submitBtn.disabled = false;
+        resultContainer.classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

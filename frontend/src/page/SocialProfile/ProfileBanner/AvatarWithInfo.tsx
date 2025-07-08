@@ -1,6 +1,6 @@
 import { Avatar } from "antd";
 import { useEffect, useState } from "react";
-import { getEmployeeByID } from "../../../services"; // ปรับ path ให้ถูกต้อง
+import { getEmployeeByID,apiUrlPicture } from "../../../services"; // ปรับ path ให้ถูกต้อง
 import { EmployeeInterface } from "../../../interface/IEmployee"; // กำหนด interface ให้ตรงกับข้อมูล
 
 export const AvatarWithInfo = () => {
@@ -24,7 +24,7 @@ export const AvatarWithInfo = () => {
     <div className="flex items-center justify-between flex-col sm:flex-row">
       <div className="flex flex-wrap flex-col items-center max-sm:text-center mb-6 lg:flex-row">
         <Avatar 
-          src={employee?.User?.Profile ? `http://localhost:8000/${employee.User.Profile}` : undefined} 
+          src={employee?.User?.Profile ? `${apiUrlPicture}${employee.User.Profile}` : undefined} 
           alt="user" 
           size={80} 
         />

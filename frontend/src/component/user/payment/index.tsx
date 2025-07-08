@@ -9,6 +9,7 @@ import {
   ListMethods,
   CreatePayment,
   CreateEVChargingPayment,
+  apiUrlPicture
 } from "../../../services";
 import { UsersInterface } from "../../../interface/IUser";
 import { MethodInterface } from "../../../interface/IMethod";
@@ -150,7 +151,6 @@ const Index = () => {
       <img src={logo} style={{ width: "150px" }} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* ซ้าย: รายละเอียดคำสั่งซื้อ */}
         <div className="space-y-4">
           <h1 className="text-2xl font-bold">สรุปรายการคำสั่งซื้อ</h1>
           <div className="border rounded-lg p-4 space-y-4">
@@ -174,7 +174,7 @@ const Index = () => {
                 <div key={index}>
                   <div className="flex justify-between items-center gap-4">
                     <img
-                      src={`http://localhost:8000/${item.picture}`}
+                      src={`${apiUrlPicture}${item.picture}`}
                       alt={item.name}
                       className="w-16 h-16 object-cover rounded"
                     />

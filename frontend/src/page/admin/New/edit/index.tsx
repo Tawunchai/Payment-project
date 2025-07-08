@@ -3,7 +3,7 @@ import { message, Upload } from "antd";
 import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
-import { UpdateNewsByID } from "../../../../services/index";
+import { UpdateNewsByID,apiUrlPicture } from "../../../../services/index";
 import BackgroundImage from "../../../../assets/admin/img/img.jpg";
 import "../new.css";
 
@@ -19,7 +19,7 @@ const EditNews = () => {
             uid: "-1",
             name: "current.jpg",
             status: "done",
-            url: `http://localhost:8000/${initialPicture}`,
+            url: `${apiUrlPicture}${initialPicture}`,
           },
         ]
       : []
