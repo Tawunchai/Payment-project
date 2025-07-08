@@ -1,51 +1,34 @@
 package inverter
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/goburrow/modbus"
 )
 
-// GetInverterStatus ดึงข้อมูล Active Power จาก SUN2000
+type InverterResponse struct {
+	ActivePower int    `json:"active_power"`
+	Unit        string `json:"unit"`
+}
+
 func GetInverterStatus(c *gin.Context) {
-	handler := modbus.NewTCPClientHandler("192.168.1.139:502") // ใช้ IP เครื่อง SUN2000 ของคุณ
-	handler.SlaveId = 1
-	handler.Timeout = 5 * 1000000000 // 5 วินาที (5e9 ns)
-
-	err := handler.Connect()
+	resp, err := http.Get("http://localhost:9000/active_power")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":      "เชื่อมต่อ inverter ไม่สำเร็จ: " + err.Error(),
-			"inverterIP": "192.168.1.139:502",
+			"error": "เชื่อมต่อ Python API ไม่สำเร็จ: " + err.Error(),
 		})
 		return
 	}
-	defer handler.Close()
+	defer resp.Body.Close()
 
-	client := modbus.NewClient(handler)
-
-	// อ่านค่า Active Power ที่ Register 32080 (2 register)
-	results, err := client.ReadHoldingRegisters(32080, 2)
-	if err != nil {
+	var result InverterResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "อ่านข้อมูลจาก inverter ไม่สำเร็จ: " + err.Error(),
+			"error": "อ่านข้อมูล JSON ไม่สำเร็จ: " + err.Error(),
 		})
 		return
 	}
 
-	if len(results) < 4 {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "ข้อมูลจาก inverter ไม่สมบูรณ์",
-		})
-		return
-	}
-
-	// แปลง 4 byte เป็น int16 (อาจต้องปรับตามข้อมูลจริง)
-	power := int16(results[0])<<8 | int16(results[1])
-
-	c.JSON(http.StatusOK, gin.H{
-		"active_power": power,
-		"unit":         "Watt",
-	})
+	c.JSON(http.StatusOK, result)
 }
