@@ -410,6 +410,7 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 			payment := entity.Payment{
 				Date:     createdAt,
 				Amount:   float64(amount),
+				ReferenceNumber: "12345",
 				UserID:   &userID,
 				MethodID: &methodID,
 			}

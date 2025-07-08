@@ -7,6 +7,7 @@ import { FaTrash, FaEdit } from "react-icons/fa";
 import { Trash2 } from "react-feather";
 import Modal from "../admin/getting/modal";
 import { useNavigate } from "react-router-dom";
+import { HiOutlineDocumentText } from "react-icons/hi";
 
 const Editor = () => {
   const [getstartedList, setGetstartedList] = useState<GetstartedInterface[]>([]);
@@ -103,12 +104,8 @@ const Editor = () => {
 
                 {/* เนื้อหา */}
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                    <img
-                      src="https://via.placeholder.com/64"
-                      alt="icon"
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center text-orange-500">
+                    <HiOutlineDocumentText size={32} />
                   </div>
                   <p className="font-semibold text-sm">{item.Title}</p>
                 </div>
