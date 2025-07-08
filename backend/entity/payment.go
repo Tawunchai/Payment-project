@@ -11,6 +11,7 @@ type Payment struct {
 	Date time.Time
 	Amount float64
 	ReferenceNumber string
+	Picture string
 	
 	UserID 		*uint
 	User   		*User `gorm:"foreignKey:UserID"`

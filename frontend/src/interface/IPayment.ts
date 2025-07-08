@@ -2,11 +2,13 @@ import { UsersInterface } from "./IUser";
 import { MethodInterface } from "./IMethod";
 
 export interface PaymentsInterface {
-    ID: number;
-    Amount: number;
-    Date: Date
-    User: UsersInterface;
-    Method: MethodInterface;
+  ID: number;
+  Amount: number;
+  Date: Date
+  ReferenceNumber: string,
+  Picture: string,
+  User: UsersInterface;
+  Method: MethodInterface;
 }
 
 export interface EVChargingPaymentInterface {
@@ -24,6 +26,8 @@ export interface PaymentCreateInterface {
   amount: number;
   user_id: number;
   method_id: number;
+  reference_number: string;
+  picture?: File | null;
 }
 
 export interface PaymentInterface {

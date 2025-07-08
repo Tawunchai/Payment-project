@@ -3,7 +3,7 @@ import { FaPaypal, FaUpload, FaPaperPlane, FaTimes } from "react-icons/fa";
 import { message, QRCode, Image } from "antd";
 import generatePayload from "promptpay-qr";
 import { useLocation, useNavigate } from "react-router-dom";
-import { uploadSlipOK, CreatePayment, CreateEVChargingPayment } from "../../../../services/index";
+import { uploadSlipOK, CreatePayment, CreateEVChargingPayment, ListBank } from "../../../../services/index";
 import { FileImageOutlined } from "@ant-design/icons";
 
 const PayPalCard: React.FC = () => {
@@ -13,21 +13,36 @@ const PayPalCard: React.FC = () => {
   const location = useLocation();
   const { totalAmount, userID, chargers, MethodID } = location.state || {};
   const amountNumber = Number(totalAmount) || 0;
-  console.log(userID)
-  console.log(chargers)
-  console.log(MethodID)
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const phoneNumber = "0935096372";
-    if (amountNumber > 0) {
+    const fetchBankData = async () => {
+      try {
+        const banks = await ListBank();
+        if (banks && banks.length > 0) {
+          const bankPhone = banks[0].PromptPay || "";
+          setPhoneNumber(bankPhone);
+        } else {
+          message.error("ไม่พบข้อมูลธนาคารสำหรับ PromptPay");
+        }
+      } catch (error) {
+        message.error("โหลดข้อมูลธนาคารล้มเหลว");
+      }
+    };
+
+    fetchBankData();
+  }, []);
+
+  useEffect(() => {
+    if (amountNumber > 0 && phoneNumber) {
       const payload = generatePayload(phoneNumber, { amount: amountNumber });
       setQrCode(payload);
     } else {
       setQrCode("");
     }
-  }, [amountNumber]);
+  }, [amountNumber, phoneNumber]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -62,10 +77,12 @@ const PayPalCard: React.FC = () => {
 
         // สร้าง Payment object
         const paymentData = {
-          date: new Date().toISOString(),
+          date: new Date().toISOString().split("T")[0], // "YYYY-MM-DD"
           amount: Number(totalAmount),
-          user_id: 1,
+          user_id: userID,
           method_id: MethodID,
+          reference_number: result.data.ref,
+          picture: uploadedFile, // <-- เอา path จาก server
         };
 
         // สร้าง Payment
@@ -73,11 +90,8 @@ const PayPalCard: React.FC = () => {
 
         if (paymentResult && paymentResult.ID) {
           message.success("สร้าง Payment เรียบร้อยแล้ว");
-
-          // ถ้า chargers เป็น array ให้ loop สร้าง EVChargingPayment ทีละตัว
           if (Array.isArray(chargers)) {
             for (const charger of chargers) {
-              // สมมุติ charger มี ID, power, total
               const evChargingPaymentData = {
                 evcharging_id: charger.id,
                 payment_id: paymentResult.ID,
@@ -110,6 +124,20 @@ const PayPalCard: React.FC = () => {
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการส่งหลักฐาน");
     }
+  };
+
+  // เพิ่มฟังก์ชัน handleDrop
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      const file = event.dataTransfer.files[0];
+      setUploadedFile(file);
+      event.dataTransfer.clearData();
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
   };
 
 
@@ -175,14 +203,20 @@ const PayPalCard: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="mb-4 flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-lg py-12 text-gray-400 cursor-pointer select-none">
+            <div
+              className="mb-4 flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-lg py-12 text-gray-400 cursor-pointer select-none"
+              onClick={handleUploadClick}    // ให้คลิกที่โซนนี้ก็เปิด file dialog
+              onDrop={handleDrop}            // รับ event ลากไฟล์มาวาง
+              onDragOver={handleDragOver}    // ป้องกัน browser เปิดไฟล์
+            >
               <FileImageOutlined style={{ fontSize: 48, marginBottom: 12 }} />
               <p className="text-base font-medium">ยังไม่มีสลิปที่อัปโหลด</p>
               <p className="text-sm mt-1 text-gray-500 text-center px-2">
-                คลิกปุ่มด้านล่างเพื่ออัปโหลดสลิปของคุณ
+                คลิกหรือลากไฟล์สลิปมาวางที่นี่เพื่ออัปโหลด
               </p>
             </div>
           )}
+
 
           <button
             onClick={handleUploadClick}

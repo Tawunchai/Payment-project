@@ -13,6 +13,7 @@
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@heroicons/react": "^2.2.0",
     "@syncfusion/ej2-react-calendars": "^29.2.11",
     "@syncfusion/ej2-react-charts": "^29.2.10",
     "@syncfusion/ej2-react-dropdowns": "^29.2.10",

@@ -13,7 +13,8 @@ import { StatusInterface } from "../interface/IStatus";
 import { ReportInterface } from "../interface/IReport";
 import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface } from "../interface/IPayment";
 import { MethodInterface } from "../interface/IMethod";
-import {InverterStatus} from "../interface/IInverterStatus"
+import { InverterStatus } from "../interface/IInverterStatus"
+import { BankInterface } from "../interface/IBank"
 
 export const apiUrlPicture = "http://localhost:8000/";
 
@@ -1227,25 +1228,81 @@ export const CreatePayment = async (
   paymentData: PaymentCreateInterface
 ): Promise<PaymentInterface | null> => {
   try {
-    const response = await axios.post(
-      `${apiUrl}/create-payments`,
-      paymentData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-      }
-    );
+    const formData = new FormData();
+
+    formData.append("date", paymentData.date);
+    formData.append("amount", paymentData.amount.toString());
+    formData.append("user_id", paymentData.user_id.toString());
+    formData.append("method_id", paymentData.method_id.toString());
+    formData.append("reference_number", paymentData.reference_number || "");
+
+    // ✅ แนบรูปเฉพาะถ้ามี
+    if (paymentData.picture instanceof File) {
+      formData.append("picture", paymentData.picture);
+    }
+
+    const response = await axios.post(`${apiUrl}/create-payments`, formData, {
+      headers: {
+        ...getAuthHeader(),
+        // ไม่ต้องตั้ง Content-Type
+      },
+    });
 
     if (response.status === 200 || response.status === 201) {
-      return response.data as PaymentInterface;
+      return response.data.data as PaymentInterface;
     } else {
       console.error("Unexpected status:", response.status);
       return null;
     }
   } catch (error: any) {
     console.error("Error creating Payment:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// ฟังก์ชันดึงรายการธนาคาร
+export const ListBank = async (): Promise<BankInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/banks`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching banks list:", error);
+    return null;
+  }
+};
+
+// ฟังก์ชัน PATCH อัปเดตข้อมูลธนาคาร
+export const UpdateBank = async (
+  id: number,
+  data: { promptpay?: string; manager?: string; banking?: string }
+): Promise<BankInterface | null> => {
+  try {
+    const response = await axios.patch(`${apiUrl}/banks/${id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data.data; // ตามโครงสร้าง response จาก backend
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error updating bank:", error);
     return null;
   }
 };

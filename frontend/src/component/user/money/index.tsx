@@ -114,6 +114,21 @@ const AddMoneyCoin: React.FC = () => {
         }
     };
 
+    // เพิ่มฟังก์ชัน handleDrop
+    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+            const file = event.dataTransfer.files[0];
+            setUploadedFile(file);
+            event.dataTransfer.clearData();
+        }
+    };
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+    };
+
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
             <div className="flex flex-col md:flex-row bg-white rounded-2xl shadow-md border border-gray-300 w-full max-w-5xl p-6 md:p-8 md:gap-12 gap-6">
@@ -178,12 +193,7 @@ const AddMoneyCoin: React.FC = () => {
                             <Image
                                 src={URL.createObjectURL(uploadedFile)}
                                 alt="Preview slip"
-                                style={{
-                                    maxHeight: 220,
-                                    maxWidth: "100%",
-                                    objectFit: "contain",
-                                    borderRadius: 8,
-                                }}
+                                style={{ maxHeight: 220, maxWidth: "100%", objectFit: "contain", borderRadius: 8 }}
                                 placeholder
                                 preview={{ maskClassName: "rounded-lg" }}
                             />
@@ -198,11 +208,16 @@ const AddMoneyCoin: React.FC = () => {
                             </button>
                         </div>
                     ) : (
-                        <div className="mb-4 flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-lg py-12 text-gray-400 cursor-pointer select-none">
+                        <div
+                            className="mb-4 flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-lg py-12 text-gray-400 cursor-pointer select-none"
+                            onClick={handleUploadClick}    // ให้คลิกที่โซนนี้ก็เปิด file dialog
+                            onDrop={handleDrop}            // รับ event ลากไฟล์มาวาง
+                            onDragOver={handleDragOver}    // ป้องกัน browser เปิดไฟล์
+                        >
                             <FileImageOutlined style={{ fontSize: 48, marginBottom: 12 }} />
                             <p className="text-base font-medium">ยังไม่มีสลิปที่อัปโหลด</p>
                             <p className="text-sm mt-1 text-gray-500 text-center px-2">
-                                คลิกปุ่มด้านล่างเพื่ออัปโหลดสลิปของคุณ
+                                คลิกหรือลากไฟล์สลิปมาวางที่นี่เพื่ออัปโหลด
                             </p>
                         </div>
                     )}

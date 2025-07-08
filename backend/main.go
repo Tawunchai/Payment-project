@@ -94,9 +94,10 @@ func main() {
 
 		//payment
 		public.GET("/payments", payment.ListPayment)
+		public.GET("/banks", payment.ListBank)
+		public.PATCH("/banks/:id", payment.UpdateBank)
 		public.POST("/create-payments", payment.CreatePayment)
 		public.POST("/create-evchargingpayments", payment.CreateEVChargingPayment)
-
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)

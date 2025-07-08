@@ -67,6 +67,7 @@ func SetupDatabase() {
 		&entity.Payment{},
 		&entity.Method{},
 		&entity.EVChargingPayment{},
+		&entity.Bank{},
 	)
 
 	GenderMale := entity.Genders{Gender: "Male"}
@@ -386,6 +387,13 @@ func SetupDatabase() {
 		log.Fatalf("Seed payments failed: %v", err)
 	}
 
+	BankingManager := entity.Bank{
+		PromptPay: "0935096372",
+		Manager: "MR. TAWANCHAI BURAKHON",
+		Banking: "006",
+	}
+	db.FirstOrCreate(&BankingManager, &entity.Bank{PromptPay: "0935096372"})
+
 }
 
 func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
@@ -408,11 +416,12 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 			amount := price1 + price2 // รวมราคา
 
 			payment := entity.Payment{
-				Date:     createdAt,
-				Amount:   float64(amount),
+				Date:            createdAt,
+				Amount:          float64(amount),
 				ReferenceNumber: "12345",
-				UserID:   &userID,
-				MethodID: &methodID,
+				Picture:         "uploads/payment/1751999510090771300.jpg",
+				UserID:          &userID,
+				MethodID:        &methodID,
 			}
 
 			if err := db.Create(&payment).Error; err != nil {

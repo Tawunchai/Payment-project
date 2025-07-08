@@ -111,10 +111,12 @@ const Index = () => {
         message.success("ชำระเงินด้วย Coin สำเร็จแล้ว");
 
         const paymentData = {
-          date: new Date().toISOString(),
+          date: new Date().toISOString().split("T")[0], // ส่งแค่ YYYY-MM-DD
           amount: Number(totalAmount),
           user_id: user.ID!,
           method_id: coinMethod!.ID!,
+          reference_number: "", // หรือจะใส่ "ชำระด้วย Coin" ก็ได้
+          picture: null, // ✅ ชัดเจนว่าไม่ส่งรูป
         };
 
         const paymentResult = await CreatePayment(paymentData);
