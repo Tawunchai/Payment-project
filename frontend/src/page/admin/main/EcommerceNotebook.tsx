@@ -1,11 +1,11 @@
 import "./Ecommerce.css"
-import RecentTransactions from "./recent_transctions"
-import LineChart from './chart/index'
-import Weekly from "./weekly"
-import Banding from "./branding"
-import Introduction from "./header"
-import Month from "./month"
-import Year from "./year"
+import RecentTransactions from "./recent_transctions/notebook"
+import LineChart from './chart/notebook'
+import Weekly from "./weekly/notebook"
+import Banding from "./branding/notebook"
+import Introduction from "./header/notebook"
+import Month from "./month/notebook"
+import Year from "./year/notebook"
 
 const Ecommerce = () => {
   return (
@@ -16,12 +16,10 @@ const Ecommerce = () => {
         <div className="flex flex-wrap justify-center">
           <Weekly />
           <Banding />
-
         </div>
 
         <div>
           <Month />
-
           <Year />
         </div>
       </div>
