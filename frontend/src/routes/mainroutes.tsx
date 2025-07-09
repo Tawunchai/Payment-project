@@ -31,7 +31,7 @@ const Payment = Loadable(lazy(() => import("../page/admin/pyment/Payment")));
 const New = Loadable(lazy(() => import("../page/admin/New/New")));
 const Create_New = Loadable(lazy(() => import("../page/admin/New/create")));
 const Edit_New = Loadable(lazy(() => import("../page/admin/New/edit")));
-
+const Line = Loadable(lazy(() => import("../page/SocialProfile/SocialProfile")));
 {/* Monitor  */ }
 const Monitor = Loadable(lazy(() => import("../page/admin/test")));
 
@@ -83,6 +83,7 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "edit-new", element: <Edit_New /> },
       {/* Test  */ },
       { path: "Monitor", element: <Monitor /> },
+      { path: "Line", element: <Line /> },
     ],
   },
 ];

@@ -118,7 +118,6 @@ const Index = () => {
           reference_number: "", // หรือจะใส่ "ชำระด้วย Coin" ก็ได้
           picture: null, // ✅ ชัดเจนว่าไม่ส่งรูป
         };
-
         const paymentResult = await CreatePayment(paymentData);
 
         if (paymentResult && paymentResult.ID) {

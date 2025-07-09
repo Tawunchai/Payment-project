@@ -102,7 +102,7 @@ const Payment = () => {
 
   return (
     <div className="m-2 md:m-10 mt-24">
-      <div className="bg-white rounded-3xl p-6 md:p-10 mb-6 ">
+      <div className="bg-white rounded-3xl p-6 md:p-10 mb-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b border-gray-300 pb-3">
           ข้อมูลธนาคารปัจจุบัน
         </h2>
@@ -110,72 +110,73 @@ const Payment = () => {
         {bankData.length === 0 ? (
           <p className="text-center text-gray-500 py-10">ไม่มีข้อมูลธนาคาร</p>
         ) : (
-          <table className="w-full table-fixed border-collapse text-gray-700">
-            <thead>
-              <tr className="bg-gray-100 text-gray-600 uppercase text-sm font-semibold tracking-wide select-none">
-                <th className="border border-gray-300 p-3 w-[180px] min-w-[150px] text-left">
-                  <div className="flex items-center space-x-2">
-                    <BanknotesIcon className="h-5 w-5 text-indigo-600" />
-                    <span>PROMPTPAY</span>
-                  </div>
-                </th>
-                <th className="border border-gray-300 p-3 w-[180px] min-w-[150px] text-left">
-                  <div className="flex items-center space-x-2">
-                    <UserIcon className="h-5 w-5 text-indigo-600" />
-                    <span>MANAGER</span>
-                  </div>
-                </th>
-                <th className="border border-gray-300 p-3 w-[200px] min-w-[150px] text-left">
-                  <div className="flex items-center space-x-2">
-                    <CreditCardIcon className="h-5 w-5 text-indigo-600" />
-                    <span>BANKING</span>
-                  </div>
-                </th>
-                <th className="border border-gray-300 p-3 w-[100px] text-center">
-                  จัดการ
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {bankData.map((bank) => (
-                <tr
-                  key={bank.ID}
-                  className="hover:bg-blue-50 transition-colors cursor-pointer"
-                >
-                  <td
-                    className="border border-gray-300 p-3 overflow-hidden whitespace-nowrap text-ellipsis"
-                    title={bank.PromptPay}
-                  >
-                    {bank.PromptPay}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-3 overflow-hidden whitespace-nowrap text-ellipsis"
-                    title={bank.Manager}
-                  >
-                    {bank.Manager}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-3 overflow-hidden whitespace-nowrap text-ellipsis"
-                    title={bank.Banking}
-                  >
-                    {bank.Banking}
-                  </td>
-                  <td className="border border-gray-300 p-3 text-center">
-                    <Button
-                      type="primary"
-                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 border-blue-600"
-                      onClick={() => setEditBank(bank)}
-                    >
-                      แก้ไข
-                    </Button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-[600px] w-full table-fixed border-collapse text-gray-700">
+              <thead>
+                <tr className="bg-gray-100 text-gray-600 uppercase text-sm font-semibold tracking-wide select-none">
+                  <th className="border border-gray-300 p-3 w-[180px] min-w-[150px] text-left">
+                    <div className="flex items-center space-x-2">
+                      <BanknotesIcon className="h-5 w-5 text-indigo-600" />
+                      <span>PROMPTPAY</span>
+                    </div>
+                  </th>
+                  <th className="border border-gray-300 p-3 w-[180px] min-w-[150px] text-left">
+                    <div className="flex items-center space-x-2">
+                      <UserIcon className="h-5 w-5 text-indigo-600" />
+                      <span>MANAGER</span>
+                    </div>
+                  </th>
+                  <th className="border border-gray-300 p-3 w-[200px] min-w-[150px] text-left">
+                    <div className="flex items-center space-x-2">
+                      <CreditCardIcon className="h-5 w-5 text-indigo-600" />
+                      <span>BANKING</span>
+                    </div>
+                  </th>
+                  <th className="border border-gray-300 p-3 w-[100px] text-center">
+                    จัดการ
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {bankData.map((bank) => (
+                  <tr
+                    key={bank.ID}
+                    className="hover:bg-blue-50 transition-colors cursor-pointer"
+                  >
+                    <td
+                      className="border border-gray-300 p-3 overflow-hidden whitespace-nowrap text-ellipsis"
+                      title={bank.PromptPay}
+                    >
+                      {bank.PromptPay}
+                    </td>
+                    <td
+                      className="border border-gray-300 p-3 overflow-hidden whitespace-nowrap text-ellipsis"
+                      title={bank.Manager}
+                    >
+                      {bank.Manager}
+                    </td>
+                    <td
+                      className="border border-gray-300 p-3 overflow-hidden whitespace-nowrap text-ellipsis"
+                      title={bank.Banking}
+                    >
+                      {bank.Banking}
+                    </td>
+                    <td className="border border-gray-300 p-3 text-center">
+                      <Button
+                        type="primary"
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 border-blue-600"
+                        onClick={() => setEditBank(bank)}
+                      >
+                        แก้ไข
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
-
 
       {/* กล่องแรก: ColorMapping */}
       <div className="bg-white rounded-3xl p-6 md:p-10 mb-6">

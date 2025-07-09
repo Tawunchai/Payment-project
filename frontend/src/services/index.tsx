@@ -17,7 +17,8 @@ import { InverterStatus } from "../interface/IInverterStatus"
 import { BankInterface } from "../interface/IBank"
 
 export const apiUrlPicture = "http://localhost:8000/";
-
+//const apiUrl = "http://10.0.14.228:8000";
+//const apiUrl = "http://192.168.53.128:8000";
 const apiUrl = "http://localhost:8000";
 
 const getAuthHeader = () => {

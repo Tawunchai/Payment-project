@@ -88,9 +88,10 @@ func ListPayment(c *gin.Context) {
 func CreatePayment(c *gin.Context) {
 	var filePath string
 
-	// อ่านไฟล์รูปภาพ
+	// ตรวจสอบและจัดการรูปภาพ ถ้ามี
 	file, err := c.FormFile("picture")
 	if err == nil && file != nil {
+		// มีการอัปโหลดรูป
 		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
 		isValid := false
 		for _, t := range validTypes {
@@ -119,8 +120,8 @@ func CreatePayment(c *gin.Context) {
 			return
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "กรุณาอัปโหลดรูปภาพ"})
-		return
+		// ❗ ไม่แนบรูป — ไม่เป็นไร
+		filePath = ""
 	}
 
 	// รับข้อมูลอื่นจาก form
@@ -164,7 +165,7 @@ func CreatePayment(c *gin.Context) {
 		UserID:          &userID,
 		MethodID:        &methodID,
 		ReferenceNumber: referenceNumber,
-		Picture:         filePath,
+		Picture:         filePath, // อาจเป็นค่าว่างได้ ถ้าไม่มีรูป
 	}
 
 	if err := config.DB().Create(&payment).Error; err != nil {
@@ -172,7 +173,10 @@ func CreatePayment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "สร้างข้อมูล Payment สำเร็จ", "data": payment})
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "สร้างข้อมูล Payment สำเร็จ",
+		"data":    payment,
+	})
 }
 
 
