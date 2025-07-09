@@ -730,7 +730,7 @@ export const recentTransactions = [
   {
     icon: <BsCurrencyDollar />,
     amount: '+$350',
-    title: 'Paypal Transfer',
+    title: 'Paromtpay',
     desc: 'Money Added',
     iconColor: '#03C9D7',
     iconBg: '#E5FAFB',
@@ -739,8 +739,8 @@ export const recentTransactions = [
   {
     icon: <BsShield />,
     amount: '-$560',
-    desc: 'Bill Payment',
-    title: 'Wallet',
+    desc: 'All Payment',
+    title: 'Coins',
     iconColor: 'rgb(0, 194, 146)',
     iconBg: 'rgb(235, 250, 242)',
     pcColor: 'red-600',
