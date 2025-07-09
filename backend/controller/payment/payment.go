@@ -13,6 +13,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func ListEVChargingPayment(c *gin.Context) {
+	var payments []entity.EVChargingPayment
+
+	db := config.DB()
+	result := db.Preload("EVcharging").Preload("Payment").Find(&payments)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, payments)
+}
+
 func ListBank(c *gin.Context) {
 	var banks []entity.Bank
 

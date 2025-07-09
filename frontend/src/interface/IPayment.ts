@@ -1,6 +1,6 @@
 import { UsersInterface } from "./IUser";
 import { MethodInterface } from "./IMethod";
-
+import { EVchargingInterface } from "./IEV"
 export interface PaymentsInterface {
   ID: number;
   Amount: number;
@@ -19,6 +19,17 @@ export interface EVChargingPaymentInterface {
   quantity: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface EVChargingPayListmentInterface {
+  id?: number;
+  evcharging_id: number;
+  payment_id: number;
+  Price: number;
+  Quantity: number;
+  created_at?: string;
+  updated_at?: string;
+  EVcharging?: EVchargingInterface
 }
 
 export interface PaymentCreateInterface {

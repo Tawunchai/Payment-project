@@ -11,7 +11,7 @@ import { UserroleInterface } from "../interface/IUserrole";
 import { TypeInterface } from "../interface/IType";
 import { StatusInterface } from "../interface/IStatus";
 import { ReportInterface } from "../interface/IReport";
-import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface } from "../interface/IPayment";
+import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface,EVChargingPayListmentInterface } from "../interface/IPayment";
 import { MethodInterface } from "../interface/IMethod";
 import { InverterStatus } from "../interface/IInverterStatus"
 import { BankInterface } from "../interface/IBank"
@@ -1220,6 +1220,27 @@ export const CreateEVChargingPayment = async (
     }
   } catch (error: any) {
     console.error("Error creating EVChargingPayment:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const ListEVChargingPayments = async (): Promise<EVChargingPayListmentInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/evcharging-payments`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching EV charging payments:", error.response?.data || error.message);
     return null;
   }
 };

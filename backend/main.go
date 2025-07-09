@@ -98,6 +98,7 @@ func main() {
 		public.PATCH("/banks/:id", payment.UpdateBank)
 		public.POST("/create-payments", payment.CreatePayment)
 		public.POST("/create-evchargingpayments", payment.CreateEVChargingPayment)
+		public.GET("/evcharging-payments", payment.ListEVChargingPayment)
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)
