@@ -585,47 +585,14 @@ export const links = [
         name: 'New',
         icon: <FiEdit />,
       },
-      /*{
-        name: 'Getting Started',
-        icon: <FiEdit />,
-      },*/
     ],
   },
   {
-    title: 'Charts',
+    title: 'Solar Monitor',
     links: [
       {
-        name: 'Area',
+        name: 'Monitor',
         icon: <AiOutlineAreaChart />,
-      },
-
-      {
-        name: 'Bar',
-        icon: <AiOutlineBarChart />,
-      },
-      {
-        name: 'Pie',
-        icon: <FiPieChart />,
-      },
-      {
-        name: 'Financial',
-        icon: <RiStockLine />,
-      },
-      {
-        name: 'ColorMapping',
-        icon: <BsBarChart />,
-      },
-      {
-        name: 'Pyramid',
-        icon: <GiLouvrePyramid />,
-      },
-      {
-        name: 'Stacked',
-        icon: <AiOutlineBarChart />,
-      },
-      {
-        name: 'Modal',
-        icon: <AiOutlineBarChart />,
       },
     ],
   },

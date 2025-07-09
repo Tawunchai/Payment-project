@@ -32,16 +32,8 @@ const New = Loadable(lazy(() => import("../page/admin/New/New")));
 const Create_New = Loadable(lazy(() => import("../page/admin/New/create")));
 const Edit_New = Loadable(lazy(() => import("../page/admin/New/edit")));
 
-const Modal = Loadable(lazy(() => import("../component/modal")));
-
-{/* charts  */ }
-const Area = Loadable(lazy(() => import("../page/admin/test")));
-const Bar = Loadable(lazy(() => import("../page/admin/charts/Bar")));
-const Financial = Loadable(lazy(() => import("../page/admin/charts/Financial")));
-const Line = Loadable(lazy(() => import("../page/SocialProfile/SocialProfile")));
-const Pie = Loadable(lazy(() => import("../page/admin/charts/Pie")));
-const Pyramid = Loadable(lazy(() => import("../page/admin/charts/Pyramid")));
-const Stacked = Loadable(lazy(() => import("../page/admin/charts/Stacked")));
+{/* Monitor  */ }
+const Monitor = Loadable(lazy(() => import("../page/admin/test")));
 
 
 
@@ -89,15 +81,8 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "New", element: <New /> },
       { path: "create-new", element: <Create_New /> },
       { path: "edit-new", element: <Edit_New /> },
-      {/* charts  */ },
-      { path: "Area", element: <Area /> },
-      { path: "Bar", element: <Bar /> },
-      { path: "Financial", element: <Financial /> },
-      { path: "Line", element: <Line /> },
-      { path: "Pie", element: <Pie /> },
-      { path: "Pyramid", element: <Pyramid /> },
-      { path: "Stacked", element: <Stacked /> },
-      { path: "Modal", element: <Modal /> },
+      {/* Test  */ },
+      { path: "Monitor", element: <Monitor /> },
     ],
   },
 ];

@@ -18,8 +18,8 @@ const index = () => {
     const [employeeCount, setEmployeeCount] = useState<number>(0);
 
     //@ts-ignore
-    const [evPayments, setEvPayments] = useState<EVChargingPayListmentInterface[]>([]);
-    const [salesTotal, setSalesTotal] = useState<number>(0);
+    const [evPayments, setEvPayments] = useState<EVChargingPayListmentInterface[]>([]);//@ts-ignore
+    const [salesTotal, setSalesTotal] = useState<number>(0);//@ts-ignore
     const [refundsCount, setRefundsCount] = useState<number>(0);
 
     useEffect(() => {

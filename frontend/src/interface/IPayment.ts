@@ -30,6 +30,7 @@ export interface EVChargingPayListmentInterface {
   created_at?: string;
   updated_at?: string;
   EVcharging?: EVchargingInterface
+  CreatedAt:string;
 }
 
 export interface PaymentCreateInterface {
