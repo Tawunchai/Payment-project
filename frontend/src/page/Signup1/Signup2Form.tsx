@@ -82,7 +82,9 @@ const Signup2Form = () => {
       const res = await CreateUser(formData); // เรียกใช้งาน CreateUser จาก service
       if (res) {
         message.success("User created successfully!");
-        navigate("/auth/login-2");
+        setTimeout(() => {
+          navigate("/auth/login-2");
+        }, 2000);
       } else {
         message.error("Failed to create user.");
       }

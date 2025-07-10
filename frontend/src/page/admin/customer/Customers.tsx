@@ -20,6 +20,7 @@ import { ListUsersByRoleUser, DeleteUser, UpdateUser, ListGenders, ListUserRoles
 import Modal from "../getting/modal";
 import EditUserModal from "./edit/index";
 import { Trash2 } from "react-feather";
+import { message } from "antd";
 
 const Customers = () => {
 
@@ -71,7 +72,8 @@ const Customers = () => {
         Status: user.Gender?.Gender ?? "-",
         StatusBg: user.Gender?.Gender === "Male" ? "#8BE78B" : "#FEC90F",
         PhoneNumber: user.PhoneNumber ?? "-",
-        Raw: user, 
+        Coin: user.Coin ?? 0,
+        Raw: user,
       }));
       setCustomerData(formatted);
     }
@@ -108,7 +110,7 @@ const Customers = () => {
     if (failedIds.length === 0) {
       await fetchUsers();
     }
-
+    message.success("ลบข้อมูลสำเร็จ");
     selectedRowsRef.current = [];
     setOpenConfirmModal(false);
   };
@@ -129,14 +131,15 @@ const Customers = () => {
       return;
     }
     const id = updated.UserID ?? updated.ID;
-    const { Raw, CustomerName, ...dataToUpdate } = updated; 
+    const { Raw, CustomerName, ...dataToUpdate } = updated;
     console.log(dataToUpdate)
     const res = await UpdateUser(id, dataToUpdate);
     if (res) {
+      message.success("อัปเดตข้อมูลสำเร็จ");
       await fetchUsers();
       setEditUser(null);
     } else {
-      alert("Failed to update user");
+      message.error("อัปเดตข้อมูลไม่สำเร็จ");
     }
   };
 
@@ -161,10 +164,12 @@ const Customers = () => {
         <ColumnsDirective>
           <ColumnDirective type="checkbox" width="50" />
           <ColumnDirective field="UserID" headerText="ID" isPrimaryKey={true} visible={false} />
-      
+
           {customersGrid.map((item: any, index: number) => (
             <ColumnDirective key={index} {...item} />
           ))}
+          <ColumnDirective field="Coin" headerText="Coin" textAlign="Center" width="100" />
+
           <ColumnDirective
             headerText="Action"
             textAlign="Center"

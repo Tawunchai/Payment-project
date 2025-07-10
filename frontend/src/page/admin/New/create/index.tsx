@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { message, Upload } from "antd";
 import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
 import { CreateNews } from "../../../../services/index"; // ปรับ path ให้ตรงกับไฟล์ service คุณ
 import BackgroundImage from "../../../../assets/admin/img/img.jpg";
 import "../new.css";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const employeeID = 1;
+  const navigate = useNavigate();
+  const [employeeid, setEmployeeid] = useState<number>(
+    Number(localStorage.getItem("employeeid")) || 0
+  );
+  const employeeID = employeeid;
 
   const onChange = ({ fileList: newFileList }: any) => {
     setFileList(newFileList);
@@ -55,13 +60,20 @@ const Index = () => {
 
     if (result) {
       message.success("สร้างข่าวสำเร็จ");
-      setFileList([]);
-      setTitle("");
-      setDescription("");
+      setTimeout(() => {
+        setFileList([]);
+        setTitle("");
+        setDescription("");
+        navigate("/admin/New");
+      }, 2000);
     } else {
       message.error("สร้างข่าวล้มเหลว");
     }
   };
+
+  useEffect(() => {
+    setEmployeeid(Number(localStorage.getItem("employeeid")));
+  }, []);
 
   return (
     <div>

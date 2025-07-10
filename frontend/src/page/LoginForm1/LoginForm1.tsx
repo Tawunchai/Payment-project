@@ -54,11 +54,10 @@ const LoginForm1 = () => {
       }
 
       messageApi.success(`Successfully logged in as ${roleName}`);
-
       setTimeout(() => {
         if (roleName === "Admin" || roleName === "Employee") navigate("/admin");
         else if (roleName === "User") navigate("/user");
-      }, 100);
+      }, 2000);
     } else {
       messageApi.error("Invalid username or password. Please try again.");
     }

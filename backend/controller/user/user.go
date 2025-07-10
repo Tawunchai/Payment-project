@@ -163,7 +163,6 @@ func CreateUser(c *gin.Context) {
 	})
 }
 
-
 // DeleteUserByID ลบ User ตาม ID
 func DeleteUserByID(c *gin.Context) {
 	id := c.Param("id")
@@ -304,6 +303,7 @@ func UpdateUserByID(c *gin.Context) {
 		"LastName":    true,
 		"Profile":     true,
 		"PhoneNumber": true,
+		"Coin":        true,
 		"UserRoleID":  true,
 		"GenderID":    true,
 	}
@@ -351,74 +351,74 @@ func ListUserByID(c *gin.Context) {
 }
 
 type EmailCheckRequest struct {
-    Email string `json:"email" binding:"required,email"`
+	Email string `json:"email" binding:"required,email"`
 }
 
 func CheckEmailExists(c *gin.Context) {
-    var req EmailCheckRequest
+	var req EmailCheckRequest
 
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูล email ไม่ถูกต้อง"})
-        return
-    }
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูล email ไม่ถูกต้อง"})
+		return
+	}
 
-    db := config.DB()
-    var user entity.User
+	db := config.DB()
+	var user entity.User
 
-    err := db.Where("email = ?", req.Email).First(&user).Error
-    if err != nil {
-        if err == gorm.ErrRecordNotFound {
-            c.JSON(http.StatusOK, gin.H{"exists": false, "message": "ไม่พบ email นี้ในระบบ"})
-            return
-        }
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในระบบ"})
-        return
-    }
+	err := db.Where("email = ?", req.Email).First(&user).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusOK, gin.H{"exists": false, "message": "ไม่พบ email นี้ในระบบ"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในระบบ"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"exists": true, "message": "พบ email นี้ในระบบ"})
+	c.JSON(http.StatusOK, gin.H{"exists": true, "message": "พบ email นี้ในระบบ"})
 }
 
 type ResetPasswordRequest struct {
-    Email       string `json:"email" binding:"required,email"`
-    NewPassword string `json:"new_password" binding:"required,min=6"`
+	Email       string `json:"email" binding:"required,email"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
 }
 
 func ResetPassword(c *gin.Context) {
-    var req ResetPasswordRequest
+	var req ResetPasswordRequest
 
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูลไม่ถูกต้อง หรือขาดข้อมูล"})
-        return
-    }
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูลไม่ถูกต้อง หรือขาดข้อมูล"})
+		return
+	}
 
-    db := config.DB()
+	db := config.DB()
 
-    var user entity.User
-    err := db.Where("email = ?", req.Email).First(&user).Error
-    if err != nil {
-        if err == gorm.ErrRecordNotFound {
-            c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบ email ในระบบ"})
-        } else {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในระบบ"})
-        }
-        return
-    }
+	var user entity.User
+	err := db.Where("email = ?", req.Email).First(&user).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบ email ในระบบ"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในระบบ"})
+		}
+		return
+	}
 
-    // ทำการ hash รหัสผ่านใหม่ก่อนบันทึก
-    hashedPassword, err := config.HashPassword(req.NewPassword)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในการเข้ารหัสรหัสผ่าน"})
-        return
-    }
+	// ทำการ hash รหัสผ่านใหม่ก่อนบันทึก
+	hashedPassword, err := config.HashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในการเข้ารหัสรหัสผ่าน"})
+		return
+	}
 
-    user.Password = hashedPassword
+	user.Password = hashedPassword
 
-    if err := db.Save(&user).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถอัปเดตรหัสผ่านได้"})
-        return
-    }
+	if err := db.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถอัปเดตรหัสผ่านได้"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "เปลี่ยนรหัสผ่านสำเร็จ"})
+	c.JSON(http.StatusOK, gin.H{"message": "เปลี่ยนรหัสผ่านสำเร็จ"})
 }
 
 func UpdateCoins(c *gin.Context) {

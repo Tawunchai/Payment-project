@@ -3,7 +3,7 @@ import { message, Upload } from "antd";
 import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
-import { UpdateNewsByID,apiUrlPicture } from "../../../../services/index";
+import { UpdateNewsByID, apiUrlPicture } from "../../../../services/index";
 import BackgroundImage from "../../../../assets/admin/img/img.jpg";
 import "../new.css";
 
@@ -15,22 +15,24 @@ const EditNews = () => {
   const [fileList, setFileList] = useState<any[]>(
     initialPicture
       ? [
-          {
-            uid: "-1",
-            name: "current.jpg",
-            status: "done",
-            url: `${apiUrlPicture}${initialPicture}`,
-          },
-        ]
+        {
+          uid: "-1",
+          name: "current.jpg",
+          status: "done",
+          url: `${apiUrlPicture}${initialPicture}`,
+        },
+      ]
       : []
   );
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
-  const employeeID = 1;
+  const [employeeid, setEmployeeid] = useState<number>(
+    Number(localStorage.getItem("employeeid")) || 0
+  );
+  const employeeID = employeeid;
 
   useEffect(() => {
     if (!newsId) {
-      message.warning("ไม่พบข้อมูลข่าวที่จะแก้ไข");
       navigate("/admin/edit-new");
     }
   }, [newsId, navigate]);
@@ -74,11 +76,17 @@ const EditNews = () => {
 
     if (result) {
       message.success("อัปเดตข่าวสำเร็จ");
-      navigate("/admin/edit-new");
+      setTimeout(() => {
+        navigate("/admin/New");
+      }, 2000);
     } else {
       message.error("อัปเดตข่าวล้มเหลว");
     }
   };
+
+  useEffect(() => {
+    setEmployeeid(Number(localStorage.getItem("employeeid")));
+  }, []);
 
   return (
     <div>

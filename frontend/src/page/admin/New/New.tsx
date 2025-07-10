@@ -6,7 +6,8 @@ import type { NewsInterface } from "../../../interface/INews";
 import { FaTrash, FaEdit } from "react-icons/fa";
 import { Trash2 } from "react-feather";
 import Modal from "../getting/modal";
-import { useNavigate } from "react-router-dom"; // ✅ เพิ่ม
+import { useNavigate } from "react-router-dom"; 
+import { message } from 'antd';
 
 const New = () => {
   const [newsList, setNewsList] = useState<NewsInterface[]>([]);
@@ -32,10 +33,10 @@ const New = () => {
     if (selectedNewsRef.current) {
       const result = await DeleteNews(selectedNewsRef.current.ID!);
       if (result) {
-        alert("ลบข่าวสำเร็จ");
+        message.success("ลบข่าวสำเร็จ");
         fetchNews();
       } else {
-        alert("เกิดข้อผิดพลาดในการลบข่าว");
+        message.warning("เกิดข้อผิดพลาดในการลบข่าว");
       }
       setOpenConfirmModal(false);
       selectedNewsRef.current = null;

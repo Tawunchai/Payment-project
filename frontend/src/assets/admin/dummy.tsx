@@ -416,13 +416,6 @@ const gridEmployeeProfile = (props: any) => (
 
 export const customersGrid = [
   {
-    field: "UserID",
-    headerText: "User ID",
-    width: "120",
-    textAlign: "Center",
-    isPrimaryKey: true,
-  },
-  {
     headerText: "Name",
     width: "150",
     template: customerGridImage, // แสดงรูป+ชื่อ (อย่าลืมแก้ template ให้ใช้ CustomerName)

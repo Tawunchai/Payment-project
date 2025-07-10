@@ -38,7 +38,9 @@ const EditGettingStarted = () => {
 
     if (result) {
       message.success("อัปเดตข้อมูลสำเร็จ");
-      navigate("/admin/editor");
+      setTimeout(() => {
+        navigate("/admin/editor");
+      }, 2000);
     } else {
       message.error("อัปเดตข้อมูลล้มเหลว");
     }

@@ -16,7 +16,7 @@ import { DatePickerComponent } from '@syncfusion/ej2-react-calendars';
 import type { ScheduleComponent as ScheduleType } from '@syncfusion/ej2-react-schedule';
 import { Header } from '../../../component/admin';
 import type { View } from '@syncfusion/ej2-react-schedule';
-
+import { message } from 'antd';
 import { ListCalendars, CreateCalendar, UpdateCalendar, DeleteCalendar } from '../../../services/index';
 import { CalendarInterface } from '../../../interface/ICalendar';
 
@@ -26,8 +26,11 @@ const Scheduler = () => {
   const [scheduleObj, setScheduleObj] = useState<ScheduleType | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const views: View[] = ['Day', 'Week', 'WorkWeek', 'Month', 'Agenda'];
+    const [employeeid, setEmployeeid] = useState<number>(
+    Number(localStorage.getItem("employeeid")) || 0
+  );
 
-  const loggedInEmployeeID = 1;
+  const loggedInEmployeeID = employeeid;
 
   const refreshEvents = async () => {
     const updated = await ListCalendars();
@@ -46,6 +49,7 @@ const Scheduler = () => {
   };
 
   useEffect(() => {
+    setEmployeeid(Number(localStorage.getItem("employeeid")));
     refreshEvents();
   }, []);
 
@@ -77,6 +81,7 @@ const Scheduler = () => {
 
       const response = await CreateCalendar(newCalendar);
       if (response) {
+        message.success('สร้างข้อมูลสำเร็จ');
         await refreshEvents();
       }
     }
@@ -98,6 +103,7 @@ const Scheduler = () => {
       if (changedData.Id) {
         const updateResponse = await UpdateCalendar(changedData.Id, updatedCalendar);
         if (updateResponse) {
+          message.success('แก้ไขข้อมูลสำเร็จ');
           await refreshEvents();
         }
       }
@@ -110,6 +116,7 @@ const Scheduler = () => {
         console.log("🗑️ Deleting event with ID:", removedData.Id);
         const deleteResponse = await DeleteCalendar(removedData.Id);
         if (deleteResponse) {
+          message.success('ลบข้อมูลสำเร็จ');
           await refreshEvents();
         }
       }

@@ -8,6 +8,7 @@ import { Trash2 } from "react-feather";
 import Modal from "../admin/getting/modal";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineDocumentText } from "react-icons/hi";
+import { message } from 'antd';
 
 const Editor = () => {
   const [getstartedList, setGetstartedList] = useState<GetstartedInterface[]>([]);
@@ -33,10 +34,10 @@ const Editor = () => {
     if (selectedRef.current) {
       const result = await DeleteGettingByID(selectedRef.current.ID!);
       if (result) {
-        alert("ลบข้อมูลสำเร็จ");
+        message.success('ลบข้อมูลสำเร็จ');
         fetchData();
       } else {
-        alert("เกิดข้อผิดพลาดในการลบ");
+        message.error("เกิดข้อผิดพลาดในการลบ");
       }
       setOpenConfirmModal(false);
       selectedRef.current = null;

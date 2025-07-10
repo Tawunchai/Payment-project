@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { message } from "antd";
-import { CreateGettingStarted } from "../../../services/index"; 
+import { CreateGettingStarted } from "../../../services/index";
 import BackgroundImage from "../../../assets/admin/img/img.jpg";
 import "../new.css";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const employeeID = 1;
+  const navigate = useNavigate();
+  const [employeeid, setEmployeeid] = useState<number>(
+    Number(localStorage.getItem("employeeid")) || 0
+  );
+  const employeeID = employeeid;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +22,6 @@ const Index = () => {
       return;
     }
 
-    // สร้าง JSON object ส่งไป
     const data = {
       title,
       description,
@@ -28,12 +32,19 @@ const Index = () => {
 
     if (result) {
       message.success("สร้างข้อมูลสำเร็จ");
-      setTitle("");
-      setDescription("");
+      setTimeout(() => {
+        navigate("/admin/editor");
+        setTitle("");
+        setDescription("");
+      }, 2000);
     } else {
       message.error("สร้างข้อมูลล้มเหลว");
     }
   };
+
+  useEffect(() => {
+    setEmployeeid(Number(localStorage.getItem("employeeid")));
+  }, []);
 
   return (
     <div>

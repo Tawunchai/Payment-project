@@ -42,16 +42,17 @@ const ResetPasswordForm = () => {
   }
 
   try {
-    console.log(email,newpassword)
     const res = await resetPassword({
       email: email,       
       new_password: newpassword,
     });
 
-    if (res) {
-      message.success("เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่");
+     if (res) {
+    message.success("เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่");
+    setTimeout(() => {
       navigate("/");
-    } else {
+    }, 2500);
+  } else {
       message.error("เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่");
     }
   } catch (error) {
