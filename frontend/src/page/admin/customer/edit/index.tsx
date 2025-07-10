@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import Modal from "../../getting/modal";
 import { GendersInterface } from "../../../../interface/IGender";
 import { UserroleInterface } from "../../../../interface/IUserrole";
-import { FaUserEdit, FaEnvelope, FaUser, FaPhoneAlt, FaCoins, FaTransgender, FaUserTag, FaTimes, FaSave } from "react-icons/fa";
+import {
+  FaUserEdit, FaEnvelope, FaUser, FaPhoneAlt, FaCoins, FaTransgender, FaUserTag, FaTimes, FaSave
+} from "react-icons/fa";
 
 interface EditUserModalProps {
   open: boolean;
@@ -22,6 +24,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   userRoles,
 }) => {
   const [form, setForm] = useState<any>(user);
+  const [errors, setErrors] = useState<{ Email?: string; PhoneNumber?: string; Coin?: string }>({});
 
   useEffect(() => {
     setForm({
@@ -31,20 +34,49 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       UserRoleID: user?.UserRole?.ID ?? user?.UserRoleID ?? "",
       Coin: user?.Coin ?? 0,
     });
+    setErrors({});
   }, [user]);
 
   if (!open) return null;
+
+  const validate = () => {
+    const newErrors: typeof errors = {};
+
+    // Validate email
+    if (form.Email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.Email)) {
+      newErrors.Email = "รูปแบบอีเมลไม่ถูกต้อง";
+    }
+
+    // Validate phone number
+    if (form.PhoneNumber && !/^0\d{9}$/.test(form.PhoneNumber)) {
+      newErrors.PhoneNumber = "กรุณาใส่เบอร์โทรให้ถูกต้อง";
+    }
+
+    // Validate coin
+    if (form.Coin !== undefined && isNaN(form.Coin)) {
+      newErrors.Coin = "ต้องเป็นตัวเลขเท่านั้น";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev: any) => ({
       ...prev,
-      [name]: name === "Coin" ? Number(value) : value
+      [name]: name === "Coin" ? value : value
     }));
   };
 
   const handleSubmit = () => {
-    const { Gender, UserRole, ...payload } = form;
+    if (!validate()) {
+      return;
+    }
+    const { Gender, UserRole, ...payload } = {
+      ...form,
+      Coin: Number(form.Coin)  // แปลง Coin เป็น number ก่อนส่ง
+    };
     console.log("📦 ข้อมูลที่กำลังจะอัปเดต:", payload);
     onSave(payload);
   };
@@ -77,6 +109,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               value={form.Email || ""}
               onChange={handleChange}
             />
+            {errors.Email && <p className="text-red-500 text-sm mt-1">{errors.Email}</p>}
           </div>
           <input
             className="border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
@@ -101,17 +134,20 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               value={form.PhoneNumber || ""}
               onChange={handleChange}
             />
+            {errors.PhoneNumber && <p className="text-red-500 text-sm mt-1">{errors.PhoneNumber}</p>}
           </div>
           <div className="relative">
             <FaCoins className="absolute left-2 top-3 text-yellow-500" />
             <input
               type="number"
+              step="0.01"
               className="pl-8 border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
               name="Coin"
               placeholder="Coin"
               value={form.Coin ?? 0}
               onChange={handleChange}
             />
+            {errors.Coin && <p className="text-red-500 text-sm mt-1">{errors.Coin}</p>}
           </div>
         </div>
 
