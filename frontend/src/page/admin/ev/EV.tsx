@@ -12,7 +12,7 @@ import {
   Filter,
 } from "@syncfusion/ej2-react-grids";
 import { SelectionSettingsModel } from "@syncfusion/ej2-react-grids";
-
+import { message } from "antd";
 import { Header } from "../../../component/admin";
 import { EVGrid } from "../../../assets/admin/dummy";
 import {
@@ -130,7 +130,7 @@ const EV = () => {
     if (failedIds.length === 0) {
       await fetchEVData();
     }
-
+    message.success("ลบข้อมูลสำเร็จ");
     selectedRowsRef.current = [];
     setOpenConfirmModal(false);
   };

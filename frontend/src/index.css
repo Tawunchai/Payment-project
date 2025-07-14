@@ -135,6 +135,7 @@ a {
   }
 }
 
+
 /* media queries */
 @media (min-width: 1536px) {
   .innerWidth {
@@ -163,5 +164,67 @@ a {
     font-size: 1.2rem;
   }
 }
+
+
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 10s linear infinite;
+}
+
+@keyframes spin-fast {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+.animate-spin-fast {
+  animation: spin-fast 4s linear infinite;
+}
+
+/* Shimmer glow effect for green text */
+@keyframes shimmer-glow-green {
+  0% {
+    background-position: -200% center;
+    filter: drop-shadow(0 0 5px #22c55e);
+  }
+  50% {
+    background-position: 200% center;
+    filter: drop-shadow(0 0 15px #4ade80);
+  }
+  100% {
+    background-position: -200% center;
+    filter: drop-shadow(0 0 5px #22c55e);
+  }
+}
+.animate-shimmer-glow-green {
+  background-size: 400% 100%;
+  animation: shimmer-glow-green 3.5s ease-in-out infinite;
+}
+
+
+
+
 
 

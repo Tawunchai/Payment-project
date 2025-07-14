@@ -35,7 +35,15 @@ const Line = Loadable(lazy(() => import("../page/SocialProfile/SocialProfile")))
 {/* Monitor  */ }
 const Monitor = Loadable(lazy(() => import("../page/admin/test")));
 
-
+{/* charts  */}
+const Area = Loadable(lazy(() => import("../page/admin/charts/Area")));
+const Bar = Loadable(lazy(() => import("../page/admin/charts/Bar")));
+const Financial = Loadable(lazy(() => import("../page/admin/charts/Financial")));
+const LineLinear = Loadable(lazy(() => import("../page/admin/charts/Line")));
+const ColorMapping = Loadable(lazy(() => import("../page/admin/charts/ColorMapping")));
+const Pie = Loadable(lazy(() => import("../page/admin/charts/Pie")));
+const Pyramid = Loadable(lazy(() => import("../page/admin/charts/Pyramid")));
+const Stacked = Loadable(lazy(() => import("../page/admin/charts/Stacked")));
 
 const UserRoutes = (): RouteObject[] => [
   {
@@ -84,6 +92,15 @@ const AdminRoutes = (): RouteObject[] => [
       {/* Test  */ },
       { path: "Monitor", element: <Monitor /> },
       { path: "Line", element: <Line /> },
+      {/* charts  */},
+      { path: "Area", element: <Area /> },
+      { path: "Bar", element: <Bar /> },
+      { path: "Financial", element: <Financial /> },
+      { path: "LineLinear", element: <LineLinear /> },
+      { path: "ColorMapping", element: <ColorMapping /> },
+      { path: "Pie", element: <Pie /> },
+      { path: "Pyramid", element: <Pyramid /> },
+      { path: "Stacked", element: <Stacked /> },
     ],
   },
 ];

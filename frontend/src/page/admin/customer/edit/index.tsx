@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import Modal from "../../getting/modal";
 import { GendersInterface } from "../../../../interface/IGender";
 import { UserroleInterface } from "../../../../interface/IUserrole";
 import {
-  FaUserEdit, FaEnvelope, FaUser, FaPhoneAlt, FaCoins, FaTransgender, FaUserTag, FaTimes, FaSave
+  FaUserEdit, FaEnvelope, FaUser, FaPhoneAlt, FaCoins, FaTransgender, FaUserTag, FaTimes
 } from "react-icons/fa";
 
 interface EditUserModalProps {
@@ -42,21 +41,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   const validate = () => {
     const newErrors: typeof errors = {};
 
-    // Validate email
     if (form.Email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.Email)) {
       newErrors.Email = "รูปแบบอีเมลไม่ถูกต้อง";
     }
-
-    // Validate phone number
     if (form.PhoneNumber && !/^0\d{9}$/.test(form.PhoneNumber)) {
       newErrors.PhoneNumber = "กรุณาใส่เบอร์โทรให้ถูกต้อง";
     }
-
-    // Validate coin
     if (form.Coin !== undefined && isNaN(form.Coin)) {
       newErrors.Coin = "ต้องเป็นตัวเลขเท่านั้น";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -70,93 +63,108 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!validate()) {
-      return;
-    }
+    if (!validate()) return;
     const { Gender, UserRole, ...payload } = {
       ...form,
-      Coin: Number(form.Coin)  // แปลง Coin เป็น number ก่อนส่ง
+      Coin: Number(form.Coin)
     };
     console.log("📦 ข้อมูลที่กำลังจะอัปเดต:", payload);
     onSave(payload);
   };
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <div className="w-full max-w-xl mx-auto p-6 bg-white rounded-xl shadow-lg border-t-4 border-orange-500 space-y-5">
-        <div className="flex items-center justify-center gap-2 text-orange-600">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+      <div className="bg-white rounded-2xl p-6 w-[90%] max-w-[600px] shadow-lg space-y-5 relative mx-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-orange-500 hover:text-orange-600"
+        >
+          <FaTimes size={20} />
+        </button>
+
+        <div className="flex items-center gap-2 mb-2 text-orange-500">
           <FaUserEdit size={24} />
-          <h2 className="text-xl font-semibold">Edit User</h2>
+          <h2 className="text-xl font-semibold text-gray-800">แก้ไขข้อมูลผู้ใช้</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="relative">
-            <FaUser className="absolute left-2 top-3 text-orange-400" />
+          <div className="flex items-center border rounded-lg px-3 py-2">
+            <FaUser className="text-orange-400 mr-2" />
             <input
-              className="pl-8 border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
+              className="w-full outline-none"
               name="Username"
               placeholder="Username"
               value={form.Username || ""}
               onChange={handleChange}
             />
           </div>
-          <div className="relative">
-            <FaEnvelope className="absolute left-2 top-3 text-orange-400" />
-            <input
-              className="pl-8 border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
-              name="Email"
-              placeholder="Email"
-              value={form.Email || ""}
-              onChange={handleChange}
-            />
-            {errors.Email && <p className="text-red-500 text-sm mt-1">{errors.Email}</p>}
+
+          <div className="flex flex-col">
+            <div className="flex items-center border rounded-lg px-3 py-2">
+              <FaEnvelope className="text-orange-400 mr-2" />
+              <input
+                className="w-full outline-none"
+                name="Email"
+                placeholder="Email"
+                value={form.Email || ""}
+                onChange={handleChange}
+              />
+            </div>
+            {errors.Email && <p className="text-red-500 text-xs mt-1">{errors.Email}</p>}
           </div>
+
           <input
-            className="border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
+            className="border rounded-lg px-3 py-2 outline-none"
             name="FirstName"
             placeholder="First Name"
             value={form.FirstName || ""}
             onChange={handleChange}
           />
           <input
-            className="border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
+            className="border rounded-lg px-3 py-2 outline-none"
             name="LastName"
             placeholder="Last Name"
             value={form.LastName || ""}
             onChange={handleChange}
           />
-          <div className="relative">
-            <FaPhoneAlt className="absolute left-2 top-3 text-orange-400" />
-            <input
-              className="pl-8 border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
-              name="PhoneNumber"
-              placeholder="Phone Number"
-              value={form.PhoneNumber || ""}
-              onChange={handleChange}
-            />
-            {errors.PhoneNumber && <p className="text-red-500 text-sm mt-1">{errors.PhoneNumber}</p>}
+
+          <div className="flex flex-col">
+            <div className="flex items-center border rounded-lg px-3 py-2">
+              <FaPhoneAlt className="text-orange-400 mr-2" />
+              <input
+                className="w-full outline-none"
+                name="PhoneNumber"
+                placeholder="Phone Number"
+                value={form.PhoneNumber || ""}
+                onChange={handleChange}
+              />
+            </div>
+            {errors.PhoneNumber && <p className="text-red-500 text-xs mt-1">{errors.PhoneNumber}</p>}
           </div>
-          <div className="relative">
-            <FaCoins className="absolute left-2 top-3 text-yellow-500" />
-            <input
-              type="number"
-              step="0.01"
-              className="pl-8 border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
-              name="Coin"
-              placeholder="Coin"
-              value={form.Coin ?? 0}
-              onChange={handleChange}
-            />
-            {errors.Coin && <p className="text-red-500 text-sm mt-1">{errors.Coin}</p>}
+
+          <div className="flex flex-col">
+            <div className="flex items-center border rounded-lg px-3 py-2">
+              <FaCoins className="text-yellow-500 mr-2" />
+              <input
+                type="number"
+                step="0.01"
+                className="w-full outline-none"
+                name="Coin"
+                placeholder="Coin"
+                value={form.Coin ?? 0}
+                onChange={handleChange}
+              />
+            </div>
+            {errors.Coin && <p className="text-red-500 text-xs mt-1">{errors.Coin}</p>}
           </div>
         </div>
 
         <div className="flex flex-col gap-3">
-          <div className="relative">
-            <FaTransgender className="absolute left-2 top-3 text-orange-400" />
+          <div className="flex items-center border rounded-lg px-3 py-2">
+            <FaTransgender className="text-orange-400 mr-2" />
             <select
               name="GenderID"
-              className="pl-8 border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
+              className="w-full outline-none bg-transparent"
               value={form.GenderID || ""}
               onChange={handleChange}
             >
@@ -168,11 +176,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               ))}
             </select>
           </div>
-          <div className="relative">
-            <FaUserTag className="absolute left-2 top-3 text-orange-400" />
+
+          <div className="flex items-center border rounded-lg px-3 py-2">
+            <FaUserTag className="text-orange-400 mr-2" />
             <select
               name="UserRoleID"
-              className="pl-8 border rounded p-2 w-full focus:ring-2 focus:ring-orange-300"
+              className="w-full outline-none bg-transparent"
               value={form.UserRoleID || ""}
               onChange={handleChange}
             >
@@ -186,22 +195,22 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onClose}
-            className="flex items-center gap-1 px-4 py-2 bg-orange-100 text-orange-600 rounded hover:bg-orange-200 transition"
+            className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300"
           >
-            <FaTimes /> Cancel
+            ยกเลิก
           </button>
           <button
             onClick={handleSubmit}
-            className="flex items-center gap-1 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition"
+            className="px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600"
           >
-            <FaSave /> Save
+            บันทึก
           </button>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 

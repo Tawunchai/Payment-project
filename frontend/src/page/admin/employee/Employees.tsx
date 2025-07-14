@@ -12,7 +12,6 @@ import {
   Filter,
 } from "@syncfusion/ej2-react-grids";
 import { SelectionSettingsModel } from "@syncfusion/ej2-react-grids";
-
 import { Header } from "../../../component/admin";
 import { employeesGrid } from "../../../assets/admin/dummy";
 import {
@@ -22,12 +21,11 @@ import {
   ListUserRoles,
   createEmployeeByAdmin,
 } from "../../../services/index";
-
 import Modal from "../getting/modal";
 import { Trash2 } from "react-feather";
 import EditAdminModal from "./edit/index";
 import CreateAdminModal from "./create";
-
+import { message } from "antd";
 import { CreateEmployeeInput } from "../../../interface/IEmployee"; // import type จริง
 
 const Employees = () => {
@@ -125,6 +123,7 @@ const Employees = () => {
     }
 
     selectedRowsRef.current = [];
+    message.success("ลบข้อมูลพนักงานสำเร็จ");
     setOpenConfirmModal(false);
   };
 
