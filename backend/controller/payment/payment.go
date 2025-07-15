@@ -41,7 +41,6 @@ func ListBank(c *gin.Context) {
 
 func UpdateBank(c *gin.Context) {
 	var bank entity.Bank
-
 	id := c.Param("id")
 
 	db := config.DB()
@@ -50,10 +49,12 @@ func UpdateBank(c *gin.Context) {
 		return
 	}
 
+	// เพิ่ม Minimum ใน struct input
 	var input struct {
 		PromptPay string `json:"promptpay"`
 		Manager   string `json:"manager"`
 		Banking   string `json:"banking"`
+		Minimum   uint   `json:"minimum"`  // <-- เพิ่ม Minimum
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -63,6 +64,7 @@ func UpdateBank(c *gin.Context) {
 	bank.PromptPay = input.PromptPay
 	bank.Manager = input.Manager
 	bank.Banking = input.Banking
+	bank.Minimum = input.Minimum    // <-- กำหนด Minimum
 
 	if err := db.Save(&bank).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "อัปเดตข้อมูลไม่สำเร็จ"})
@@ -179,7 +181,6 @@ func CreatePayment(c *gin.Context) {
 	})
 }
 
-
 type CreateEVChargingPaymentInput struct {
 	EVchargingID uint    `json:"evcharging_id" binding:"required"`
 	PaymentID    uint    `json:"payment_id" binding:"required"`
@@ -211,4 +212,114 @@ func CreateEVChargingPayment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, evPayment)
+}
+
+func ListPaymentCoins(c *gin.Context) {
+	var paymentCoins []entity.PaymentCoin
+
+	db := config.DB()
+	result := db.Preload("User").Find(&paymentCoins)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, paymentCoins)
+}
+
+func CreatePaymentCoin(c *gin.Context) {
+    var filePath string
+
+    // 1. จัดการรูปภาพ
+    file, err := c.FormFile("Picture")
+    if err == nil && file != nil {
+        // ตรวจสอบ type ไฟล์
+        validTypes := []string{"image/jpeg", "image/png", "image/gif"}
+        isValid := false
+        for _, t := range validTypes {
+            if file.Header.Get("Content-Type") == t {
+                isValid = true
+                break
+            }
+        }
+        if !isValid {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็นไฟล์ .jpg, .png, .gif เท่านั้น"})
+            return
+        }
+
+        uploadDir := "uploads/paymentcoin"
+        if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างโฟลเดอร์เก็บไฟล์ได้"})
+            return
+        }
+
+        ext := filepath.Ext(file.Filename)
+        newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+        filePath = filepath.Join(uploadDir, newFileName)
+
+        if err := c.SaveUploadedFile(file, filePath); err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+    } else {
+        filePath = ""
+    }
+
+    // 2. รับข้อมูลอื่นจาก form
+    dateStr := c.PostForm("Date")                    // ตัว D ใหญ่ตรงกับ key ที่ส่งมาจาก frontend
+    amountStr := c.PostForm("Amount")
+    referenceNumber := c.PostForm("ReferenceNumber")
+    userIDStr := c.PostForm("UserID")
+
+    // 3. แปลงค่าที่จำเป็น
+    // กรณี Date ใน react เป็น ISO string ใช้ time.Parse(time.RFC3339, ...)
+    var date time.Time
+    if dateStr != "" {
+        date, err = time.Parse(time.RFC3339, dateStr)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "รูปแบบวันที่ไม่ถูกต้อง (ต้องเป็น ISO 8601)"})
+            return
+        }
+    } else {
+        date = time.Now()
+    }
+
+    amount, err := strconv.ParseFloat(amountStr, 64)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "จำนวนเงินไม่ถูกต้อง"})
+        return
+    }
+
+    userID64, err := strconv.ParseUint(userIDStr, 10, 32)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "UserID ไม่ถูกต้อง"})
+        return
+    }
+    userID := uint(userID64)
+
+    // 4. ตรวจสอบ user
+    db := config.DB()
+    var user entity.User
+    if err := db.First(&user, userID).Error; err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+        return
+    }
+
+    // 5. สร้างข้อมูล PaymentCoin
+    paymentCoin := entity.PaymentCoin{
+        Date:            date,
+        Amount:          amount,
+        ReferenceNumber: referenceNumber,
+        Picture:         filePath, // string (อาจเป็น path ว่าง)
+        UserID:          userID,
+    }
+
+    if err := db.Create(&paymentCoin).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    db.Preload("User").First(&paymentCoin, paymentCoin.ID)
+
+    c.JSON(http.StatusCreated, paymentCoin)
 }

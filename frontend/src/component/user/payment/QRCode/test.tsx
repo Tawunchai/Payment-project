@@ -5,6 +5,7 @@ import generatePayload from "promptpay-qr";
 import { useLocation, useNavigate } from "react-router-dom";
 import { uploadSlipOK, CreatePayment, CreateEVChargingPayment, ListBank } from "../../../../services/index";
 import { FileImageOutlined } from "@ant-design/icons";
+import LoadingAnimation from "../../../../component/user/money/LoadingAnimation";
 
 const PayPalCard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -14,6 +15,8 @@ const PayPalCard: React.FC = () => {
   const { totalAmount, userID, chargers, MethodID } = location.state || {};
   const amountNumber = Number(totalAmount) || 0;
   const [phoneNumber, setPhoneNumber] = useState<string>("");
+
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -48,7 +51,6 @@ const PayPalCard: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  // แก้ไข: แค่เก็บไฟล์ไว้ใน state ไม่เรียก uploadSlip ที่นี่
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
@@ -68,10 +70,10 @@ const PayPalCard: React.FC = () => {
       message.warning("กรุณาอัปโหลดสลิปก่อนส่ง");
       return;
     }
+    setLoading(true);
 
     try {
       const result = await uploadSlipOK(uploadedFile);
-      console.log(result)
       if (result) {
         message.success("ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว");
 
@@ -82,7 +84,7 @@ const PayPalCard: React.FC = () => {
           user_id: userID,
           method_id: MethodID,
           reference_number: result.data.ref,
-          picture: uploadedFile, // <-- เอา path จาก server
+          picture: uploadedFile, // สามารถเปลี่ยนเป็น path ที่ return จาก server ได้ถ้าต้องการ
         };
 
         // สร้าง Payment
@@ -99,11 +101,9 @@ const PayPalCard: React.FC = () => {
                 quantity: charger.power,
               };
 
-              console.log(evChargingPaymentData)
-
               const evPaymentResult = await CreateEVChargingPayment(evChargingPaymentData);
               if (evPaymentResult) {
-                console.log("สร้าง EVChargingPayment เรียบร้อย", evPaymentResult);
+                // สำเร็จ
               } else {
                 message.error(`สร้าง EVChargingPayment สำหรับ charger ${charger.name} ล้มเหลว`);
               }
@@ -117,16 +117,18 @@ const PayPalCard: React.FC = () => {
 
         setTimeout(() => {
           navigate("/user/charging");
+          setLoading(false);
         }, 2000);
       } else {
         message.error("ส่งหลักฐานล้มเหลว");
+        setLoading(false);
       }
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการส่งหลักฐาน");
+      setLoading(false);
     }
   };
 
-  // เพิ่มฟังก์ชัน handleDrop
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
@@ -140,9 +142,13 @@ const PayPalCard: React.FC = () => {
     event.preventDefault();
   };
 
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4 relative">
+      {loading && (
+        <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center z-50">
+          <LoadingAnimation />
+        </div>
+      )}
       <div className="flex flex-col md:flex-row bg-white rounded-2xl shadow-md border border-gray-300 w-full max-w-5xl p-6 md:p-8 md:gap-12 gap-6">
 
         {/* QR Code Section */}
@@ -205,9 +211,9 @@ const PayPalCard: React.FC = () => {
           ) : (
             <div
               className="mb-4 flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-lg py-12 text-gray-400 cursor-pointer select-none"
-              onClick={handleUploadClick}    // ให้คลิกที่โซนนี้ก็เปิด file dialog
-              onDrop={handleDrop}            // รับ event ลากไฟล์มาวาง
-              onDragOver={handleDragOver}    // ป้องกัน browser เปิดไฟล์
+              onClick={handleUploadClick}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
             >
               <FileImageOutlined style={{ fontSize: 48, marginBottom: 12 }} />
               <p className="text-base font-medium">ยังไม่มีสลิปที่อัปโหลด</p>
@@ -216,7 +222,6 @@ const PayPalCard: React.FC = () => {
               </p>
             </div>
           )}
-
 
           <button
             onClick={handleUploadClick}

@@ -1,7 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { MdOutlineCancel } from 'react-icons/md';
 import { TooltipComponent } from '@syncfusion/ej2-react-popups';
-import Logo from "../../assets/picture/Direct_Energy_logo.svg.png"
+import Logo from "../../assets/LogoEV2.png"
 import { links } from '../../assets/admin/dummy';
 import { useStateContext } from '../../contexts/ContextProvider';
 
@@ -22,8 +22,8 @@ const Sidebar = () => {
       {activeMenu && (
         <>
           <div className="flex justify-between items-center">
-            <Link to="/admin" onClick={handleCloseSideBar} className="items-center gap-3 ml-3 mt-4 flex text-xl font-extrabold tracking-tight dark:text-white text-slate-900">
-              <span><img src={Logo} alt="" width={150} /></span>
+            <Link to="/admin" onClick={handleCloseSideBar} className="items-center gap-3 ml-4 mt-4 flex text-xl font-extrabold tracking-tight dark:text-white text-slate-900">
+              <span className='ml-8'><img src={Logo} alt="" width={150}  /></span>
             </Link>
             <TooltipComponent content="Menu" position="BottomCenter">
               <button
@@ -36,7 +36,7 @@ const Sidebar = () => {
               </button>
             </TooltipComponent>
           </div>
-          <div className="mt-10 ">
+          <div>
             {links.map((item) => (
               <div key={item.title}>
                 <p className="text-gray-400 dark:text-gray-400 m-3 mt-4 uppercase">

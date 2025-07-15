@@ -52,6 +52,8 @@ func ConnectionDB() {
 func SetupDatabase() {
 	db.AutoMigrate(
 		&entity.User{},
+		&entity.Car{},
+		&entity.PaymentCoin{},
 		&entity.UserRoles{},
 		&entity.Genders{},
 		&entity.Employee{},
@@ -389,10 +391,31 @@ func SetupDatabase() {
 
 	BankingManager := entity.Bank{
 		PromptPay: "0935096372",
-		Manager: "MR. TAWANCHAI BURAKHON",
-		Banking: "006",
+		Manager:   "MR. TAWANCHAI BURAKHON",
+		Banking:   "006",
+		Minimum: 100,
 	}
 	db.FirstOrCreate(&BankingManager, &entity.Bank{PromptPay: "0935096372"})
+
+	// สร้าง PaymentCoin รายการที่ 1 ด้วย FirstOrCreate
+	payment1 := entity.PaymentCoin{
+		Date:            time.Now(),
+		Amount:          100.00,
+		ReferenceNumber: "REF2024071401",
+		Picture:         "uploads/payments/coin1.jpg",
+		UserID:          uint(1),
+	}
+	db.FirstOrCreate(&payment1, entity.PaymentCoin{ReferenceNumber: "REF2024071401"})
+
+	// สร้าง PaymentCoin รายการที่ 2 ด้วย FirstOrCreate
+	payment2 := entity.PaymentCoin{
+		Date:            time.Now().Add(-24 * time.Hour),
+		Amount:          250.50,
+		ReferenceNumber: "REF2024071402",
+		Picture:         "uploads/payments/coin2.jpg",
+		UserID:          uint(1),
+	}
+	db.FirstOrCreate(&payment2, entity.PaymentCoin{ReferenceNumber: "REF2024071402"})
 
 }
 

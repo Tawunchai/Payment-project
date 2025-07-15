@@ -11,14 +11,15 @@ import { UserroleInterface } from "../interface/IUserrole";
 import { TypeInterface } from "../interface/IType";
 import { StatusInterface } from "../interface/IStatus";
 import { ReportInterface } from "../interface/IReport";
-import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface,EVChargingPayListmentInterface } from "../interface/IPayment";
+import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface, EVChargingPayListmentInterface } from "../interface/IPayment";
 import { MethodInterface } from "../interface/IMethod";
 import { InverterStatus } from "../interface/IInverterStatus"
 import { BankInterface } from "../interface/IBank"
+import { PaymentCoinInterface } from "../interface/IPaymentCoin";
 
-export const apiUrlPicture = "http://localhost:8000/";
 //const apiUrl = "http://10.0.14.228:8000";
-//const apiUrl = "http://192.168.53.128:8000";
+//const apiUrl = "http://192.168.1.141:8000";
+export const apiUrlPicture = "http://localhost:8000/";
 const apiUrl = "http://localhost:8000";
 
 const getAuthHeader = () => {
@@ -93,9 +94,6 @@ export const uploadSlip = async (file: File): Promise<any | null> => {
     const response = await axios.post(`${apiUrl}/api/check-slip`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
-        // ถ้า backend ไม่มี auth middleware ลบ Authorization ออกได้เลย
-        // หากมีระบบ login ให้เพิ่ม token ใน header นี้
-        // Authorization: `Bearer ${yourToken}`
       },
     });
 
@@ -1307,7 +1305,7 @@ export const ListBank = async (): Promise<BankInterface[] | null> => {
 // ฟังก์ชัน PATCH อัปเดตข้อมูลธนาคาร
 export const UpdateBank = async (
   id: number,
-  data: { promptpay?: string; manager?: string; banking?: string }
+  data: { promptpay?: string; manager?: string; banking?: string; minimum?: number }
 ): Promise<BankInterface | null> => {
   try {
     const response = await axios.patch(`${apiUrl}/banks/${id}`, data, {
@@ -1328,3 +1326,54 @@ export const UpdateBank = async (
     return null;
   }
 };
+
+export const ListPaymentCoins = async (): Promise<PaymentCoinInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/payment-coins`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching payment coins:", error);
+    return null;
+  }
+};
+
+export const CreatePaymentCoin = async (data: any) => {
+  try {
+    const formData = new FormData();
+    formData.append("Date", data.Date);
+    formData.append("Amount", data.Amount);
+    formData.append("ReferenceNumber", data.ReferenceNumber);
+    formData.append("UserID", data.UserID);
+    formData.append("Picture", data.Picture); // <<< File
+
+    const response = await axios.post(
+      `${apiUrl}/create-payment-coins`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          ...getAuthHeader(),
+        },
+      }
+    );
+    if (response.status === 201) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+

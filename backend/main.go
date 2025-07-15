@@ -56,7 +56,7 @@ func main() {
 	authorized := r.Group("")
 	authorized.Use(middlewares.Authorizes())
 	{
-		
+
 	}
 
 	public := r.Group("")
@@ -99,6 +99,8 @@ func main() {
 		public.POST("/create-payments", payment.CreatePayment)
 		public.POST("/create-evchargingpayments", payment.CreateEVChargingPayment)
 		public.GET("/evcharging-payments", payment.ListEVChargingPayment)
+		public.GET("/payment-coins", payment.ListPaymentCoins)
+		public.POST("/create-payment-coins", payment.CreatePaymentCoin)
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)

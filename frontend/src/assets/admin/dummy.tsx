@@ -1,12 +1,11 @@
 import { AiOutlineCalendar, AiOutlineShoppingCart, AiOutlineAreaChart } from 'react-icons/ai';
 import { FiShoppingBag, FiEdit, FiBarChart, FiCreditCard, FiStar, FiShoppingCart } from 'react-icons/fi';
-import {  BsBarChart,BsBoxSeam, BsCurrencyDollar, BsShield, BsChatLeft } from 'react-icons/bs';
+import { BsBoxSeam, BsCurrencyDollar, BsShield, BsChatLeft } from 'react-icons/bs';
 import { IoMdContacts } from 'react-icons/io';
-import { RiContactsLine, RiStockLine } from 'react-icons/ri';
+import { RiContactsLine } from 'react-icons/ri';
 import { MdOutlineSupervisorAccount } from 'react-icons/md';
 import { HiOutlineRefresh } from 'react-icons/hi';
 import { TiTick } from 'react-icons/ti';
-import { GiLouvrePyramid } from 'react-icons/gi';
 import { AxisModel } from '@syncfusion/ej2-react-charts';
 import type { EdgeLabelPlacement } from '@syncfusion/ej2-react-charts';
 import { ContextMenuItem } from '@syncfusion/ej2-react-grids';
@@ -23,8 +22,7 @@ import product6 from './product6.jpg';
 import product7 from './product7.jpg';
 import { AiOutlineUser } from 'react-icons/ai';
 import {apiUrlPicture} from "../../services/index"
-import { AiOutlineBarChart, AiOutlineStock } from 'react-icons/ai';
-import {  FiPieChart } from 'react-icons/fi';
+
 export const gridOrderImage = (props: any) => (
   <div>
     <img
@@ -572,48 +570,6 @@ export const links = [
       {
         name: 'New',
         icon: <FiEdit />,
-      },
-    ],
-  },
-  {
-    title: 'Charts',
-    links: [
-      {
-        name: 'LineLinear',
-        icon: <AiOutlineStock />,
-      },
-      {
-        name: 'Area',
-        icon: <AiOutlineAreaChart />,
-      },
-
-      {
-        name: 'Bar',
-        icon: <AiOutlineBarChart />,
-      },
-      {
-        name: 'Pie',
-        icon: <FiPieChart />,
-      },
-      {
-        name: 'Financial',
-        icon: <RiStockLine />,
-      },
-      {
-        name: 'ColorMapping',
-        icon: <BsBarChart />,
-      },
-      {
-        name: 'Pyramid',
-        icon: <GiLouvrePyramid />,
-      },
-      {
-        name: 'Stacked',
-        icon: <AiOutlineBarChart />,
-      },
-      {
-        name: 'Modal',
-        icon: <AiOutlineBarChart />,
       },
     ],
   },

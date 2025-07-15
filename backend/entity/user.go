@@ -29,4 +29,6 @@ type User struct {
 	Review []Review `gorm:"foreignKey:UserID"`
 
 	Payment []Payment `gorm:"foreignKey:UserID"`
+
+	Car    []Car `gorm:"many2many:user_cars;"`
 }

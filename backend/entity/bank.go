@@ -9,4 +9,5 @@ type Bank struct {
 	PromptPay string
 	Manager string
 	Banking string
+	Minimum uint
 }

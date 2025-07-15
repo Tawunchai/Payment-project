@@ -4,4 +4,5 @@ export interface BankInterface {
   PromptPay: string;
   Manager: string;
   Banking: string;
+  Minimum:number
 }

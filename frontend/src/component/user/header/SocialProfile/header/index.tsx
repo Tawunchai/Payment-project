@@ -2,7 +2,7 @@ import { useState, useEffect, CSSProperties } from "react";
 import { BiMenuAltRight } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
-import Logo from "../../../../../assets/picture/Direct_Energy_logo.svg.png";
+import Logo from "../../../../../assets/LogoEV2.png";
 import "./extra.css";
 import OutsideClickHandler from "react-outside-click-handler";
 import ReportModal from "../../report/index";

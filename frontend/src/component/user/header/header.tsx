@@ -1,7 +1,7 @@
 import { BiMenuAltRight } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
-import Logo from "../../../assets/picture/Direct_Energy_logo.svg.png";
+import Logo from "../../../assets/LogoEV2.png";
 import "./header.css";
 import { useState, CSSProperties, useEffect } from "react";
 import OutsideClickHandler from "react-outside-click-handler";
@@ -78,7 +78,7 @@ const Header = ({ scrollToNew }: HeaderProps) => {
       {contextHolder}
       <section className="h-wrapper">
         <div className="flexCenter paddings innerWidth h-container">
-          <img src={Logo} alt="logo" width={180} />
+          <img src={Logo} alt="logo" width={200} />
 
           <OutsideClickHandler onOutsideClick={() => setMenuOpened(false)}>
             <div className="flexCenter h-menu" style={getMenuStyles(menuOpened)}>
