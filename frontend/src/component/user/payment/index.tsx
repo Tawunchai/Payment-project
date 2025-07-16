@@ -1,6 +1,6 @@
 import React, { useEffect, useState, memo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import logo from "../../../assets/picture/Direct_Energy_logo.svg.png";
+import logo from "../../../assets/LogoEV2.png";
 import qrpayment from "../../../assets/PromptPay-logo.png";
 import { Divider, Button, message } from "antd";
 import {
@@ -148,26 +148,10 @@ const Index = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6 text-gray-800">
+    <div className="max-w-6xl mx-auto p-6 space-y-1 text-gray-800">
       <img src={logo} style={{ width: "150px" }} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-4">
-          <h1 className="text-2xl font-bold">สรุปรายการคำสั่งซื้อ</h1>
-          <div className="border rounded-lg p-4 space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <span className="bg-purple-100 text-orange-700 text-sm font-medium px-2 py-1 rounded">
-                  ใบเสร็จรับเงิน
-                </span>
-                <p className="mt-1 text-sm">
-                  {user?.FirstName} {user?.LastName} - {user?.Email}
-                </p>
-              </div>
-              <button className="text-orange-600 hover:underline text-sm">แก้ไขข้อมูล</button>
-            </div>
-          </div>
-
           <div>
             <h2 className="text-lg font-semibold mt-6">รายการสั่งซื้อ</h2>
             <div className="border rounded-lg p-4 space-y-4">
@@ -261,12 +245,6 @@ const Index = () => {
                 </div>
               </div>
             )}
-
-            <p className="text-xs text-gray-600 mt-2">
-              โดยการสั่งซื้อนี้ถือว่าคุณยอมรับใน{" "}
-              <span className="underline">ข้อตกลงการใช้บริการ</span> และ{" "}
-              <span className="underline">นโยบายการคืนเงิน</span> เรียบร้อยแล้ว
-            </p>
           </div>
 
           <button

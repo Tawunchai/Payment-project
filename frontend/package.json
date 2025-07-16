@@ -25,6 +25,7 @@
     "antd-img-crop": "^4.25.0",
     "axios": "^1.9.0",
     "framer-motion": "^12.18.1",
+    "lucide-react": "^0.525.0",
     "omise": "^1.0.0",
     "promptpay-qr": "^0.5.0",
     "react": "^18.3.1",

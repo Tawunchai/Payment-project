@@ -402,7 +402,7 @@ func SetupDatabase() {
 		Date:            time.Now(),
 		Amount:          100.00,
 		ReferenceNumber: "REF2024071401",
-		Picture:         "uploads/payments/coin1.jpg",
+		Picture:         "uploads/payment/1751999510090771300.jpg",
 		UserID:          uint(1),
 	}
 	db.FirstOrCreate(&payment1, entity.PaymentCoin{ReferenceNumber: "REF2024071401"})
@@ -412,7 +412,7 @@ func SetupDatabase() {
 		Date:            time.Now().Add(-24 * time.Hour),
 		Amount:          250.50,
 		ReferenceNumber: "REF2024071402",
-		Picture:         "uploads/payments/coin2.jpg",
+		Picture:         "uploads/payment/1751999510090771300.jpg",
 		UserID:          uint(1),
 	}
 	db.FirstOrCreate(&payment2, entity.PaymentCoin{ReferenceNumber: "REF2024071402"})

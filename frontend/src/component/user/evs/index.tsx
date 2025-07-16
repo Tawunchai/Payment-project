@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ListEVCharging,apiUrlPicture } from "../../../services/index";
 import { EVchargingInterface } from "../../../interface/IEV";
-import logo from "../../../assets/picture/Direct_Energy_logo.svg.png";
+import logo from "../../../assets/LogoEV2.png";
 import { Divider, Slider, ConfigProvider } from "antd";
 
 const Index = () => {

@@ -65,9 +65,27 @@ const renderUserCell = (props: PaymentsInterface) => {
 const createColumns = () => [
     { field: "ID", headerText: "ID", width: "70", textAlign: "Center", isPrimaryKey: true },
     {
-        headerText: "ชื่อผู้ใช้",
+        headerText: "ชื่อผู้ชำระเงิน",
         width: "260",
         template: renderUserCell,
+    },
+    {
+        field: "Date",
+        headerText: "วันที่",
+        width: "110",
+        textAlign: "Center",
+        template: (props: PaymentsInterface) => new Date(props.Date).toLocaleDateString(),
+    },
+     {
+        field: "Amount",
+        headerText: "จำนวนเงิน (บาท)",
+        width: "140",
+        textAlign: "Right",
+        template: (props: PaymentsInterface) => (
+            <span className="font-bold text-green-400 text-sm">
+                {props.Amount?.toLocaleString()}
+            </span>
+        ),
     },
     {
         field: "Method.Medthod",
@@ -76,15 +94,16 @@ const createColumns = () => [
         template: (props: PaymentsInterface) => renderMethodBadge(props.Method?.Medthod || ""),
         textAlign: "Center",
     },
-    { field: "Amount", headerText: "จำนวนเงิน (บาท)", width: "140", textAlign: "Right" },
     {
-        field: "Date",
-        headerText: "วันที่",
-        width: "110",
-        textAlign: "Center",
-        template: (props: PaymentsInterface) => new Date(props.Date).toLocaleDateString(),
-    },
-    { field: "ReferenceNumber", headerText: "เลขอ้างอิง", width: "130" },
+    field: "ReferenceNumber",
+    headerText: "เลขอ้างอิง",
+    width: "130",
+    template: (props: PaymentsInterface) => (
+        <span className="font-mono font-bold bg-gray-100 px-2 py-1 rounded text-gray-700">
+            {props.ReferenceNumber}
+        </span>
+    ),
+},
     {
         headerText: "หลักฐาน",
         width: 100,

@@ -10,12 +10,14 @@ const ResetPassword = Loadable(lazy(() => import("../page/ResetPassword/ResetPas
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
 const Profile = Loadable(lazy(() => import("../component/user/header/SocialProfile/SocialProfile")));
+const LearnMore = Loadable(lazy(() => import("../component/user/value/value")));
 const EVInputUser = Loadable(lazy(() => import("../component/user/evs")));
 const PaymentUser = Loadable(lazy(() => import("../component/user/payment")));
 const PaymentQr = Loadable(lazy(() => import("../component/user/payment/QRCode/test")));
 const PaymentCredit = Loadable(lazy(() => import("../component/user/payment/CreditCard/test")));
 const ChargingEV = Loadable(lazy(() => import("../component/user/charge/index")));
-const MyCoins = Loadable(lazy(() => import("../component/user/money/index")));
+const MyCoins = Loadable(lazy(() => import("../component/user/historypay/pay")));
+const PayCoins = Loadable(lazy(() => import("../component/user/money/index")));
 
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
@@ -55,11 +57,13 @@ const UserRoutes = (): RouteObject[] => [
       { index: true, element: <User /> },
       { path: "profile", element: <Profile /> },
       { path: "evs-selector", element: <EVInputUser /> },
+      { path: "learnmore", element: <LearnMore /> },
       { path: "payment", element: <PaymentUser /> },
       { path: "payment-by-qrcode", element: <PaymentQr /> },
       { path: "credit-card", element: <PaymentCredit /> },
       { path: "charging", element: <ChargingEV/> },
       { path: "my-coins", element: <MyCoins/> },
+      { path: "add-coins", element: <PayCoins/> },
     ],
   },
 ];
