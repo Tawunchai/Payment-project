@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Modal from "./modal"
+import Modal from "./Modal"
 import { Trash2 } from "react-feather";
 
 const GettingStarted = () => {
