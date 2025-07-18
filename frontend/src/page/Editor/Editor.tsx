@@ -5,7 +5,7 @@ import { ListGetStarted, DeleteGettingByID } from "../../services/index";
 import type { GetstartedInterface } from "../../interface/IGetstarted";
 import { FaTrash, FaEdit } from "react-icons/fa";
 import { Trash2 } from "react-feather";
-import Modal from "../admin/getting/Modal.tsx";
+import Modal from "../admin/getting/Modal";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineDocumentText } from "react-icons/hi";
 import { message } from 'antd';
