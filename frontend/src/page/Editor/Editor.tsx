@@ -9,7 +9,7 @@ import Modal from "../admin/getting/Modal";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineDocumentText } from "react-icons/hi";
 import { message } from 'antd';
-
+//
 const Editor = () => {
   const [getstartedList, setGetstartedList] = useState<GetstartedInterface[]>([]);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
