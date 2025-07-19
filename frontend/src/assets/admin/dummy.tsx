@@ -454,18 +454,7 @@ export const EVGrid = [
     width: "150",
     textAlign: "Center",
   },
-  {
-    field: "Voltage",
-    headerText: "Voltage",
-    width: "100",
-    textAlign: "Center",
-  },
-  {
-    field: "Current",
-    headerText: "Current",
-    width: "100",
-    textAlign: "Center",
-  },
+  { field: "Description", headerText: "Description", width: "100", textAlign: "Center" },
   {
     field: "Price",
     headerText: "Price (THB)",

@@ -304,8 +304,7 @@ func SetupDatabase() {
 
 	ev1 := entity.EVcharging{
 		Name:       "Charger A1",
-		Voltage:    400,
-		Current:    200,
+		Description: "Charger A1 is Good",
 		Price:      10,
 		Picture:    "uploads/evcharging/product1.jpg",
 		EmployeeID: &ev_eid,
@@ -315,8 +314,7 @@ func SetupDatabase() {
 
 	ev2 := entity.EVcharging{
 		Name:       "Charger B2",
-		Voltage:    240,
-		Current:    100,
+		Description: "Charger B2 is Bad",
 		Price:      20,
 		Picture:    "uploads/evcharging/product2.jpg",
 		EmployeeID: &ev_eid,

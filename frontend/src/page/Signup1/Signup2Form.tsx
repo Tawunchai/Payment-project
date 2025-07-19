@@ -29,6 +29,7 @@ const Signup2Form = () => {
   const navigate = useNavigate();
   const [genderOptions, setGenderOptions] = useState<{ ID: number; Name: string }[]>([]);
   const [fileList, setFileList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false); // <--- เพิ่ม state loading
 
   useEffect(() => {
     const fetchGenders = async () => {
@@ -67,6 +68,8 @@ const Signup2Form = () => {
       return;
     }
 
+    setLoading(true); // <--- เริ่ม loading
+
     const formData = new FormData();
     formData.append("username", values.username);
     formData.append("email", values.email);
@@ -79,17 +82,20 @@ const Signup2Form = () => {
     formData.append("profile", fileList[0].originFileObj);
 
     try {
-      const res = await CreateUser(formData); // เรียกใช้งาน CreateUser จาก service
+      const res = await CreateUser(formData);
       if (res) {
         message.success("User created successfully!");
         setTimeout(() => {
+          setLoading(false); // <--- หยุด loading
           navigate("/auth/login-2");
         }, 2000);
       } else {
         message.error("Failed to create user.");
+        setLoading(false); // <--- หยุด loading
       }
     } catch (err) {
       message.error("Error occurred while creating user.");
+      setLoading(false); // <--- หยุด loading
     }
   };
 
@@ -248,9 +254,11 @@ const Signup2Form = () => {
                   type="primary"
                   htmlType="submit"
                   size="large"
-                  style={{ backgroundColor: "var(--black)" }}
+                  loading={loading}
+                  disabled={loading}
+                  style={{ backgroundColor: "var(--black)", color: "white", borderColor: "var(--black)" }}
                 >
-                  Signup
+                  {loading ? "กำลังสมัคร..." : "Signup"}
                 </Button>
               </Form.Item>
             </Form>

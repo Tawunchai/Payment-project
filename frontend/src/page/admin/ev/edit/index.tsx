@@ -3,7 +3,7 @@ import { Upload, message } from "antd";
 import ImgCrop from "antd-img-crop";
 import { StatusInterface } from "../../../../interface/IStatus";
 import { TypeInterface } from "../../../../interface/IType";
-import { UpdateEVByID } from "../../../../services/index";
+import { UpdateEVByID,apiUrlPicture  } from "../../../../services/index";
 import { FaTimes, FaEdit, FaImage } from "react-icons/fa";
 
 interface EditEVModalProps {
@@ -24,29 +24,28 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
   typeList,
 }) => {
   const [name, setName] = useState<string>("");
-  const [voltage, setVoltage] = useState<string>("");
-  const [current, setCurrent] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   const [price, setPrice] = useState<number | string>("");
   const [statusID, setStatusID] = useState<number | "">("");
   const [typeID, setTypeID] = useState<number | "">("");
   const [fileList, setFileList] = useState<any[]>([]);
 
   useEffect(() => {
+    console.log(evCharging)
     if (evCharging) {
       setName(evCharging.Name || "");
-      setVoltage(evCharging.Voltage?.toString() || "");
-      setCurrent(evCharging.Current?.toString() || "");
+      setDescription(evCharging.Description || "");
       setPrice(evCharging.Price ?? "");
       setStatusID(evCharging.StatusID ?? "");
       setTypeID(evCharging.TypeID ?? "");
 
-      if (evCharging.PictureURL) {
+      if (evCharging.Picture) {
         setFileList([
           {
             uid: "-1",
             name: "current_image.jpg",
             status: "done",
-            url: evCharging.PictureURL,
+            url: apiUrlPicture + evCharging.Picture,
             originFileObj: null,
           },
         ]);
@@ -61,15 +60,14 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
       alert("ข้อมูล EV Charging ไม่สมบูรณ์");
       return;
     }
-    if (!name || !voltage || !current || !price || !statusID || !typeID) {
+    if (!name || !description || !price || !statusID || !typeID) {
       message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
       return;
     }
 
     const formData = new FormData();
     formData.append("name", name);
-    formData.append("voltage", voltage);
-    formData.append("current", current);
+    formData.append("description", description);
     formData.append("price", price.toString());
     formData.append("statusID", statusID.toString());
     formData.append("typeID", typeID.toString());
@@ -159,20 +157,6 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
           />
           <input
             className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300"
-            type="text"
-            placeholder="Voltage"
-            value={voltage}
-            onChange={(e) => setVoltage(e.target.value)}
-          />
-          <input
-            className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300"
-            type="text"
-            placeholder="Current"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-          />
-          <input
-            className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300"
             type="number"
             placeholder="Price"
             value={price}
@@ -202,6 +186,13 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
               </option>
             ))}
           </select>
+          <textarea
+            className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300 col-span-1 md:col-span-2"
+            placeholder="Description"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </div>
 
         {/* ปุ่ม */}

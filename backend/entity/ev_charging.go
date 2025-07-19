@@ -7,8 +7,7 @@ import (
 type EVcharging struct {
 	gorm.Model
 	Name    string
-	Voltage float64
-	Current float64
+	Description string
 	Price   float64
 	Picture string
 

@@ -1,12 +1,11 @@
-import {EmployeeInterface} from "./IEmployee"
-import {StatusInterface} from "./IStatus"
-import {TypeInterface} from "./IType"
+import { EmployeeInterface } from "./IEmployee";
+import { StatusInterface } from "./IStatus";
+import { TypeInterface } from "./IType";
 
 export interface EVchargingInterface {
   ID: number;
   Name: string;
-  Voltage: number;
-  Current: number;
+  Description: string;
   Price: number;
   Picture: string;
   Employee?: EmployeeInterface;
@@ -20,8 +19,7 @@ export interface EVchargingInterface {
 
 export interface CreateEVInput {
   Name: string;
-  Voltage: number;
-  Current: number;
+  Description: string;
   Price: number;
   EmployeeID: number;
   StatusID: number;

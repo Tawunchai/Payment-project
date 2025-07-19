@@ -33,17 +33,15 @@ func ListEVData(c *gin.Context) {
 
 func UpdateEVByID(c *gin.Context) {
 	id := c.Param("id")
-
 	var ev entity.EVcharging
 	if err := config.DB().First(&ev, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบข้อมูล EV Charging ที่ต้องการอัปเดต"})
 		return
 	}
 
-	// อ่านไฟล์ใหม่ ถ้ามีการส่งเข้ามา
+	// รูปภาพ
 	file, err := c.FormFile("picture")
 	if err == nil && file != nil {
-		// ตรวจสอบชนิด
 		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
 		isValid := false
 		for _, t := range validTypes {
@@ -56,7 +54,6 @@ func UpdateEVByID(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็น .jpg, .png, .gif เท่านั้น"})
 			return
 		}
-
 		uploadDir := "uploads/evcharging"
 		os.MkdirAll(uploadDir, os.ModePerm)
 		ext := filepath.Ext(file.Filename)
@@ -70,19 +67,12 @@ func UpdateEVByID(c *gin.Context) {
 		ev.Picture = filePath
 	}
 
-	// อ่านข้อมูลอื่นจาก form
+	// อัปเดตข้อมูลจาก form
 	if name := c.PostForm("name"); name != "" {
 		ev.Name = name
 	}
-	if voltage := c.PostForm("voltage"); voltage != "" {
-		if v, err := strconv.ParseFloat(voltage, 64); err == nil {
-			ev.Voltage = v
-		}
-	}
-	if current := c.PostForm("current"); current != "" {
-		if v, err := strconv.ParseFloat(current, 64); err == nil {
-			ev.Current = v
-		}
+	if description := c.PostForm("description"); description != "" {
+		ev.Description = description
 	}
 	if price := c.PostForm("price"); price != "" {
 		if v, err := strconv.ParseFloat(price, 64); err == nil {
@@ -112,16 +102,15 @@ func UpdateEVByID(c *gin.Context) {
 	}
 
 	config.DB().Preload("Employee").Preload("Status").Preload("Type").First(&ev, id)
-
 	c.JSON(http.StatusOK, gin.H{"message": "อัปเดตข้อมูล EV Charging สำเร็จ", "data": ev})
 }
+
 
 func CreateEV(c *gin.Context) {
 	file, err := c.FormFile("picture")
 	var filePath string
 
 	if err == nil && file != nil {
-		// ตรวจสอบชนิดไฟล์
 		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
 		isValid := false
 		for _, t := range validTypes {
@@ -134,13 +123,11 @@ func CreateEV(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็นไฟล์ .jpg, .png, .gif เท่านั้น"})
 			return
 		}
-
 		uploadDir := "uploads/evcharging"
 		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างโฟลเดอร์เก็บไฟล์ได้"})
 			return
 		}
-
 		ext := filepath.Ext(file.Filename)
 		newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 		filePath = filepath.Join(uploadDir, newFileName)
@@ -156,8 +143,7 @@ func CreateEV(c *gin.Context) {
 
 	// รับข้อมูลจาก form
 	name := c.PostForm("name")
-	voltage, _ := strconv.ParseFloat(c.PostForm("voltage"), 64)
-	current, _ := strconv.ParseFloat(c.PostForm("current"), 64)
+	description := c.PostForm("description")
 	price, _ := strconv.ParseFloat(c.PostForm("price"), 64)
 	statusID, _ := strconv.ParseUint(c.PostForm("statusID"), 10, 64)
 	typeID, _ := strconv.ParseUint(c.PostForm("typeID"), 10, 64)
@@ -170,14 +156,13 @@ func CreateEV(c *gin.Context) {
 	}
 
 	ev := entity.EVcharging{
-		Name:       name,
-		Voltage:    voltage,
-		Current:    current,
-		Price:      price,
-		Picture:    filePath,
-		EmployeeID: employeeID,
-		StatusID:   uint(statusID),
-		TypeID:     uint(typeID),
+		Name:        name,
+		Description: description,
+		Price:       price,
+		Picture:     filePath,
+		EmployeeID:  employeeID,
+		StatusID:    uint(statusID),
+		TypeID:      uint(typeID),
 	}
 
 	if err := config.DB().Create(&ev).Error; err != nil {
@@ -186,7 +171,6 @@ func CreateEV(c *gin.Context) {
 	}
 
 	config.DB().Preload("Employee.User").Preload("Status").Preload("Type").First(&ev, ev.ID)
-
 	c.JSON(http.StatusCreated, gin.H{"message": "สร้างข้อมูล EV Charging สำเร็จ", "data": ev})
 }
 

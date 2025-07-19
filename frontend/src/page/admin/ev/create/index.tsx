@@ -22,8 +22,7 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
   typeList,
 }) => {
   const [name, setName] = useState<string>("");
-  const [voltage, setVoltage] = useState<string>("");
-  const [current, setCurrent] = useState<string>("");
+  const [description, setDescription] = useState<string>(""); // ใช้ description
   const [price, setPrice] = useState<string>("");
   const [statusID, setStatusID] = useState<number | "">("");
   const [typeID, setTypeID] = useState<number | "">("");
@@ -32,8 +31,7 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
   useEffect(() => {
     if (open) {
       setName("");
-      setVoltage("");
-      setCurrent("");
+      setDescription("");
       setPrice("");
       setStatusID("");
       setTypeID("");
@@ -43,15 +41,14 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
 
   const handleSubmit = async () => {
     if (
-      !name || !voltage || !current || !price || !statusID || !typeID || fileList.length === 0
+      !name || !description || !price || !statusID || !typeID || fileList.length === 0
     ) {
       message.error("กรุณากรอกข้อมูลให้ครบถ้วนและเลือกรูปภาพ");
       return;
     }
     const formData = new FormData();
     formData.append("name", name);
-    formData.append("voltage", voltage);
-    formData.append("current", current);
+    formData.append("description", description);
     formData.append("price", price);
     formData.append("statusID", statusID.toString());
     formData.append("typeID", typeID.toString());
@@ -138,20 +135,6 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
           />
           <input
             className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300"
-            type="text"
-            placeholder="Voltage"
-            value={voltage}
-            onChange={(e) => setVoltage(e.target.value)}
-          />
-          <input
-            className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300"
-            type="text"
-            placeholder="Current"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-          />
-          <input
-            className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300"
             type="number"
             placeholder="Price"
             value={price}
@@ -181,6 +164,13 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
               </option>
             ))}
           </select>
+          <textarea
+            className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300 col-span-1 md:col-span-2"
+            placeholder="Description"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </div>
 
         {/* ปุ่ม */}
