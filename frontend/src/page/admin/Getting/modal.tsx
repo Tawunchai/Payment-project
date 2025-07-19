@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { X } from "react-feather";
-
+//
 interface ModalProps {
   open: boolean;
   onClose: () => void;

@@ -3,7 +3,7 @@ import { ChartComponent, SeriesCollectionDirective, SeriesDirective, Inject, Hil
 import { financialChartData, FinancialPrimaryXAxis, FinancialPrimaryYAxis } from '../../../assets/admin/dummy';
 import { useStateContext } from '../../../contexts/ContextProvider';
 import { ChartsHeader } from '../../../component/admin';
-
+//
 const date1 = new Date('2017, 1, 1');
 
 // eslint-disable-next-line consistent-return

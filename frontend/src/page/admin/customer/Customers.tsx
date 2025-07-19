@@ -17,7 +17,7 @@ import { UserroleInterface } from "../../../interface/IUserrole";
 import { Header } from "../../../component/admin";
 import { customersGrid } from "../../../assets/admin/dummy";
 import { ListUsersByRoleUser, DeleteUser, UpdateUser, ListGenders, ListUserRoles } from "../../../services/index";
-import Modal from "../getting/Modal";
+import Modal from "../Getting/Modal";
 import EditUserModal from "./edit/index";
 import { Trash2 } from "react-feather";
 import { message } from "antd";

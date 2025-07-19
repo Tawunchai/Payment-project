@@ -3,7 +3,7 @@ import { ChartComponent, SeriesCollectionDirective, SeriesDirective, Inject, Leg
 import { barCustomSeries, barPrimaryXAxis, barPrimaryYAxis } from '../../../assets/admin/dummy';
 import { ChartsHeader } from '../../../component/admin';
 import { useStateContext } from '../../../contexts/ContextProvider';
-
+//
 const Bar = () => {
   const { currentMode } = useStateContext();
 

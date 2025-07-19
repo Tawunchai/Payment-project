@@ -5,7 +5,7 @@ import { ListNews, DeleteNews,apiUrlPicture } from "../../../services";
 import type { NewsInterface } from "../../../interface/INews";
 import { FaTrash, FaEdit } from "react-icons/fa";
 import { Trash2 } from "react-feather";
-import Modal from "../getting/Modal";
+import Modal from "../Getting/Modal";
 import { useNavigate } from "react-router-dom"; 
 import { message } from 'antd';
 

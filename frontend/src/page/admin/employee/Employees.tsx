@@ -21,7 +21,7 @@ import {
   ListUserRoles,
   createEmployeeByAdmin,
 } from "../../../services/index";
-import Modal from "../getting/Modal";
+import Modal from "../Getting/Modal";
 import { Trash2 } from "react-feather";
 import EditAdminModal from "./edit/index";
 import CreateAdminModal from "./create";

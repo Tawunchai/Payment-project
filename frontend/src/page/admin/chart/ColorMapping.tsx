@@ -3,7 +3,7 @@ import { ChartComponent, SeriesCollectionDirective, SeriesDirective, Inject, Col
 import { colorMappingData, ColorMappingPrimaryXAxis, ColorMappingPrimaryYAxis, rangeColorMapping } from '../../../assets/admin/dummy';
 import { ChartsHeader } from '../../../component/admin';
 import { useStateContext } from '../../../contexts/ContextProvider';
-
+//
 const ColorMapping = () => {
   const { currentMode } = useStateContext();
 

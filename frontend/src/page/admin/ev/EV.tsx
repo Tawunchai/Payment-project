@@ -22,7 +22,7 @@ import {
   ListTypeEV,
   apiUrlPicture
 } from "../../../services/index";
-import Modal from "../getting/Modal";
+import Modal from "../Getting/Modal";
 import { Trash2 } from "react-feather";
 
 import EditEVModal from "./edit";
