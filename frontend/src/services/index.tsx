@@ -17,10 +17,8 @@ import { InverterStatus } from "../interface/IInverterStatus"
 import { BankInterface } from "../interface/IBank"
 import { PaymentCoinInterface } from "../interface/IPaymentCoin";
 
-//const apiUrl = "http://10.0.14.228:8000";
-//export const apiUrlPicture = "http://10.0.14.228:8000/";
-export const apiUrlPicture = "http://localhost:8000/";
-const apiUrl = "http://localhost:8000";
+export const apiUrlPicture = "https://payment-project-t4dj.onrender.com/";
+const apiUrl = "https://payment-project-t4dj.onrender.com";
 
 const getAuthHeader = () => {
   const token = localStorage.getItem("token");
