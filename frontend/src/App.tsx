@@ -3,7 +3,7 @@ import ConfigRoutes from './routes/mainroutes';
 import { ContextProvider } from "./contexts/ContextProvider"
 import { registerLicense } from '@syncfusion/ej2-base';
 
-registerLicense('Ngo9BigBOggjHTQxAR8/V1JEaF5cXmRCeUx0Rnxbf1x1ZFZMYV5bRXdPMyBoS35Rc0VkWHlec3VXR2FUWEBxVEFd');
+registerLicense('Ngo9BigBOggjHTQxAR8/V1NNaF1cXGJCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWXhfdnRQRWddWUNxWktWYUA=');
 
 
 const App: React.FC = () => {
