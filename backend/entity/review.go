@@ -10,7 +10,8 @@ type Review struct {
 	gorm.Model
 	Rating       uint  
 	Comment      string 
-	ReviewDate   time.Time 
+	ReviewDate   time.Time
+	Status bool 
 
 	UserID       *uint 
 	User         User    `gorm:"foreignKey:UserID"` 
