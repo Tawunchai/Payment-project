@@ -1,7 +1,6 @@
 package employee
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/Tawunchai/work-project/entity"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 func GetEmployeeByUserID(c *gin.Context) {
@@ -29,75 +27,6 @@ func GetEmployeeByUserID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, employee)
-}
-
-// PATCH /api/employees/:id/profile
-func UpdateEmployeeProfile(c *gin.Context) {
-	id := c.Param("id")
-
-	db := config.DB()
-	var employee entity.Employee
-
-	// 🔍 ตรวจสอบว่ามีพนักงานนี้ในระบบหรือไม่
-	if err := db.Preload("User").First(&employee, id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		return
-	}
-
-	// 📋 รับข้อมูลจาก form-data (partial update)
-	bio := c.PostForm("bio")
-	experience := c.PostForm("experience")
-	education := c.PostForm("education")
-	salaryStr := c.PostForm("salary")
-
-	// 🎯 อัปเดตเฉพาะฟิลด์ที่ส่งมา
-	if bio != "" {
-		employee.Bio = bio
-	}
-	if experience != "" {
-		employee.Experience = experience
-	}
-	if education != "" {
-		employee.Education = education
-	}
-	if salaryStr != "" {
-		salary, err := strconv.ParseFloat(salaryStr, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid salary format"})
-			return
-		}
-		employee.Salary = salary
-	}
-
-	// 💾 บันทึกข้อมูลลงฐานข้อมูล
-	if err := db.Save(&employee).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update employee profile: %v", err)})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Employee profile updated successfully",
-		"employee": gin.H{
-			"id":          employee.ID,
-			"bio":         employee.Bio,
-			"experience":  employee.Experience,
-			"education":   employee.Education,
-			"salary":      employee.Salary,
-			"userID":      employee.UserID,
-			"user": gin.H{
-				"id":        employee.User.ID,
-				"username":  employee.User.Username,
-				"firstname": employee.User.FirstName,
-				"lastname":  employee.User.LastName,
-				"email":     employee.User.Email,
-				"profile":   employee.User.Profile,
-			},
-		},
-	})
 }
 
 func DeleteAdminByID(c *gin.Context) {

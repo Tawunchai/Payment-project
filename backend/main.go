@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/controller/calendar"
@@ -26,16 +27,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const PORT = "8000"
-
 func main() {
-
 	config.ConnectionDB()
-
 	config.SetupDatabase()
 
 	r := gin.Default()
-
 	r.Use(CORSMiddleware())
 
 	r.POST("/login", login.AddLogin)
@@ -43,21 +39,15 @@ func main() {
 	authorized := r.Group("")
 	authorized.Use(middlewares.Authorizes())
 	{
-
+		// ใส่ route ที่ต้อง auth เพิ่มได้ที่นี่
 	}
 
 	public := r.Group("")
 	{
-		//SlipOK
 		public.POST("/api/check-slipok", slip.CheckSlipOI)
-		//CheckSlip
 		public.POST("/api/check-slip", slip.CheckSlipThunder)
-		//Iverter
 		public.GET("/inverter", inverter.GetInverterStatus)
 
-		//user and admin
-		public.PATCH("/update-employee-profile/:id", employee.UpdateEmployeeProfile)
-		public.PATCH("/update-user-profile/:id", user.UpdateUserProfileByID)
 		public.GET("/employee/:userID", user.GetEmployeeByUserID)
 		public.POST("/create-employees", employee.CreateEmployeeByAdmin)
 		public.GET("/uploads/*filename", user.ServeImage)
@@ -71,12 +61,14 @@ func main() {
 		public.GET("/employees/user/:id", employee.GetEmployeeByUserID)
 		public.DELETE("/delete-admins/:id", employee.DeleteAdminByID)
 		public.PATCH("/update-boss-admins/:id", employee.UpdateAdminByID)
-		public.GET("employeebyid/:id", employee.ListEmployeeByID)
+
+		// ❗ เดิมขาด "/" หน้า path → ทำให้ route ไม่แม็ตช์
+		public.GET("/employeebyid/:id", employee.ListEmployeeByID)
+
 		public.POST("/check-email", user.CheckEmailExists)
 		public.POST("/reset-password", user.ResetPassword)
 		public.PUT("/users/update-coin", user.UpdateCoins)
 
-		//payment
 		public.GET("/payments", payment.ListPayment)
 		public.GET("/banks", payment.ListBank)
 		public.PATCH("/banks/:id", payment.UpdateBank)
@@ -86,84 +78,69 @@ func main() {
 		public.GET("/payment-coins", payment.ListPaymentCoins)
 		public.POST("/create-payment-coins", payment.CreatePaymentCoin)
 
-		//role
 		public.GET("/userroles", role.ListUserRoles)
-
-		//type
 		public.GET("/types", types.ListTypeEV)
-
-		//status
 		public.GET("/statuss", status.ListStatus)
 
-		//EV Charging
 		public.GET("/evs", charging.ListEVData)
 		public.DELETE("/delete-evchargings/:id", charging.DeleteEVByID)
 		public.PATCH("/update-evs/:id", charging.UpdateEVByID)
 		public.POST("/create-evs", charging.CreateEV)
 
-		//gender
 		public.GET("/genders", gender.ListGenders)
-
-		//Method
 		public.GET("/methods", method.ListMethods)
 
-		//review
 		public.GET("/reviews", review.ListReview)
 		public.POST("/reviews-create", review.CreateReview)
-		public.GET("/reviews/visible", review.ListReviewsStatusTrue)
-		public.PATCH("/reviews/:id/status", review.UpdateStatusReviewsByID)
-		public.DELETE("/reviews/:id", review.DeleteReviewsByID)
 
-		//new
 		public.GET("/news", new.ListNew)
 		public.POST("/create-news", new.CreateNews)
 		public.PATCH("/update-news/:id", new.UpdateNewsByID)
 		public.DELETE("/delete-news/:id", new.DeleteNewByID)
 
-		//getstarted
 		public.GET("/getstarteds", getstarted.ListGetStarted)
 		public.POST("/create-getting", getstarted.CreateGettingStarted)
 		public.PATCH("/update-gettings/:id", getstarted.PatchGettingStartedByID)
 		public.DELETE("/delete-gettings/:id", getstarted.DeleteGettingByID)
 
-		//report
 		public.GET("/reports", report.ListReport)
 		public.POST("/create-report", report.CreateReport)
 		public.PUT("/update-reports/:id", report.UpdateReport)
 		public.DELETE("/delete-report/:id", report.DeleteReportByID)
 
-		//calendar
 		public.GET("/calendars", calendar.ListCalendar)
 		public.POST("/create-calendar", calendar.PostCalendar)
 		public.PUT("/update-calendar/:id", calendar.UpdateCalendar)
 		public.DELETE("/delete-calendar/:id", calendar.DeleteCalendar)
 
-		//like
 		public.POST("/reviews/like", like.LikeReview)
 		public.DELETE("/reviews/unlike", like.UnlikeReview)
 		public.GET("/reviews/:userID/:reviewID/like", like.CheckUserLikeStatus)
 	}
 
 	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "API RUNNING... PORT: %s", PORT)
+		c.String(http.StatusOK, "API RUNNING...")
 	})
 
-	r.Run("localhost:" + PORT)
-	//r.Run("0.0.0.0:" + PORT)
+	// ✅ Render จะอัดค่า PORT มาให้ → ต้องอ่านจาก ENV
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	r.Run(":" + port)
 }
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		c.Next()
 	}
 }
