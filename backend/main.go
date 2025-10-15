@@ -48,6 +48,8 @@ func main() {
 		public.POST("/api/check-slip", slip.CheckSlipThunder)
 		public.GET("/inverter", inverter.GetInverterStatus)
 
+		public.PATCH("/update-employee-profile/:id", employee.UpdateEmployeeProfile)
+		public.PATCH("/update-user-profile/:id", user.UpdateUserProfileByID)
 		public.GET("/employee/:userID", user.GetEmployeeByUserID)
 		public.POST("/create-employees", employee.CreateEmployeeByAdmin)
 		public.GET("/uploads/*filename", user.ServeImage)
