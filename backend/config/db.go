@@ -139,6 +139,33 @@ func SetupDatabase() {
 	}
 	db.FirstOrCreate(&User3, entity.User{Username: "user3"})
 
+	// 🔹 สร้างข้อมูลรถ 3 คัน (คนละคัน)
+	car1 := entity.Car{
+		Brand:        "Tesla",
+		ModelCar:     "Model 3",
+		LicensePlate: "EV-001",
+		City:         "Bangkok",
+		User:         []entity.User{User1},
+	}
+	car2 := entity.Car{
+		Brand:        "BYD",
+		ModelCar:     "Atto 3",
+		LicensePlate: "EV-002",
+		City:         "Chiang Mai",
+		User:         []entity.User{User2},
+	}
+	car3 := entity.Car{
+		Brand:        "MG",
+		ModelCar:     "ZS EV",
+		LicensePlate: "EV-003",
+		City:         "Khon Kaen",
+		User:         []entity.User{User2},
+	}
+
+	db.FirstOrCreate(&car1, entity.Car{LicensePlate: car1.LicensePlate})
+	db.FirstOrCreate(&car2, entity.Car{LicensePlate: car2.LicensePlate})
+	db.FirstOrCreate(&car3, entity.Car{LicensePlate: car3.LicensePlate})
+
 	Admin1 := entity.User{
 		Username:    "admin1",
 		FirstName:   "Kanyapron",
@@ -264,6 +291,7 @@ func SetupDatabase() {
 		Rating:     5,
 		Comment:    "The zoo was incredibly well-maintained, and the animals looked happy and healthy. The staff were friendly and knowledgeable, always ready to share interesting facts about the animals. I loved the interactive exhibits, especially the feeding sessions with the giraffes! Its a great place for families, and theres something for everyone to enjoy. I can't wait to visit again!",
 		ReviewDate: time.Now(),
+		Status: true,
 		UserID:     &uid1,
 	}
 
@@ -271,6 +299,7 @@ func SetupDatabase() {
 		Rating:     4,
 		Comment:    "The zoo had a wide variety of animals, and the staff were helpful. However, some areas felt overcrowded, and a few enclosures looked outdated. The food options were decent, but a bit overpriced. Its a nice place to visit, but it could be even better with a few updates",
 		ReviewDate: time.Now(),
+		Status: true,
 		UserID:     &uid2,
 	}
 
@@ -278,6 +307,7 @@ func SetupDatabase() {
 		Rating:     3,
 		Comment:    "The animals were interesting, and the staff seemed to care about them. However, some enclosures felt too small, and the facilities could have been cleaner. The ticket price was a bit high for the experience provided. It was okay, but I wouldnt rush back.",
 		ReviewDate: time.Now(),
+		Status: true,
 		UserID:     &uid3,
 	}
 

@@ -46,6 +46,8 @@ function Login() {
 
       const RoleName = localStorage.getItem("roleName");
       const userID = localStorage.getItem("userid");
+      console.log(RoleName)
+      console.log(userID)
 
       if (userID && RoleName !== "User") {
         try {

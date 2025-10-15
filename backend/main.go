@@ -34,7 +34,6 @@ func main() {
 
 	config.SetupDatabase()
 
-
 	r := gin.Default()
 
 	r.Use(CORSMiddleware())
@@ -57,6 +56,8 @@ func main() {
 		public.GET("/inverter", inverter.GetInverterStatus)
 
 		//user and admin
+		public.PATCH("/update-employee-profile/:id", employee.UpdateEmployeeProfile)
+		public.PATCH("/update-user-profile/:id", user.UpdateUserProfileByID)
 		public.GET("/employee/:userID", user.GetEmployeeByUserID)
 		public.POST("/create-employees", employee.CreateEmployeeByAdmin)
 		public.GET("/uploads/*filename", user.ServeImage)
@@ -109,6 +110,9 @@ func main() {
 		//review
 		public.GET("/reviews", review.ListReview)
 		public.POST("/reviews-create", review.CreateReview)
+		public.GET("/reviews/visible", review.ListReviewsStatusTrue)
+		public.PATCH("/reviews/:id/status", review.UpdateStatusReviewsByID)
+		public.DELETE("/reviews/:id", review.DeleteReviewsByID)
 
 		//new
 		public.GET("/news", new.ListNew)

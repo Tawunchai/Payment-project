@@ -1,76 +1,116 @@
-import { useEffect, useState } from "react";
-import Slider from "react-slick";
+import { useEffect, useMemo, useState } from "react";
+import Slider, { Settings } from "react-slick";
 import Profile from "../../../assets/profile/people1.png"; // fallback image
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import Like from "../../like/like"
+import Like from "../../like/like";
 import { ReviewInterface } from "../../../interface/IReview";
-import { ListReviews,apiUrlPicture } from "../../../services/index";
+import { ListReviewsVisible, apiUrlPicture } from "../../../services/index";
 
 const Review = () => {
   const [reviews, setReviews] = useState<ReviewInterface[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ โหลดข้อมูลรีวิว
   useEffect(() => {
     const fetchReviews = async () => {
-      const res = await ListReviews();
-      console.log("All reviews fetched:", res);
-      if (res) {
-        setReviews(res);
+      try {
+        const res = await ListReviewsVisible();
+        if (res) setReviews(res);
+      } catch (err) {
+        console.error("Error fetching reviews:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchReviews();
   }, []);
 
-  const settings = {
-    dots: true,
-    arrows: false,
-    infinite: true,
-    speed: 500,
-    slidesToScroll: 1,
-    autoplaySpeed: 2000,
-    cssEase: "linear",
-    pauseOnHover: true,
-    pauseOnFocus: true,
-    slidesToShow: 3,
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 640,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
-    ],
-  };
+  // ✅ ป้องกัน crash ตอน render ก่อนโหลดเสร็จ
+  const hasReviews = reviews.length > 0;
 
+  // ✅ useMemo ต้องอยู่ข้างนอก (ไม่อยู่ใน if)
+  const settings: Settings = useMemo(() => {
+    const n = reviews.length;
+    const baseShow = Math.min(3, n || 1);
+    const showMd = Math.min(2, n || 1);
+    const showSm = Math.min(1, n || 1);
+
+    return {
+      dots: true,
+      arrows: false,
+      infinite: n > baseShow,
+      speed: 500,
+      slidesToScroll: 1,
+      autoplay: n > 1,
+      autoplaySpeed: 2000,
+      cssEase: "linear",
+      pauseOnHover: true,
+      pauseOnFocus: true,
+      slidesToShow: baseShow,
+      responsive: [
+        {
+          breakpoint: 1024,
+          settings: {
+            slidesToShow: showMd,
+            slidesToScroll: 1,
+            infinite: n > showMd,
+            autoplay: n > 1,
+          },
+        },
+        {
+          breakpoint: 640,
+          settings: {
+            slidesToShow: showSm,
+            slidesToScroll: 1,
+            infinite: n > showSm,
+            autoplay: n > 1,
+          },
+        },
+      ],
+    };
+  }, [reviews.length]);
+
+  // ✅ loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <p className="text-gray-500">กำลังโหลดรีวิว...</p>
+      </div>
+    );
+  }
+
+  // ✅ ไม่มีรีวิวเลย
+  if (!hasReviews) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <p className="text-gray-400">ยังไม่มีรีวิวจากผู้ใช้งาน</p>
+      </div>
+    );
+  }
+
+  // ✅ แสดงรีวิวทั้งหมด
   return (
     <div className="flex flex-col items-center pt-10 px-4 bg-white">
       <div className="container">
         <div className="space-y-4 p-6 text-center max-w-[600px] mx-auto mb-6">
           <h1 className="uppercase font-semibold text-yellow-400 text-3xl">
-            OUR Reviews
+            OUR REVIEWS
           </h1>
           <p className="font-semibold text-3xl">
-            What Our Customer Say About Us
+            What Our Customers Say About Us
           </p>
         </div>
 
         <Slider {...settings}>
-          {reviews.map((item) => {
-            console.log("User Profile:", item?.User?.Profile);
-            const imageSrc = item?.User?.Profile
-              ? `${apiUrlPicture}${item.User.Profile}`
-              : Profile;
+          {reviews.map((item, idx) => {
+            const imageSrc =
+              item?.User?.Profile
+                ? `${apiUrlPicture}${item.User.Profile}`
+                : (Profile as unknown as string);
 
             return (
-              <div key={item.ID} className="px-2 my-6">
+              <div key={item.ID ?? idx} className="px-2 my-6">
                 <div className="flex flex-col p-6 rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] h-full min-h-[280px]">
                   {/* Profile + Rating */}
                   <div className="flex justify-start items-center gap-4 mb-3">
@@ -78,6 +118,10 @@ const Review = () => {
                       src={imageSrc}
                       className="w-12 h-12 rounded-full object-cover"
                       alt="user"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          Profile as unknown as string;
+                      }}
                     />
                     <div>
                       <p className="text-xl font-bold text-black/80">
@@ -87,25 +131,27 @@ const Review = () => {
                     </div>
                   </div>
 
-                  {/* Comment + Like (flex-grow + space-between) */}
+                  {/* Comment + Like */}
                   <div className="flex flex-col justify-between flex-grow">
-                    {/* Comment */}
                     <p
                       className="text-sm text-gray-500 overflow-hidden text-ellipsis mb-4"
                       style={{
-                        display: '-webkit-box',
+                        display: "-webkit-box",
                         WebkitLineClamp: 5,
-                        WebkitBoxOrient: 'vertical',
-                        lineHeight: '1.5rem',
-                        height: '7.5rem',
-                        overflowWrap: 'break-word',
+                        WebkitBoxOrient: "vertical",
+                        lineHeight: "1.5rem",
+                        height: "7.5rem",
+                        overflowWrap: "break-word",
                       }}
                     >
                       {item.Comment}
                     </p>
 
-                    {/* Like */}
-                    <Like reviewID={item.ID!} userID={1} />
+                    {/* ✅ ดึง userID จาก localStorage */}
+                    <Like
+                      reviewID={item.ID!}
+                      userID={Number(localStorage.getItem("userid")) || 0}
+                    />
                   </div>
                 </div>
               </div>
