@@ -13,6 +13,7 @@ export const AvatarWithInfo = () => {
     setEmployeeid(Number(localStorage.getItem("employeeid")));
     const fetchEmployee = async () => {
       const emp = await getEmployeeByID(employeeid); 
+      console.log(emp)
       if (emp) {
         setEmployee(emp);
       }

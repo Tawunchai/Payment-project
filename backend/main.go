@@ -92,6 +92,9 @@ func main() {
 
 		public.GET("/reviews", review.ListReview)
 		public.POST("/reviews-create", review.CreateReview)
+		public.GET("/reviews/visible", review.ListReviewsStatusTrue)
+		public.PATCH("/reviews/:id/status", review.UpdateStatusReviewsByID)
+		public.DELETE("/reviews/:id", review.DeleteReviewsByID)
 
 		public.GET("/news", new.ListNew)
 		public.POST("/create-news", new.CreateNews)

@@ -203,6 +203,31 @@ export const createCharge = async (
   }
 };
 
+export const UpdateUserProfileByID = async (
+  id: number,
+  formData: FormData
+): Promise<boolean> => {
+  try {
+    const res = await axios.patch(`${apiUrl}/update-user-profile/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeader(), // ถ้ามี JWT ใช้ header นี้
+      },
+    });
+
+    if (res.status === 200) {
+      console.log("✅ User profile updated successfully:", res.data);
+      return true;
+    }
+
+    console.warn("⚠️ Unexpected status:", res.status);
+    return false;
+  } catch (error: any) {
+    console.error("❌ Error updating user profile:", error);
+    return false;
+  }
+};
+
 export const createEmployeeByAdmin = async (
   employeeData: CreateEmployeeInput
 ): Promise<EmployeeInterface | null> => {
@@ -244,6 +269,32 @@ export const getEmployeeByID = async (
     }
   } catch (error: any) {
     console.error("Error fetching employee:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// ✅ อัปเดตข้อมูลพนักงาน (PATCH /update-employee-profile/:id)
+export const UpdateEmployeeProfile = async (
+  id: number,
+  data: FormData
+): Promise<EmployeeInterface | null> => {
+  try {
+    const res = await axios.patch(`${apiUrl}/update-employee-profile/${id}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (res.status === 200) {
+      console.log("✅ Employee profile updated successfully");
+      return res.data.employee as EmployeeInterface;
+    }
+
+    console.error("Unexpected status:", res.status);
+    return null;
+  } catch (err) {
+    console.error("❌ Error updating employee profile:", err);
     return null;
   }
 };
@@ -292,6 +343,66 @@ export const ListReviews = async (): Promise<ReviewInterface[] | null> => {
   } catch (error) {
     console.error("Error fetching reviews:", error);
     return null;
+  }
+};
+
+export const ListReviewsVisible = async (): Promise<ReviewInterface[] | null> => {
+  try {
+    const res = await axios.get(`${apiUrl}/reviews/visible`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+    if (res.status === 200) return res.data as ReviewInterface[];
+    console.error("Unexpected status:", res.status);
+    return null;
+  } catch (err) {
+    console.error("Error fetching visible reviews:", err);
+    return null;
+  }
+};
+
+/** อัปเดตสถานะการมองเห็นรีวิว (true/false) ตาม ID */
+export const UpdateReviewStatusByID = async (
+  id: number | string,
+  status: boolean
+): Promise<ReviewInterface | null> => {
+  try {
+    const res = await axios.patch(
+      `${apiUrl}/reviews/${id}/status`,
+      { status },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      }
+    );
+    if (res.status === 200) return res.data as ReviewInterface;
+    console.error("Unexpected status:", res.status);
+    return null;
+  } catch (err) {
+    console.error(`Error updating review status (id=${id}):`, err);
+    return null;
+  }
+};
+
+/** ลบรีวิวตาม ID (ฝั่ง backend เป็น soft delete จาก gorm.Model) */
+export const DeleteReviewByID = async (id: number | string): Promise<boolean> => {
+  try {
+    const res = await axios.delete(`${apiUrl}/reviews/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+    if (res.status === 200) return true;
+    console.error("Unexpected status:", res.status);
+    return false;
+  } catch (err) {
+    console.error(`Error deleting review (id=${id}):`, err);
+    return false;
   }
 };
 
