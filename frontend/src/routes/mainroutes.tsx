@@ -18,6 +18,8 @@ const PaymentCredit = Loadable(lazy(() => import("../component/user/payment/Cred
 const ChargingEV = Loadable(lazy(() => import("../component/user/charge/index")));
 const MyCoins = Loadable(lazy(() => import("../component/user/historypay/pay")));
 const PayCoins = Loadable(lazy(() => import("../component/user/money/index")));
+const IntroCar = Loadable(lazy(() => import("../component/user/car/intro")));
+const AddCar = Loadable(lazy(() => import("../component/user/car/create")));
 
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
@@ -64,6 +66,8 @@ const UserRoutes = (): RouteObject[] => [
       { path: "charging", element: <ChargingEV/> },
       { path: "my-coins", element: <MyCoins/> },
       { path: "add-coins", element: <PayCoins/> },
+      { path: "intro-cars", element: <IntroCar/> },
+      { path: "add-cars", element: <AddCar/> },
     ],
   },
 ];
