@@ -4,7 +4,7 @@ import Header from "../../component/user/header/header";
 import New from "../../component/user/new/new";
 import NewMobile from "../../component/user/new/newmoblie";
 import Review from "../../component/user/review/review";
-import Footer from "../../component/user/footer/footer";
+//import Footer from "../../component/user/footer/footer";
 import Car from "../../component/user/car/index";
 import { useEffect, useRef, useState } from "react";
 import "./user.css";
