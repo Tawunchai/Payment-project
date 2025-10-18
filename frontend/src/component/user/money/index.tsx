@@ -178,10 +178,6 @@ const AddMoneyCoin: React.FC = () => {
             <div className="flex flex-col md:flex-row bg-white rounded-2xl shadow-md border border-gray-300 w-full max-w-5xl p-6 md:p-8 md:gap-12 gap-6">
                 {/* QR Code Section */}
                 <div className="flex flex-col items-center justify-center w-full md:w-1/2">
-                    <div className="border-2 border-dashed border-gray-400 rounded-full w-20 h-20 md:w-24 md:h-24 flex items-center justify-center mb-4 text-center text-xs text-gray-500 leading-tight">
-                        YOUR LOGO<br />HERE
-                    </div>
-
                     <div className="flex items-center gap-2 mb-4">
                         <FaPaypal className="text-blue-600 text-2xl md:text-3xl" />
                         <span className="text-lg md:text-xl font-bold text-gray-700">
@@ -209,10 +205,6 @@ const AddMoneyCoin: React.FC = () => {
 
                 {/* Upload Slip Section */}
                 <div className="flex flex-col justify-center w-full md:w-1/2 max-w-md mx-auto">
-                    <h2 className="text-xl md:text-2xl font-semibold mb-4 text-center">
-                        เติม Coin ด้วย PromptPay
-                    </h2>
-
                     <div className="mb-4">
                         <label className="block font-medium text-gray-700 mb-2">
                             จำนวน Coin ที่ต้องการเติม <span className="text-red-500">*</span>

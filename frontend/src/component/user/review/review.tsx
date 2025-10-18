@@ -97,9 +97,6 @@ const Review = () => {
           <h1 className="uppercase font-semibold text-yellow-400 text-3xl">
             OUR REVIEWS
           </h1>
-          <p className="font-semibold text-3xl">
-            What Our Customers Say About Us
-          </p>
         </div>
 
         <Slider {...settings}>

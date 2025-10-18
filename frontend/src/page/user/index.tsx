@@ -27,24 +27,27 @@ const Index = () => {
   const isMobile = useIsMobile(768);
 
   return (
-    <div className='user'>
+    <div className="user">
       <div>
         <Header
           scrollToValue={() => valueRef.current?.scrollIntoView({ behavior: "smooth" })}
           scrollToNew={() => newRef.current?.scrollIntoView({ behavior: "smooth" })}
         />
         <Hero scrollToValue={() => valueRef.current?.scrollIntoView({ behavior: "smooth" })} />
-        <div className='white-gradient' />
+        <div className="white-gradient" />
       </div>
-      <Car />
+
+      {isMobile && <Car />}
+      <br /><br />
       <div ref={valueRef}>
         <Value />
       </div>
+
       <div ref={newRef}>
         {isMobile ? <NewMobile /> : <New />}
       </div>
-      <Review /><br />
-      <Footer />
+
+      <Review /><br /><p className="invisible">footer</p>
     </div>
   );
 };

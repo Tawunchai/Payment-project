@@ -2,8 +2,7 @@ import "./hero.css";
 import Hero_Image from "../../../assets/picture/car_charging.jpg";
 import CountUp from "react-countup";
 import { useEffect, useState } from "react";
-import { ListEVCharging } from "../../../services/index";
-import { ListUsers } from "../../../services/index";
+import { ListEVCharging, ListUsers } from "../../../services/index";
 import { EVchargingInterface } from "../../../interface/IEV";
 import { UsersInterface } from "../../../interface/IUser";
 import { useNavigate } from "react-router-dom";
@@ -20,13 +19,10 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
   useEffect(() => {
     const fetchData = async () => {
       const evs = await ListEVCharging();
-      console.log(evs)
       const users = await ListUsers();
-
       if (evs) setEVList(evs);
       if (users) setUserList(users);
     };
-
     fetchData();
   }, []);
 
@@ -36,10 +32,10 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
     return acc;
   }, {});
 
-
   return (
     <section className="hero-wrapper">
       <div className="flexCenter paddings innerWidth hero-container">
+        {/* LEFT */}
         <div className="flexColStart hero-left">
           <div className="hero-title">
             <div className="orange-circle" />
@@ -51,20 +47,36 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
           </div>
 
           <div className="flexColStart hero-des">
-            <span className="secondaryText">Find EV charging stations that fit your needs effortlessly</span>
-            <span className="secondaryText">Say goodbye to the hassle of finding a place to recharge</span>
+            <span className="secondaryText">
+              Find EV charging stations that fit your needs effortlessly
+            </span>
+            <span className="secondaryText">
+              Say goodbye to the hassle of finding a place to recharge
+            </span>
           </div>
 
           <div className="flexCenter search-bar">
-            <button className="button" onClick={() => navigate("/user/evs-selector")}>Power Charg</button>
-            <button className="button" onClick={scrollToValue}>Learn More</button>
+            <button
+              className="button"
+              onClick={() => navigate("/user/evs-selector")}
+            >
+              Power Charg
+            </button>
+            <button className="button" onClick={scrollToValue}>
+              Learn More
+            </button>
           </div>
 
           <div className="flexCenter stats">
             {Object.entries(namePriceSums).map(([name, totalPrice]) => (
               <div key={name} className="flexColCenter stat">
                 <span>
-                  <CountUp start={0} end={parseFloat(totalPrice.toFixed(2))} duration={2} decimals={2} />
+                  <CountUp
+                    start={0}
+                    end={parseFloat(totalPrice.toFixed(2))}
+                    duration={2}
+                    decimals={2}
+                  />
                   <span>$</span>
                 </span>
                 <span className="secondaryText">{name}</span>
@@ -81,7 +93,8 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
           </div>
         </div>
 
-        <div className="flexCenter hero-right">
+        {/* RIGHT — แสดงเฉพาะ iPad, Desktop */}
+        <div className="hero-right md:flex hidden !important">
           <div className="image-container">
             <img src={Hero_Image} alt="EV Charging" />
           </div>
