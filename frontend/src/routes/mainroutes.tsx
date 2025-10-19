@@ -10,16 +10,17 @@ const ResetPassword = Loadable(lazy(() => import("../page/ResetPassword/ResetPas
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
 const Profile = Loadable(lazy(() => import("../component/user/header/SocialProfile/SocialProfile")));
-const LearnMore = Loadable(lazy(() => import("../component/user/value/value")));
 const EVInputUser = Loadable(lazy(() => import("../component/user/evs")));
 const PaymentUser = Loadable(lazy(() => import("../component/user/payment")));
 const PaymentQr = Loadable(lazy(() => import("../component/user/payment/QRCode/test")));
-const PaymentCredit = Loadable(lazy(() => import("../component/user/payment/CreditCard/test")));
 const ChargingEV = Loadable(lazy(() => import("../component/user/charge/index")));
 const MyCoins = Loadable(lazy(() => import("../component/user/historypay/pay")));
 const PayCoins = Loadable(lazy(() => import("../component/user/money/index")));
 const IntroCar = Loadable(lazy(() => import("../component/user/car/intro")));
 const AddCar = Loadable(lazy(() => import("../component/user/car/create")));
+const Map = Loadable(lazy(() => import("../component/user/map")));
+const AllNews = Loadable(lazy(() => import("../component/user/new/all")));
+const News = Loadable(lazy(() => import("../component/user/new/event")));
 
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
@@ -57,17 +58,18 @@ const UserRoutes = (): RouteObject[] => [
     path: "/user",
     children: [
       { index: true, element: <User /> },
-      { path: "profile", element: <Profile /> },
-      { path: "evs-selector", element: <EVInputUser /> },
-      { path: "learnmore", element: <LearnMore /> },
-      { path: "payment", element: <PaymentUser /> },
-      { path: "payment-by-qrcode", element: <PaymentQr /> },
-      { path: "credit-card", element: <PaymentCredit /> },
-      { path: "charging", element: <ChargingEV/> },
-      { path: "my-coins", element: <MyCoins/> },
-      { path: "add-coins", element: <PayCoins/> },
-      { path: "intro-cars", element: <IntroCar/> },
-      { path: "add-cars", element: <AddCar/> },
+      { path: "profile", element: <Profile /> }, //edit
+      { path: "evs-selector", element: <EVInputUser /> }, // edit
+      { path: "payment", element: <PaymentUser /> }, // edit
+      { path: "payment-by-qrcode", element: <PaymentQr /> }, //edit
+      { path: "charging", element: <ChargingEV/> },//edit
+      { path: "my-coins", element: <MyCoins/> }, //edit
+      { path: "add-coins", element: <PayCoins/> }, //edit
+      { path: "intro-cars", element: <IntroCar/> }, //edit
+      { path: "add-cars", element: <AddCar/> }, //edit
+      { path: "map", element: <Map/> }, //edit
+      { path: "all-news", element: <AllNews/> }, //edit
+      { path: "one-news", element: <News/> }, //edit
     ],
   },
 ];
@@ -118,12 +120,12 @@ const MainRoutes = (): RouteObject[] => [
   {
     path: "/",
     children: [
-      { index: true, element: <Login /> },
+      { index: true, element: <Login /> }, //edit
       { path: "/register", element: <SignUp /> },
-      { path: "*", element: <Login /> },
-      { path: "/register", element: <SignUp /> },
-      { path: "/forgot-password", element: <ForgotPassword /> },
-      { path: "/reset-password", element: <ResetPassword /> },
+      { path: "*", element: <Login /> }, //edit 
+      { path: "/register", element: <SignUp /> }, //edit
+      { path: "/forgot-password", element: <ForgotPassword /> }, //edit
+      { path: "/reset-password", element: <ResetPassword /> }, //edit
     ],
   },
 ];

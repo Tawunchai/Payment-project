@@ -1,184 +1,159 @@
-import { useState } from "react";
-import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
-import background2 from "../../assets/EV Car.jpeg";
-import {
-  Button,
-  Card,
-  Form,
-  Image,
-  Input,
-  theme,
-  Typography,
-  message,
-} from "antd";
+import React, { useState } from "react";
+import { Button, Form, Input, Typography, message } from "antd";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { IoPlayCircle } from "react-icons/io5";
-import { Link, useNavigate } from "react-router-dom";
+import { FaBolt } from "react-icons/fa";
+
+import background2 from "../../assets/EV Car.jpeg";
 import { resetPassword } from "../../services/httpLogin";
-import { useSearchParams } from "react-router-dom";
 
-const { useToken } = theme;
-
-const ResetPasswordForm = () => {
-  const { token } = useToken();
-  const [loading, setLoading] = useState(false);
+const ResetPasswordForm: React.FC = () => {
   const navigate = useNavigate();
-   const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const email = searchParams.get("email") || "";
+  const [loading, setLoading] = useState(false);
 
-  const onFinish = async (values: any) => {
-  const { password, newpassword } = values;
+  const onFinish = async (values: { password: string; newpassword: string }) => {
+    const { password, newpassword } = values;
 
-  if (password !== newpassword) {
-    message.error("New password and confirm password must be the same!");
-    return;
-  }
-
-  setLoading(true);
-
-  if (!email) {
-    message.error("Email ไม่ถูกต้อง หรือหมดเวลา กรุณาลองใหม่");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    const res = await resetPassword({
-      email: email,       
-      new_password: newpassword,
-    });
-
-     if (res) {
-    message.success("เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่");
-    setTimeout(() => {
-      navigate("/");
-    }, 2500);
-  } else {
-      message.error("เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่");
+    if (password !== newpassword) {
+      message.error("New password and confirm password must be the same!");
+      return;
     }
-  } catch (error) {
-    message.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!email) {
+      message.error("Email ไม่ถูกต้อง หรือหมดเวลา กรุณาลองใหม่");
+      return;
+    }
 
+    setLoading(true);
+    try {
+      const res = await resetPassword({ email, new_password: newpassword });
+      if (res) {
+        message.success("เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่");
+        setTimeout(() => navigate("/"), 1800);
+      } else {
+        message.error("เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่");
+      }
+    } catch {
+      message.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div
-      className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full min-h-screen p-4 md:p-8 xl:p-20"
-      style={{ backgroundColor: token.colorBgLayout }}
-    >
-      {/* FORM */}
-      <div className="col-span-12 lg:col-span-6 flex justify-center lg:order-2">
-        <Card
-          className="h-full w-full"
-          classNames={{
-            body: "p-4 sm:p-8 max-w-[700px] mx-auto flex flex-col justify-around h-full",
-          }}
-          bordered={false}
-        >
-          {/* Logo */}
-          <div className="mb-8">
-            <Link to={"#"}>
-              <Image
-                src={ASSET_IMAGES}
-                alt="logo"
-                className="w-[70px] sm:w-[90px]"
-                style={{ width: "150px" }}
-                preview={false}
-              />
-            </Link>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white">
+      {/* Brand bar */}
+      <div className="mx-auto max-w-screen-xl px-4 pt-6 pb-2">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm">
+            <FaBolt className="text-lg" />
+          </span>
+          <div className="leading-tight">
+            <div className="text-xl font-bold tracking-tight text-blue-700">
+              EV Station
+            </div>
+            <div className="text-[12px] text-blue-900/60">secure • simple</div>
           </div>
+        </div>
+      </div>
 
-          {/* Title & Form */}
-          <div className="mb-4">
-            <Typography.Title
-              level={2}
-              className="text-3xl sm:text-4xl font-semibold mb-2.5"
-              style={{ color: token.colorTextHeading }}
-            >
-              Reset Password
-            </Typography.Title>
+      {/* Content */}
+      <div className="mx-auto grid max-w-screen-xl grid-cols-1 gap-6 px-4 pb-12 lg:grid-cols-2">
+        {/* LEFT: Form card */}
+        <div className="flex items-stretch">
+          <div className="w-full rounded-2xl border border-blue-100 bg-white p-6 shadow-[0_10px_35px_rgba(37,99,235,0.06)] sm:p-8">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold tracking-tight text-blue-900">
+                Reset Password
+              </h1>
+              <p className="mt-1 text-sm text-blue-900/60">
+                โปรดตั้งรหัสผ่านใหม่ด้านล่างเพื่อความปลอดภัยของบัญชี
+              </p>
+            </div>
 
-            <Form layout="vertical" className="mb-10" onFinish={onFinish}>
+            <Form layout="vertical" onFinish={onFinish}>
               <Form.Item
                 name="password"
-                label="New Password"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your new password!",
-                  },
-                ]}
+                label={<span className="text-sm text-gray-700">New Password</span>}
+                rules={[{ required: true, message: "Please input your new password!" }]}
                 hasFeedback
               >
-                <Input.Password placeholder="New Password" size="large" />
+                <Input.Password placeholder="New password" size="large" className="rounded-2xl" />
               </Form.Item>
 
               <Form.Item
                 name="newpassword"
-                label="Confirm New Password"
+                label={<span className="text-sm text-gray-700">Confirm New Password</span>}
                 dependencies={["password"]}
                 hasFeedback
                 rules={[
-                  {
-                    required: true,
-                    message: "Please confirm your new password!",
-                  },
+                  { required: true, message: "Please confirm your new password!" },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
-                      if (!value || getFieldValue("password") === value) {
-                        return Promise.resolve();
-                      }
-                      return Promise.reject(
-                        new Error("Passwords do not match!")
-                      );
+                      if (!value || getFieldValue("password") === value) return Promise.resolve();
+                      return Promise.reject(new Error("Passwords do not match!"));
                     },
                   }),
                 ]}
               >
-                <Input.Password placeholder="Retype New Password" size="large" />
+                <Input.Password placeholder="Retype new password" size="large" className="rounded-2xl" />
               </Form.Item>
 
-              <Form.Item>
-                <Button block type="primary" htmlType="submit" size="large" loading={loading}>
-                  Reset
+              <Form.Item className="mb-2">
+                <Button
+                  block
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
+                  loading={loading}
+                  className="!h-12 !rounded-2xl !bg-blue-600 hover:!bg-blue-700"
+                >
+                  บันทึกรหัสผ่านใหม่
                 </Button>
               </Form.Item>
             </Form>
 
-            <Typography.Text className="text-sm">
-              Already have an account?{" "}
-              <Link to={"/auth/login-1"}>Login here</Link> or{" "}
-              <Link to={"/auth/signup-1"}>Create New</Link>
-            </Typography.Text>
-          </div>
-        </Card>
-      </div>
+            <p className="mt-4 text-sm text-gray-600">
+              มีบัญชีอยู่แล้ว?{" "}
+              <Link to="/" className="text-blue-600 hover:underline">
+                กลับไปเข้าสู่ระบบ
+              </Link>
+            </p>
 
-      {/* IMAGE + DESCRIPTION */}
-      <div className="col-span-12 lg:col-span-6 lg:order-1">
-        <div className="flex flex-col h-full justify-center items-center">
-          <div className="w-full max-w-2xl px-4 sm:px-8 space-y-10">
-            <Typography.Text className="text-base sm:text-xl font-light">
-              Please enter your new password below to securely reset your
-              account credentials.
-            </Typography.Text>
+            <p className="mt-8 text-xs text-gray-400">© EV Station 2025</p>
+          </div>
+        </div>
+
+        {/* RIGHT: Illustration / helper (desktop only) */}
+        <div className="relative hidden overflow-hidden rounded-3xl lg:block">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-500" />
+          <div className="absolute -left-12 -top-12 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -right-16 bottom-8 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+
+          <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
+            <div>
+              <Typography.Title level={3} className="!m-0 !text-white !font-semibold">
+                ตั้งรหัสผ่านใหม่อย่างปลอดภัย
+              </Typography.Title>
+              <p className="mt-2 text-blue-100">
+                ใช้รหัสผ่านที่คาดเดายากและไม่ซ้ำกับบริการอื่น ๆ
+              </p>
+            </div>
 
             <div>
               <img
                 src={background2}
                 alt="reset-password-img"
-                className="w-full h-auto object-contain rounded-lg"
+                className="w-full rounded-2xl border border-white/15 shadow-lg"
               />
+              <Link to="#" className="mt-4 inline-flex items-center gap-2 text-blue-50">
+                <IoPlayCircle className="text-xl" />
+                วิธีการใช้งาน
+              </Link>
             </div>
 
-            <Link className="block text-primary" to={"#"}>
-              <span className="inline-flex items-center gap-2 text-base">
-                <IoPlayCircle />
-                How it works
-              </span>
-            </Link>
+            <div className="text-xs text-blue-100/70">keep your account secure • EV Station</div>
           </div>
         </div>
       </div>

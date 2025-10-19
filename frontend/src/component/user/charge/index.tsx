@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
-import { FaBolt } from 'react-icons/fa';
-import { message } from 'antd';
-import ModalCreate from '../review/create'; 
+import { useEffect, useMemo, useState } from "react";
+import { FaBolt } from "react-icons/fa";
+import { message } from "antd";
+import ModalCreate from "../review/create";
+
 const ChargingEV = () => {
   const [charging, setCharging] = useState(false);
-  const [energy, setEnergy] = useState(0);
-  const [time, setTime] = useState(0);
+  const [energy, setEnergy] = useState(0);   // 0-100
+  const [time, setTime] = useState(0);       // วินาที
   const [showReviewModal, setShowReviewModal] = useState(false);
-
-  const userID = 1; // 🔁 เปลี่ยนเป็นค่าจริงของผู้ใช้
+  const userID = 1; // TODO: ใช้ user จริงของระบบ
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
+    // ใช้ ReturnType เพื่อเลี่ยง NodeJS.Timeout
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (charging) {
       setEnergy(0);
       setTime(0);
@@ -20,34 +20,54 @@ const ChargingEV = () => {
 
       interval = setInterval(() => {
         seconds += 1;
-        setEnergy((prev) => {
-          const newEnergy = Math.min(prev + 20, 100);
-          if (newEnergy >= 100) {
-            setCharging(false);
-            message.success('การชาร์จเสร็จเรียบร้อย!');
-          }
-          return newEnergy;
-        });
         setTime(seconds);
-        if (seconds >= 5) {
-          clearInterval(interval);
-        }
+        setEnergy((prev) => {
+          const next = Math.min(prev + 20, 100);
+          if (next >= 100) {
+            message.success("การชาร์จเสร็จเรียบร้อย!");
+            setCharging(false);
+          }
+          return next;
+        });
+        if (seconds >= 5 && interval) clearInterval(interval); // เดโม่
       }, 1000);
     }
-
-    return () => clearInterval(interval);
+    return () => { if (interval) clearInterval(interval); };
   }, [charging]);
 
   const formatTime = (sec: number) => {
-    const h = String(Math.floor(sec / 3600)).padStart(2, '0');
-    const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
-    const s = String(sec % 60).padStart(2, '0');
+    const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+    const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+    const s = String(sec % 60).padStart(2, "0");
     return `${h}:${m}:${s}`;
   };
 
+  const canComplete = energy >= 100;
+
+  // ====== แบต 5 ช่อง (ล่าง -> บน) พร้อมสีแดง-ส้ม-เหลือง-เขียวอ่อน-เขียว ======
+  const segmentCount = 5;
+  const segments = useMemo(() => {
+    const filledCount = Math.round((energy / 100) * segmentCount);
+    return Array.from({ length: segmentCount }, (_, i) => i < filledCount);
+  }, [energy]);
+
+  const segmentColors = [
+    { from: "#f87171", to: "#ef4444", border: "#dc2626" }, // แดง
+    { from: "#fb923c", to: "#f97316", border: "#ea580c" }, // ส้ม
+    { from: "#fbbf24", to: "#f59e0b", border: "#d97706" }, // เหลือง
+    { from: "#a3e635", to: "#84cc16", border: "#65a30d" }, // เขียวอ่อน
+    { from: "#34d399", to: "#22c55e", border: "#16a34a" }, // เขียวเข้ม
+  ];
+
+  const estKW = useMemo(() => {
+    const base = 7.2;
+    const step = energy / 100;
+    const value = Math.max(3, Math.min(base + step * 2, 11));
+    return value.toFixed(1);
+  }, [energy]);
+
   return (
     <>
-      {/* Modal Review */}
       <ModalCreate
         open={showReviewModal}
         onClose={() => setShowReviewModal(false)}
@@ -55,92 +75,162 @@ const ChargingEV = () => {
         onReviewCreated={(id) => console.log("Review ID:", id)}
       />
 
-      <div className="min-h-screen flex items-center justify-center bg-[var(--black)] px-4">
-        <div className="w-full max-w-md bg-white backdrop-blur-md p-6 rounded-3xl shadow-2xl border border-orange-100 transition-all">
-          <h2 className="text-orange-500 text-2xl font-semibold mb-6 flex items-center gap-2 justify-center">
-            ⚡ กำลังชาร์จ EV
-          </h2>
-
-          {/* Progress Bar */}
-          <div className="w-full h-5 bg-orange-100 rounded-full overflow-hidden mb-2 relative">
-            <div
-              className="h-full bg-gradient-to-r from-orange-400 to-orange-500 transition-all duration-500 ease-in-out rounded-full"
-              style={{ width: `${energy}%` }}
-            ></div>
-            {charging && (
-              <div className="absolute top-0 left-0 h-full w-full overflow-hidden rounded-full">
-                <div className="w-1/3 h-full bg-white/20 animate-shimmer" />
-              </div>
-            )}
-          </div>
-
-          {/* ⚡ Pulse Lightning Animation */}
-          {charging && (
-            <div className="flex justify-center items-center gap-5 mb-6 h-6 px-4">
-              {[...Array(5)].map((_, i) => (
-                <FaBolt
-                  key={i}
-                  className="text-orange-400 animate-ping-slow"
-                  style={{ animationDelay: `${i * 0.2}s` }}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Info */}
-          <div className="text-sm space-y-2 mb-6 text-gray-700 leading-relaxed font-medium">
-            <p>🕒 เวลาที่ชาร์จ: <span className="font-semibold">{formatTime(time)}</span></p>
-            <p>⚡ พลังงานชาร์จ (kWh): <span className="font-semibold">{energy.toFixed(1)}</span></p>
-            <p>☀️ สัดส่วน Solar Cell: <span className="text-yellow-500">70%</span></p>
-            <p>🔌 สัดส่วน การไฟฟ้า: <span className="text-blue-500">30%</span></p>
-            <p>
-              📡 สถานะ:{' '}
-              <span className={`font-semibold ${charging ? 'text-green-600' : 'text-gray-400'}`}>
-                {charging ? 'กำลังชาร์จ' : 'รอเริ่มชาร์จ'}
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <header
+          className="sticky top-0 z-20 overflow-hidden rounded-b-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
+          <div className="mx-auto flex max-w-screen-sm items-center gap-2 px-4 py-3">
+            <button
+              onClick={() => window.history.back()}
+              aria-label="ย้อนกลับ"
+              className="flex h-9 w-9 items-center justify-center rounded-xl active:bg-white/15 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
+                <FaBolt className="text-white" />
               </span>
-            </p>
+              <span className="text-sm font-semibold tracking-wide">EV Charging</span>
+            </div>
           </div>
+          <div className="mx-auto h-1.5 max-w-screen-sm rounded-b-2xl bg-white/15" />
+        </header>
 
-          {/* Buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setCharging(true)}
-              className="bg-gradient-to-r from-orange-400 to-orange-500 text-white py-2 rounded-full font-semibold hover:opacity-90 transition shadow-md"
-            >
-              เริ่มชาร์จ
-            </button>
-            <button
-              onClick={() => setCharging(false)}
-              className="bg-gray-100 text-gray-600 py-2 rounded-full font-medium hover:bg-gray-200 transition shadow-sm"
-            >
-              ปลดหัวชาร์จ
-            </button>
-            <button
-              onClick={() => {
-                setCharging(false);
-                setEnergy(0);
-                setTime(0);
-              }}
-              className="bg-red-400 text-white py-2 rounded-full font-semibold hover:bg-red-500 transition shadow"
-            >
-              ยกเลิก
-            </button>
-
-            {/* ✅ ปุ่ม Complete */}
-            <button
-              disabled={energy < 100}
-              onClick={() => setShowReviewModal(true)}
-              className={`py-2 rounded-full font-semibold transition shadow 
-                ${energy >= 100
-                  ? 'bg-green-500 text-white hover:bg-green-600'
-                  : 'bg-gray-300 text-gray-400 cursor-not-allowed'
+        {/* Content */}
+        <main className="mx-auto max-w-screen-sm px-4 pt-5 pb-8">
+          <div className="rounded-2xl border border-gray-100 bg-white/90 p-5 shadow-sm backdrop-blur">
+            {/* Title */}
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-blue-900">
+                <FaBolt className="text-blue-600" /> กำลังชาร์จ EV
+              </h2>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                  charging
+                    ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-200"
+                    : "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-200"
                 }`}
-            >
-              Complete
-            </button>
+              >
+                {charging ? "CHARGING" : "IDLE"}
+              </span>
+            </div>
+
+            {/* Battery + Info */}
+            <div className="flex items-center justify-center gap-6">
+              {/* Battery 5 cell (ล่าง->บน) */}
+              <div className="text-center">
+                <div className="mx-auto mb-1 h-2 w-10 rounded-sm bg-gray-300" />
+                <div className="relative h-48 w-20 rounded-2xl border-2 border-gray-300 p-2">
+                  <div className="flex h-full flex-col-reverse justify-start gap-1">
+                    {Array.from({ length: segmentCount }, (_, idxFromBottom) => {
+                      const isOn = segments[idxFromBottom];
+                      const palette = segmentColors[idxFromBottom];
+                      const onStyle = {
+                        background: `linear-gradient(180deg, ${palette.from}, ${palette.to})`,
+                        borderColor: palette.border,
+                      };
+                      return (
+                        <div
+                          key={idxFromBottom}
+                          className={[
+                            "h-full rounded-md border transition-all duration-300",
+                            isOn ? "shadow-sm" : "bg-gray-100 border-gray-200",
+                            charging && isOn ? "animate-evGlow" : "",
+                          ].join(" ")}
+                          style={isOn ? onStyle : undefined}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/30" />
+                </div>
+              </div>
+
+              {/* ค่าปัจจุบัน */}
+              <div className="flex flex-col items-start gap-3">
+                <div className="rounded-xl bg-blue-50 px-3 py-2">
+                  <div className="text-[11px] text-blue-900/70">เปอร์เซ็นต์</div>
+                  <div className="text-3xl font-extrabold tracking-tight text-blue-700">{energy}%</div>
+                </div>
+                <div className="rounded-xl bg-gray-50 px-3 py-2">
+                  <div className="text-[11px] text-gray-500">เวลา</div>
+                  <div className="font-semibold text-gray-800">{formatTime(time)}</div>
+                </div>
+                <div className="rounded-xl bg-gray-50 px-3 py-2">
+                  <div className="text-[11px] text-gray-500">กำลังชาร์จ (kW)</div>
+                  <div className="font-semibold text-gray-800">{estKW}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Capsules เพิ่มเติม */}
+            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+                <div className="text-[11px] text-blue-800/80">Solar Cell</div>
+                <div className="font-semibold text-blue-700">70%</div>
+              </div>
+              <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+                <div className="text-[11px] text-blue-800/80">Grid</div>
+                <div className="font-semibold text-blue-700">30%</div>
+              </div>
+            </div>
+
+            {/* Actions ในการ์ด (ย้ายมาจาก Sticky Action Bar) */}
+            <div className="mt-6 border-t border-gray-100 pt-4">
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  onClick={() => setCharging(true)}
+                  disabled={charging}
+                  className={`rounded-xl px-3 py-2 text-xs font-semibold text-white shadow-sm transition
+                    ${charging ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"}`}
+                >
+                  เริ่ม
+                </button>
+                <button
+                  onClick={() => setCharging(false)}
+                  className="rounded-xl bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-200"
+                >
+                  ปลด
+                </button>
+                <button
+                  onClick={() => {
+                    setCharging(false);
+                    setEnergy(0);
+                    setTime(0);
+                  }}
+                  className="rounded-xl bg-red-500 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-red-600"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  disabled={!canComplete}
+                  onClick={() => setShowReviewModal(true)}
+                  className={`rounded-xl px-3 py-2 text-xs font-semibold shadow-sm transition
+                    ${canComplete
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+                >
+                  เสร็จสิ้น
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
+
+      <style>{`
+        @keyframes evGlow {
+          0% { box-shadow: 0 0 0px rgba(37,99,235,0); }
+          50% { box-shadow: 0 0 14px rgba(37,99,235,0.45); }
+          100% { box-shadow: 0 0 0px rgba(37,99,235,0); }
+        }
+        .animate-evGlow { animation: evGlow 1.8s ease-in-out infinite; }
+      `}</style>
     </>
   );
 };

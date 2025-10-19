@@ -27,7 +27,13 @@ const Index = () => {
   const isMobile = useIsMobile(768);
 
   return (
-    <div className="user">
+    <div
+      className="user"
+      // กันไม่ให้คอนเทนต์โดนทับโดยแถบ footer (เฉพาะมือถือ)
+      style={{
+        paddingBottom: isMobile ? "calc(84px + env(safe-area-inset-bottom))" : 0,
+      }}
+    >
       <div>
         <Header
           scrollToValue={() => valueRef.current?.scrollIntoView({ behavior: "smooth" })}
@@ -38,7 +44,7 @@ const Index = () => {
       </div>
 
       {isMobile && <Car />}
-      <br /><br />
+
       <div ref={valueRef}>
         <Value />
       </div>
@@ -47,7 +53,11 @@ const Index = () => {
         {isMobile ? <NewMobile /> : <New />}
       </div>
 
-      <Review /><br /><p className="invisible">footer</p>
+      <Review />
+      <br /><br /><br />
+
+      {/* ✅ แสดง Footer เฉพาะมือถือ */}
+      {isMobile && <Footer />}
     </div>
   );
 };

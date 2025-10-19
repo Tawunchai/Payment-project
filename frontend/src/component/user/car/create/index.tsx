@@ -1,7 +1,61 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-/* ======================= Bottom Sheet Picker ======================= */
+/* =========================
+   EV Bolt Icon (minimal)
+   ========================= */
+const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+    <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
+  </svg>
+);
+
+/* =========================
+   Reusable EV Header (blue)
+   ========================= */
+const EVHeader: React.FC<{ title?: string; onBack?: () => void }> = ({
+  title = "เพิ่มพาหนะ",
+  onBack,
+}) => {
+  const goBack = () => (onBack ? onBack() : window.history.back());
+  return (
+    <header
+      className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+      aria-label="EV top navigation"
+    >
+      <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={goBack}
+          aria-label="ย้อนกลับ"
+          className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
+            <BoltIcon className="h-5 w-5 text-white" />
+          </span>
+          <span className="text-sm font-semibold tracking-wide">{title}</span>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+/* =======================
+   Bottom Sheet Picker
+   ======================= */
 type SheetFor = "brand" | "model" | "province";
 
 type BottomSheetPickerProps = {
@@ -113,8 +167,10 @@ const BottomSheetPicker: React.FC<BottomSheetPickerProps> = ({
     </div>
   );
 };
-/* ======================= End Bottom Sheet Picker ======================= */
 
+/* =======================
+   Page: Add Vehicle Form
+   ======================= */
 const Index: React.FC = () => {
   const navigate = useNavigate();
 
@@ -131,6 +187,7 @@ const Index: React.FC = () => {
     "AJ EV","Audi","BMW","BYD","Changan","Chery","FOMM","FORD","FOXCONN",
     "GAC","GWM","Honda","Mazda","Nissan","Toyota","Tesla"
   ];
+
   const modelOptionsByBrand: Record<string, string[]> = {
     Toyota: ["Corolla Cross", "Yaris Ativ", "bZ4X"],
     Honda: ["City", "Civic e:HEV", "HR-V"],
@@ -142,6 +199,7 @@ const Index: React.FC = () => {
     Audi: ["e-tron GT", "Q8 e-tron"],
     GWM: ["ORA Good Cat"],
   };
+
   const provinces = [
     "กรุงเทพมหานคร","กระบี่","กาญจนบุรี","กาฬสินธุ์","กำแพงเพชร","ขอนแก่น","จันทบุรี","ฉะเชิงเทรา",
     "ชลบุรี","ชัยนาท","ชัยภูมิ","ชุมพร","เชียงราย","เชียงใหม่","ตรัง","ตราด","ตาก","นครนายก",
@@ -198,33 +256,30 @@ const Index: React.FC = () => {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    const payload = { brand, model, special_registration: isSpecialReg, plate, province, is_default: isDefault };
+    const payload = {
+      brand,
+      model,
+      special_registration: isSpecialReg,
+      plate,
+      province,
+      is_default: isDefault,
+    };
     console.log("SUBMIT VEHICLE:", payload);
     navigate(-1);
   };
 
   return (
     <form onSubmit={submit} className="min-h-screen bg-white flex flex-col">
-      {/* Top Bar */}
-      <div className="relative flex items-center justify-center px-4 py-3 border-b border-gray-100">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="ย้อนกลับ"
-          className="absolute left-4 inline-flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 active:scale-[0.98] transition"
-        >
-          <svg viewBox="0 0 24 24" className="h-6 w-6 text-gray-900" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <div className="text-base font-semibold text-gray-900">เพิ่มพาหนะ</div>
-      </div>
+      {/* EV Header */}
+      <EVHeader title="เพิ่มพาหนะ" onBack={() => navigate(-1)} />
 
       {/* Content */}
       <div className="flex-1 px-4 pt-4 pb-28 sm:px-6">
         {/* Brand */}
         <label className="block">
-          <span className="text-gray-700 text-sm">ยี่ห้อ <span className="text-red-500">*</span></span>
+          <span className="text-gray-700 text-sm">
+            ยี่ห้อ <span className="text-red-500">*</span>
+          </span>
           <button
             type="button"
             onClick={openBrandSheet}
@@ -237,7 +292,9 @@ const Index: React.FC = () => {
 
         {/* Model */}
         <label className="block mt-4">
-          <span className="text-gray-700 text-sm">รุ่น <span className="text-red-500">*</span></span>
+          <span className="text-gray-700 text-sm">
+            รุ่น <span className="text-red-500">*</span>
+          </span>
           <button
             type="button"
             onClick={openModelSheet}
@@ -280,7 +337,9 @@ const Index: React.FC = () => {
 
         {/* Plate */}
         <label className="block mt-6">
-          <span className="text-gray-700 text-sm">ทะเบียนพาหนะ <span className="text-red-500">*</span></span>
+          <span className="text-gray-700 text-sm">
+            ทะเบียนพาหนะ <span className="text-red-500">*</span>
+          </span>
           <input
             type="text"
             placeholder="เช่น 1กก 1234"
@@ -291,9 +350,11 @@ const Index: React.FC = () => {
           />
         </label>
 
-        {/* Province (Bottom Sheet เหมือนกัน) */}
+        {/* Province */}
         <label className="block mt-4">
-          <span className="text-gray-700 text-sm">จังหวัด <span className="text-red-500">*</span></span>
+          <span className="text-gray-700 text-sm">
+            จังหวัด <span className="text-red-500">*</span>
+          </span>
           <button
             type="button"
             onClick={openProvinceSheet}
@@ -312,15 +373,24 @@ const Index: React.FC = () => {
             role="switch"
             aria-checked={isDefault}
             onClick={() => setIsDefault((v) => !v)}
-            className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${isDefault ? "bg-blue-600" : "bg-gray-300"}`}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
+              isDefault ? "bg-blue-600" : "bg-gray-300"
+            }`}
           >
-            <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition ${isDefault ? "translate-x-6" : "translate-x-1"}`} />
+            <span
+              className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition ${
+                isDefault ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
           </button>
         </div>
       </div>
 
       {/* Save */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-gradient-to-t from-white via-white/90 to-transparent">
+      <div
+        className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-gradient-to-t from-white via-white/90 to-transparent"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         <button
           type="submit"
           disabled={!canSubmit}
