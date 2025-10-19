@@ -1,53 +1,138 @@
 import "./new.css";
 import { useEffect, useState } from "react";
-import { ListNews, apiUrlPicture } from "../../../services/index";
+import { ListNews, apiUrlPicture } from "../../../services";
 import { NewsInterface } from "../../../interface/INews";
 
 const NewsCarousel = () => {
   const [newsList, setNewsList] = useState<NewsInterface[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchNews = async () => {
-      const res = await ListNews();
-      if (res) setNewsList(res);
+      try {
+        const res = await ListNews();
+        if (res) setNewsList(res);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchNews();
   }, []);
 
   return (
-    <section className="w-full bg-white py-6 rounded-xl  mb-8 paddings">
-      <div className="flex justify-between items-center px-6 mb-4">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-800">
+    <section
+      className="
+        w-full
+        via-white to-white
+        rounded-2xl
+        px-4 py-5
+        mb-8
+      "
+      aria-label="ข่าวสารและกิจกรรม"
+    >
+      {/* Header */}
+      <div className="mx-auto max-w-screen-lg flex items-center justify-between">
+        <h2 className="text-[15px] md:text-base font-bold tracking-tight text-blue-800">
           ข่าวสารและกิจกรรม
         </h2>
         <a
           href="#"
-          className="text-blue-600 font-medium hover:underline whitespace-nowrap"
+          className="
+            inline-flex items-center gap-1
+            text-[12px] font-semibold
+            text-blue-700
+            bg-blue-50 hover:bg-blue-100
+            px-3 py-1 rounded-full
+            transition-colors
+            whitespace-nowrap
+          "
         >
-          ดูทั้งหมด &gt;
+          ดูทั้งหมด
+          <span aria-hidden>›</span>
         </a>
       </div>
-      <div className="overflow-x-auto no-scrollbar px-4">
-        <div className="flex gap-6 snap-x snap-mandatory">
-          {newsList.map((item) => (
-            <div
-              key={item.ID}
-              className="snap-center flex-shrink-0 rounded-xl overflow-hidden shadow border border-blue-100 bg-white"
-              style={{
-                width: 340,
-                minHeight: 190,
-                maxHeight: 210,
-                transition: "transform 0.3s, box-shadow 0.3s",
-              }}
-            >
-              <img
-                src={`${apiUrlPicture}${item.Picture}`}
-                alt={item.Title}
-                className="object-cover w-full h-full aspect-video"
-                style={{ maxHeight: 200 }}
-              />
-            </div>
-          ))}
+
+      {/* List */}
+      <div className="mx-auto max-w-screen-lg mt-3 overflow-x-auto no-scrollbar">
+        <div className="flex snap-x snap-mandatory gap-4 pr-1">
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="
+                    snap-start shrink-0
+                    w-72 md:w-80
+                    rounded-xl border border-blue-100 bg-white
+                    shadow-[0_8px_24px_rgba(37,99,235,0.06)]
+                    overflow-hidden
+                  "
+                >
+                  <div className="aspect-[16/9] bg-blue-50 animate-pulse" />
+                  <div className="p-3">
+                    <div className="h-3.5 w-40 bg-blue-50 rounded mb-2 animate-pulse" />
+                    <div className="h-3 w-24 bg-blue-50 rounded animate-pulse" />
+                  </div>
+                </div>
+              ))
+            : newsList.map((item) => (
+                <article
+                  key={item.ID}
+                  className="
+                    snap-start shrink-0
+                    w-72 md:w-80
+                    rounded-xl border border-blue-100 bg-white
+                    shadow-[0_8px_24px_rgba(37,99,235,0.06)]
+                    overflow-hidden
+                    transition-transform
+                    active:scale-[0.98]
+                  "
+                  role="button"
+                  tabIndex={0}
+                  aria-label={item.Title}
+                >
+                  <div className="relative aspect-[16/9]">
+                    <img
+                      src={`${apiUrlPicture}${item.Picture}`}
+                      alt={item.Title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                    {/* gradient overlay + title */}
+                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/50 via-black/10 to-transparent">
+                      <h3
+                        className="
+                          text-[13px] md:text-[14px]
+                          font-semibold leading-5 text-white line-clamp-2
+                          drop-shadow-sm
+                        "
+                        title={item.Title}
+                      >
+                        {item.Title}
+                      </h3>
+                    </div>
+
+                    {/* top-left badge */}
+                    <span
+                      className="
+                        absolute left-2 top-2
+                        text-[10px] font-semibold
+                        px-2 py-0.5 rounded-full
+                        bg-white/90 text-blue-700
+                        ring-1 ring-blue-200
+                      "
+                    >
+                      EV NEWS
+                    </span>
+                  </div>
+
+                  {/* meta */}
+                  <div className="p-3">
+                    <p className="text-[12px] leading-5 text-gray-600 line-clamp-2">
+                      {item.Description || "อัปเดตกิจกรรมและข่าวสารเกี่ยวกับการชาร์จไฟฟ้า EV"}
+                    </p>
+                  </div>
+                </article>
+              ))}
         </div>
       </div>
     </section>

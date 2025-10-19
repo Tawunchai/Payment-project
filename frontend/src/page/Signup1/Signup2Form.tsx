@@ -3,39 +3,35 @@ import {
   Button,
   Card,
   Form,
-  Image,
   Input,
   Select,
   Typography,
   message,
-  theme,
   Upload,
 } from "antd";
 import ImgCrop from "antd-img-crop";
 import { Link, useNavigate } from "react-router-dom";
 import { IoPlayCircle } from "react-icons/io5";
 import { PlusOutlined } from "@ant-design/icons";
-import ASSET_IMAGES from "../../assets/picture/Direct_Energy_logo.svg.png";
+import { FaBolt } from "react-icons/fa";
 import background2 from "../../assets/EV Car.jpeg";
 import { currentYear } from "./data";
 import { ListGenders, CreateUser } from "../../services";
 
-const { useToken } = theme;
 const { Title, Text } = Typography;
 
-const Signup2Form = () => {
+const Signup2Form: React.FC = () => {
   const [form] = Form.useForm();
-  const { token } = useToken();
   const navigate = useNavigate();
   const [genderOptions, setGenderOptions] = useState<{ ID: number; Name: string }[]>([]);
   const [fileList, setFileList] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false); // <--- เพิ่ม state loading
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchGenders = async () => {
       const res = await ListGenders();
       if (res) {
-        const mapped = res.map((g) => ({
+        const mapped = res.map((g: any) => ({
           ID: g.ID ?? 0,
           Name: g.Gender ?? "",
         }));
@@ -45,9 +41,7 @@ const Signup2Form = () => {
     fetchGenders();
   }, []);
 
-  const onChange = ({ fileList: newFileList }: any) => {
-    setFileList(newFileList);
-  };
+  const onChange = ({ fileList: newFileList }: any) => setFileList(newFileList);
 
   const onPreview = async (file: any) => {
     let src = file.url;
@@ -58,7 +52,7 @@ const Signup2Form = () => {
         reader.onload = () => resolve(reader.result as string);
       });
     }
-    const imgWindow = window.open(src);
+    const imgWindow = window.open(src as string);
     imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
   };
 
@@ -68,7 +62,7 @@ const Signup2Form = () => {
       return;
     }
 
-    setLoading(true); // <--- เริ่ม loading
+    setLoading(true);
 
     const formData = new FormData();
     formData.append("username", values.username);
@@ -86,64 +80,62 @@ const Signup2Form = () => {
       if (res) {
         message.success("User created successfully!");
         setTimeout(() => {
-          setLoading(false); // <--- หยุด loading
+          setLoading(false);
           navigate("/auth/login-2");
-        }, 2000);
+        }, 1200);
       } else {
         message.error("Failed to create user.");
-        setLoading(false); // <--- หยุด loading
+        setLoading(false);
       }
-    } catch (err) {
+    } catch {
       message.error("Error occurred while creating user.");
-      setLoading(false); // <--- หยุด loading
+      setLoading(false);
     }
   };
 
   return (
-    <div
-      className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full min-h-screen p-4 md:p-8 xl:p-20"
-      style={{ backgroundColor: token.colorBgLayout }}
-    >
-      <div className="col-span-12 lg:col-span-6 flex justify-center lg:order-2">
-        <Card
-          className="h-full w-full"
-          classNames={{
-            body: "p-4 sm:p-8 max-w-[700px] mx-auto flex flex-col justify-around h-full",
-          }}
-          bordered={false}
-        >
-          <div className="mb-8">
-            <Link to="#">
-              <Image src={ASSET_IMAGES} alt="logo" style={{ width: "150px" }} preview={false} />
-            </Link>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white">
+      {/* Brand bar */}
+      <div className="mx-auto max-w-screen-xl px-4 pt-6 pb-2">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm">
+            <FaBolt className="text-lg" />
+          </span>
+          <div className="leading-tight">
+            <div className="text-xl font-bold tracking-tight text-blue-700">EV Station</div>
+            <div className="text-[12px] text-blue-900/60">charge • drive • repeat</div>
           </div>
+        </div>
+      </div>
 
-          <div className="mb-4">
-            <div className="mb-10">
-              <Title
-                level={2}
-                className="text-3xl sm:text-4xl font-semibold mb-2.5"
-                style={{ color: token.colorTextHeading }}
-              >
-                Get Started Now
-              </Title>
-              <Text>Enter your credentials to create your account</Text>
+      {/* Content grid */}
+      <div className="mx-auto grid max-w-screen-xl grid-cols-1 gap-6 px-4 pb-12 lg:grid-cols-2">
+        {/* FORM CARD */}
+        <div className="flex items-stretch">
+          <Card
+            bordered={false}
+            className="w-full rounded-2xl border border-blue-100 shadow-[0_10px_35px_rgba(37,99,235,0.06)]"
+            styles={{ body: { padding: 24 } }}
+          >
+            <div className="mb-6">
+              <Title level={2} className="!m-0 !text-blue-900">Create your account</Title>
+              <Text className="text-blue-900/70">กรอกข้อมูลเพื่อเริ่มต้นใช้งาน</Text>
             </div>
 
             <Form
               layout="vertical"
               form={form}
               onFinish={onFinish}
-              className="mb-10"
+              className="mb-4"
               encType="multipart/form-data"
             >
-              {/* Upload รูปโปรไฟล์ แบบวงกลม */}
+              {/* Upload */}
               <div className="flex justify-center">
                 <Form.Item
-                  label="Profile Picture"
+                  label={<span className="text-sm text-gray-700">Profile Picture</span>}
                   name="profile"
                   valuePropName="fileList"
-                  getValueFromEvent={({ fileList }) => fileList}
+                  getValueFromEvent={({ fileList }: any) => fileList}
                   rules={[
                     {
                       validator: () =>
@@ -171,9 +163,9 @@ const Signup2Form = () => {
                       listType="picture-circle"
                     >
                       {fileList.length < 1 && (
-                        <div>
+                        <div className="text-center">
                           <PlusOutlined style={{ fontSize: 32 }} />
-                          <div style={{ marginTop: 8 }}>Upload</div>
+                          <div className="mt-2 text-sm">Upload</div>
                         </div>
                       )}
                     </Upload>
@@ -181,13 +173,13 @@ const Signup2Form = () => {
                 </Form.Item>
               </div>
 
-              {/* Input ฟิลด์อื่น ๆ */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Fields */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Form.Item
                   name="username"
                   rules={[{ required: true, message: "Please input your username!" }]}
                 >
-                  <Input placeholder="Username" size="large" />
+                  <Input placeholder="Username" size="large" className="rounded-2xl" />
                 </Form.Item>
 
                 <Form.Item
@@ -197,48 +189,45 @@ const Signup2Form = () => {
                     { type: "email", message: "กรุณาใส่อีเมลที่ถูกต้อง" },
                   ]}
                 >
-                  <Input placeholder="Email" size="large" />
+                  <Input placeholder="Email" size="large" className="rounded-2xl" />
                 </Form.Item>
 
                 <Form.Item
                   name="password"
                   rules={[{ required: true, message: "Please input your password!" }]}
                 >
-                  <Input.Password placeholder="Password" size="large" />
+                  <Input.Password placeholder="Password" size="large" className="rounded-2xl" />
                 </Form.Item>
 
                 <Form.Item
                   name="phone"
                   rules={[
                     { required: true, message: "Please input your phone number!" },
-                    {
-                      pattern: /^0\d{9}$/,
-                      message: "เบอร์โทรต้องเป็นเลข 10 ตัว",
-                    },
+                    { pattern: /^0\d{9}$/, message: "เบอร์โทรต้องเป็นเลข 10 ตัว" },
                   ]}
                 >
-                  <Input placeholder="Phone Number" size="large" maxLength={10} />
+                  <Input placeholder="Phone Number" size="large" maxLength={10} className="rounded-2xl" />
                 </Form.Item>
 
                 <Form.Item
                   name="firstname"
                   rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}
                 >
-                  <Input placeholder="First Name" size="large" />
+                  <Input placeholder="First Name" size="large" className="rounded-2xl" />
                 </Form.Item>
 
                 <Form.Item
                   name="lastname"
                   rules={[{ required: true, message: "กรุณากรอกนามสกุล" }]}
                 >
-                  <Input placeholder="Last Name" size="large" />
+                  <Input placeholder="Last Name" size="large" className="rounded-2xl" />
                 </Form.Item>
 
                 <Form.Item
                   name="gender"
                   rules={[{ required: true, message: "Please select your gender!" }]}
                 >
-                  <Select placeholder="Select Gender" size="large">
+                  <Select placeholder="Select Gender" size="large" className="!rounded-2xl">
                     {genderOptions.map((g) => (
                       <Select.Option key={g.ID} value={g.ID}>
                         {g.Name}
@@ -248,7 +237,7 @@ const Signup2Form = () => {
                 </Form.Item>
               </div>
 
-              <Form.Item>
+              <Form.Item className="mt-2">
                 <Button
                   block
                   type="primary"
@@ -256,51 +245,51 @@ const Signup2Form = () => {
                   size="large"
                   loading={loading}
                   disabled={loading}
-                  style={{ backgroundColor: "var(--black)", color: "white", borderColor: "var(--black)" }}
+                  className="!h-12 !rounded-2xl !bg-blue-600 hover:!bg-blue-700"
                 >
-                  {loading ? "กำลังสมัคร..." : "Signup"}
+                  {loading ? "กำลังสมัคร..." : "Sign up"}
                 </Button>
               </Form.Item>
             </Form>
 
-            <Text>
-              Already have an account? <Link to="/auth/login-2">Login here</Link>
-            </Text>
-          </div>
-
-          <div className="mt-6">
-            <Text>© Company Name {currentYear}</Text>
-          </div>
-        </Card>
-      </div>
-
-      <div className="col-span-12 lg:col-span-6 lg:order-1">
-        <div className="flex flex-col h-full justify-center items-center">
-          <div className="w-full max-w-2xl px-4 sm:px-8 lg:space-y-16">
-            <div className="mb-5">
-              <Title
-                level={3}
-                className="text-2xl sm:text-3xl lg:text-4xl"
-                style={{ color: token.colorPrimary }}
-              >
-                Bring your idea to life
-              </Title>
-              <Text className="text-base sm:text-xl font-light">
-                Right tools to give your next project a kickstart it needs
-              </Text>
+            <div className="mt-2 text-sm text-gray-700">
+              Already have an account?{" "}
+              <Link to="/auth/login-2" className="text-blue-600 hover:underline">
+                Login here
+              </Link>
             </div>
-            <div className="mb-5">
+
+            <div className="mt-8 text-xs text-gray-400">© EV Station {currentYear}</div>
+          </Card>
+        </div>
+
+        {/* ILLUSTRATION PANEL (desktop only) */}
+        <div className="relative hidden overflow-hidden rounded-3xl lg:block">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-500" />
+          <div className="absolute -left-12 -top-12 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -right-16 bottom-8 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+
+          <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
+            <div>
+              <Title level={3} className="!m-0 !text-white !font-semibold">
+                เริ่มต้นเดินทางพลังงานไฟฟ้า
+              </Title>
+              <p className="mt-2 text-blue-100">สมัครง่าย ปลอดภัย พร้อมใช้งานได้ทันที</p>
+            </div>
+
+            <div>
               <img
                 src={background2}
-                alt="sign2-img"
-                className="w-full h-auto object-contain rounded-md"
+                alt="signup-img"
+                className="w-full rounded-2xl border border-white/15 shadow-lg"
               />
+              <Link to="#" className="mt-4 inline-flex items-center gap-2 text-blue-50">
+                <IoPlayCircle className="text-xl" />
+                How it works
+              </Link>
             </div>
-            <Link className="block text-primary" to="#">
-              <span className="inline-flex items-center gap-2 text-base">
-                <IoPlayCircle /> How it works
-              </span>
-            </Link>
+
+            <div className="text-xs text-blue-100/70">charge smarter • EV Station</div>
           </div>
         </div>
       </div>

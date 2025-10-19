@@ -1,30 +1,20 @@
-import { useState } from "react";
-import ASSET_IMAGES from "../../assets/EV Car.jpeg";
-import Logo from "../../assets/picture/Direct_Energy_logo.svg.png";
-import {
-  Button,
-  Card,
-  Form,
-  Image,
-  Input,
-  theme,
-  Typography,
-} from "antd";
-import { IoPlayCircle } from "react-icons/io5";
+import React, { useState } from "react";
+import { Button, Form, Input, Typography } from "antd";
 import { Link, useNavigate } from "react-router-dom";
+import { FaBolt } from "react-icons/fa";
+import { IoPlayCircle } from "react-icons/io5";
+
+import ASSET_IMAGES from "../../assets/EV Car.jpeg";
 import { checkEmailExists } from "../../services/httpLogin";
 
-const { useToken } = theme;
-
-const ForgotPasswordForm = () => {
-  const { token } = useToken();
+const ForgotPasswordForm: React.FC = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
 
   const onFinish = async (values: { email: string }) => {
-    setEmailError(null); // เคลียร์ error เดิมก่อน
+    setEmailError(null);
     setLoading(true);
     try {
       const res = await checkEmailExists(values.email);
@@ -33,7 +23,7 @@ const ForgotPasswordForm = () => {
       } else {
         setEmailError("ไม่พบอีเมลในระบบ กรุณาลองใหม่");
       }
-    } catch (error) {
+    } catch {
       setEmailError("เกิดข้อผิดพลาดในการตรวจสอบอีเมล");
     } finally {
       setLoading(false);
@@ -41,100 +31,113 @@ const ForgotPasswordForm = () => {
   };
 
   return (
-    <div
-      className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full min-h-screen p-4 md:p-8 xl:p-20"
-      style={{ backgroundColor: token.colorBgLayout }}
-    >
-      <div className="col-span-12 lg:col-span-6 flex justify-center lg:order-2">
-        <Card
-          className="h-full w-full"
-          classNames={{
-            body: "p-4 sm:p-8 max-w-[700px] mx-auto flex flex-col justify-around h-full",
-          }}
-          bordered={false}
-        >
-          <div className="mb-8">
-            <Link to={"#"}>
-              <Image
-                src={Logo}
-                alt="wieldy-logo"
-                style={{ width: "150px" }}
-                preview={false}
-              />
-            </Link>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white">
+      {/* Brand bar: EV Station */}
+      <div className="mx-auto max-w-screen-xl px-4 pt-6 pb-2">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm">
+            <FaBolt className="text-lg" />
+          </span>
+          <div className="leading-tight">
+            <div className="text-xl font-bold tracking-tight text-blue-700">
+              EV Station
+            </div>
+            <div className="text-[12px] text-blue-900/60">secure • simple</div>
           </div>
+        </div>
+      </div>
 
-          <div className="mb-4">
-            <div className="mb-10">
-              <Typography.Title
-                level={2}
-                className="text-3xl sm:text-4xl font-semibold mb-2.5"
-                style={{ color: token.colorTextHeading }}
-              >
-                Forgot Password
-              </Typography.Title>
+      {/* Content */}
+      <div className="mx-auto grid max-w-screen-xl grid-cols-1 gap-6 px-4 pb-12 lg:grid-cols-2">
+        {/* LEFT: Form card */}
+        <div className="flex items-stretch">
+          <div className="w-full rounded-2xl border border-blue-100 bg-white p-6 shadow-[0_10px_35px_rgba(37,99,235,0.06)] sm:p-8">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold tracking-tight text-blue-900">
+                ลืมรหัสผ่าน
+              </h1>
+              <p className="mt-1 text-sm text-blue-900/60">
+                กรอกอีเมลที่ลงทะเบียนไว้ เราจะส่งลิงก์สำหรับรีเซ็ตรหัสผ่านให้คุณ
+              </p>
             </div>
 
-            <Form layout="vertical" className="mb-10" onFinish={onFinish}>
+            <Form layout="vertical" onFinish={onFinish}>
               <Form.Item
                 name="email"
+                label={<span className="text-sm text-gray-700">อีเมล</span>}
                 validateStatus={emailError ? "error" : ""}
-                help={emailError}
+                help={emailError || ""}
                 rules={[
-                  { required: true, message: "Please input your email" },
+                  { required: true, message: "กรุณากรอกอีเมล" },
                   { type: "email", message: "กรุณากรอกอีเมลให้ถูกต้อง" },
                 ]}
               >
-                <Input placeholder="Email" size="large" />
+                <Input
+                  placeholder="name@example.com"
+                  size="large"
+                  className="rounded-2xl"
+                />
               </Form.Item>
 
-              <Form.Item>
+              <Form.Item className="mb-2">
                 <Button
                   block
                   type="primary"
                   htmlType="submit"
                   size="large"
                   loading={loading}
+                  className="!h-12 !rounded-2xl !bg-blue-600 hover:!bg-blue-700"
                 >
-                  Reset Password
+                  ส่งลิงก์รีเซ็ตรหัสผ่าน
                 </Button>
               </Form.Item>
             </Form>
 
-            <Typography.Text className="text-sm">
-              Don’t remember your email?{" "}
-              <Link to={"#"} className="underline">
-                Contact Support
+            <p className="mt-4 text-sm text-gray-600">
+              จำอีเมลไม่ได้?{" "}
+              <Link to="#" className="text-blue-600 hover:underline">
+                ติดต่อทีมซัพพอร์ต
               </Link>
-            </Typography.Text>
-          </div>
-        </Card>
-      </div>
+            </p>
 
-      <div className="col-span-12 lg:col-span-6 lg:order-1">
-        <div className="flex flex-col h-full justify-center items-center">
-          <div className="w-full max-w-2xl px-4 sm:px-8 space-y-10">
+            <p className="mt-8 text-xs text-gray-400">© EV Station 2025</p>
+          </div>
+        </div>
+
+        {/* RIGHT: Illustration / helper (desktop only) */}
+        <div className="relative hidden overflow-hidden rounded-3xl lg:block">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-500" />
+          <div className="absolute -left-12 -top-12 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -right-16 bottom-8 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+
+          <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
             <div>
-              <Typography.Text className="text-base sm:text-xl font-light">
-                By entering your registered email address you will receive a
-                password reset link. Kindly follow the instructions.
-              </Typography.Text>
+              <Typography.Title
+                level={3}
+                className="!m-0 !text-white !font-semibold"
+              >
+                รีเซ็ตรหัสผ่านอย่างปลอดภัย
+              </Typography.Title>
+              <p className="mt-2 text-blue-100">
+                ระบบจะส่งลิงก์รีเซ็ตไปยังอีเมลของคุณ ตรวจสอบกล่องเข้า/สแปม
+              </p>
             </div>
 
             <div>
               <img
                 src={ASSET_IMAGES}
-                alt="sign2-img"
-                className="w-full h-auto object-contain rounded-lg"
+                alt="ev-illustration"
+                className="w-full rounded-2xl border border-white/15 shadow-lg"
               />
+              <Link to="#" className="mt-4 inline-flex items-center gap-2 text-blue-50">
+                <IoPlayCircle className="text-xl" />
+                วิธีการใช้งาน
+              </Link>
             </div>
 
-            <Link className="block text-primary" to={"#"}>
-              <span className="inline-flex items-center gap-2 text-base">
-                <IoPlayCircle />
-                How it works
-              </span>
-            </Link>
+            <div className="text-xs text-blue-100/70">
+              keep your account secure • EV Station
+            </div>
           </div>
         </div>
       </div>
