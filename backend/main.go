@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/controller/calendar"
@@ -146,15 +145,11 @@ func main() {
 	}
 
 	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "API RUNNING...")
+		c.String(http.StatusOK, "API RUNNING... PORT: %s", PORT)
 	})
 
-	// ✅ Render จะอัดค่า PORT มาให้ → ต้องอ่านจาก ENV
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	r.Run(":" + port)
+	r.Run("localhost:" + PORT)
+	//r.Run("0.0.0.0:" + PORT)
 }
 
 func CORSMiddleware() gin.HandlerFunc {
