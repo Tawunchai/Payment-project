@@ -17,13 +17,12 @@ import { InverterStatus } from "../interface/IInverterStatus"
 import { BankInterface } from "../interface/IBank"
 import { PaymentCoinInterface } from "../interface/IPaymentCoin";
 
-
-export const apiUrlPicture = "https://payment-project-t4dj.onrender.com/";
-const apiUrl = "https://payment-project-t4dj.onrender.com";
 //const apiUrl = "http://10.0.14.228:8000";
 //export const apiUrlPicture = "http://10.0.14.228:8000/";
 //export const apiUrlPicture = "http://localhost:8000/";
 //const apiUrl = "http://localhost:8000";
+export const apiUrlPicture = "https://payment-project-t4dj.onrender.com/";
+const apiUrl = "https://payment-project-t4dj.onrender.com";
 
 const getAuthHeader = () => {
   const token = localStorage.getItem("token");
@@ -1269,6 +1268,29 @@ export const ListPayments = async (): Promise<PaymentsInterface[] | null> => {
     }
   } catch (error) {
     console.error("Error fetching payments list:", error);
+    return null;
+  }
+};
+
+export const ListPaymentsByUserID = async (
+  user_id: number
+): Promise<PaymentsInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/payments/user/${user_id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching payments by user ID:", error);
     return null;
   }
 };

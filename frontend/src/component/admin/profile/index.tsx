@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Form, Input, Button, message } from "antd";
 import { EditOutlined } from "@ant-design/icons";
-import { UpdateEmployeeProfile } from "../../../services/index";
+import { UpdateEmployeeProfile } from "../../../services";
 import { EmployeeInterface } from "../../../interface/IEmployee";
 
 interface EditEmployeeModalProps {
@@ -20,6 +20,12 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
+  // ตรวจหน้าจอมือถือ เพื่อปรับตำแหน่งโมดอลไม่ให้ชิดบน
+  const isMobile = useMemo(
+    () => (typeof window !== "undefined" ? window.matchMedia("(max-width: 768px)").matches : false),
+    []
+  );
+
   useEffect(() => {
     if (show) {
       form.setFieldsValue({
@@ -33,7 +39,6 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
 
   const onFinish = async (values: any) => {
     setLoading(true);
-
     const formData = new FormData();
     formData.append("bio", values.bio || "");
     formData.append("experience", values.experience || "");
@@ -59,99 +64,90 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
       open={show}
       onCancel={onClose}
       footer={null}
-      centered
       destroyOnClose
       closable={false}
+      centered={!isMobile}                   // เดสก์ท็อป centered, มือถือไม่ centered
+      style={isMobile ? { top: 80 } : {}}    // มือถือยกลงจากขอบบน
       width={520}
       className="max-w-full md:max-w-[520px]"
-
+      styles={{
+        content: {
+          borderRadius: 16,
+          padding: 0,
+          overflow: "hidden",
+        },
+        body: { padding: 0 },
+      }}
     >
-      {/* 🟧 Header ไล่สีส้ม */}
+      {/* Header — EV blue minimal + safe-area */}
       <div
-        className="text-center text-lg font-bold text-white py-4 rounded-t-2xl flex items-center justify-center gap-2"
+        className="flex items-center justify-center gap-2 text-white"
         style={{
-          background: "linear-gradient(90deg, #f97316 0%, #f59e0b 100%)",
+          background:
+            "linear-gradient(135deg, rgba(37,99,235,1) 0%, rgba(29,78,216,1) 100%)",
+          paddingTop: "calc(env(safe-area-inset-top) + 8px)",
+          height: 56,
         }}
       >
-        <EditOutlined className="text-2xl" />
-        <span>แก้ไขประวัติส่วนตัว</span>
+        <EditOutlined style={{ fontSize: 20 }} />
+        <span style={{ fontWeight: 700, fontSize: 16 }}>แก้ไขประวัติส่วนตัว</span>
       </div>
 
-      {/* 🧾 ฟอร์มข้อมูล */}
+      {/* Body */}
       <Form
         layout="vertical"
         form={form}
         onFinish={onFinish}
-        className="px-6 md:px-8 pt-3 pb-6"
-        style={{ maxHeight: "80vh", overflowY: "auto" }} // ป้องกันล้นจอมือถือ
+        className="px-5 md:px-7 pt-4 pb-6"
+        style={{
+          maxHeight: isMobile ? "70vh" : "75vh",
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         <Form.Item
-          label={
-            <span style={{ fontSize: "15px", fontWeight: 600, color: "#555" }}>
-              ประวัติ (Bio)
-            </span>
-          }
+          label={<span className="text-[14px] font-semibold text-gray-700">ประวัติ (Bio)</span>}
           name="bio"
         >
           <Input.TextArea
             rows={3}
             placeholder="เขียนประวัติย่อของคุณ"
-            className="rounded-md text-[15px]"
+            className="rounded-lg text-[15px]"
           />
         </Form.Item>
 
         <Form.Item
-          label={
-            <span style={{ fontSize: "15px", fontWeight: 600, color: "#555" }}>
-              ประสบการณ์ (Experience)
-            </span>
-          }
+          label={<span className="text-[14px] font-semibold text-gray-700">ประสบการณ์ (Experience)</span>}
           name="experience"
         >
-          <Input
-            placeholder="ระบุประสบการณ์การทำงาน"
-            className="rounded-md text-[15px]"
-          />
+          <Input placeholder="ระบุประสบการณ์การทำงาน" className="rounded-lg text-[15px]" />
         </Form.Item>
 
         <Form.Item
-          label={
-            <span style={{ fontSize: "15px", fontWeight: 600, color: "#555" }}>
-              การศึกษา (Education)
-            </span>
-          }
+          label={<span className="text-[14px] font-semibold text-gray-700">การศึกษา (Education)</span>}
           name="education"
         >
-          <Input
-            placeholder="ระบุวุฒิการศึกษา"
-            className="rounded-md text-[15px]"
-          />
+          <Input placeholder="ระบุวุฒิการศึกษา" className="rounded-lg text-[15px]" />
         </Form.Item>
 
         <Form.Item
-          label={
-            <span style={{ fontSize: "15px", fontWeight: 600, color: "#555" }}>
-              เงินเดือน (Salary)
-            </span>
-          }
+          label={<span className="text-[14px] font-semibold text-gray-700">เงินเดือน (Salary)</span>}
           name="salary"
         >
-          <Input
-            type="number"
-            placeholder="กรอกเงินเดือน"
-            className="rounded-md text-[15px]"
-          />
+          <Input type="number" placeholder="กรอกเงินเดือน" className="rounded-lg text-[15px]" />
         </Form.Item>
 
-        {/* ปุ่ม action */}
-        <div className="flex flex-col md:flex-row justify-end gap-3 md:gap-4 mt-8">
+        {/* Actions */}
+        <div className="flex flex-col md:flex-row justify-end gap-3 mt-6">
           <Button
             onClick={onClose}
-            block={window.innerWidth < 768}
+            block={isMobile}
             style={{
-              borderColor: "#fb923c",
-              color: "#fb923c",
-              fontWeight: 500,
+              borderColor: "#2563eb",
+              color: "#2563eb",
+              height: 40,
+              borderRadius: 10,
+              fontWeight: 600,
             }}
           >
             ยกเลิก
@@ -160,11 +156,15 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
             type="primary"
             htmlType="submit"
             loading={loading}
-            block={window.innerWidth < 768}
+            block={isMobile}
             style={{
-              background: "linear-gradient(to right, #f97316, #f59e0b)",
+              background:
+                "linear-gradient(135deg, rgba(37,99,235,1) 0%, rgba(29,78,216,1) 100%)",
               border: "none",
-              fontWeight: 500,
+              height: 40,
+              borderRadius: 10,
+              fontWeight: 700,
+              boxShadow: "0 8px 20px rgba(37,99,235,0.25)",
             }}
           >
             บันทึก
