@@ -88,20 +88,20 @@ const AdminRoutes = (): RouteObject[] => [
     children: [
       { index: true, element: <Admin /> },
       { path: "Dashboard", element: <Admin /> },
-      { path: "Payment", element: <Payment /> },
-      { path: "EV Charging", element: <EV /> },
-      { path: "Employees", element: <Employees /> },
-      { path: "Customers", element: <Customers /> },
-      { path: "Calendar", element: <Calendar /> },
-      { path: "Editor", element: <Editor /> },
-      { path: "create-editor", element: <Create_Editor /> },
-      { path: "edit-editor", element: <Edit_Editor /> },
-      { path: "New", element: <New /> },
-      { path: "create-new", element: <Create_New /> },
-      { path: "edit-new", element: <Edit_New /> },
+      { path: "Payment", element: <Payment /> }, //edit
+      { path: "EV Charging", element: <EV /> }, //edit
+      { path: "Employees", element: <Employees /> },//edit
+      { path: "Customers", element: <Customers /> },//edit
+      { path: "Calendar", element: <Calendar /> },//edit
+      { path: "Editor", element: <Editor /> },//edit
+      { path: "create-editor", element: <Create_Editor /> },//edit
+      { path: "edit-editor", element: <Edit_Editor /> },//edit
+      { path: "New", element: <New /> }, //edit
+      { path: "create-new", element: <Create_New /> },//edit
+      { path: "edit-new", element: <Edit_New /> }, //edit
       {/* Test  */ },
-      { path: "Monitor", element: <Monitor /> },
-      { path: "Line", element: <Line /> },
+      { path: "Monitor", element: <Monitor /> }, //edit
+      { path: "Line", element: <Line /> }, //edit profile
       {/* charts  */},
       { path: "Area", element: <Area /> },
       { path: "Bar", element: <Bar /> },

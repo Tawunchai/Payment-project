@@ -1,7 +1,7 @@
 import { JSX, useEffect, useMemo, useState } from "react";
 import { FaCoins, FaPaypal, FaWallet } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { getUserByID, apiUrlPicture, ListPayments, ListPaymentCoins } from "../../../services";
+import { getUserByID, apiUrlPicture, ListPaymentsByUserID } from "../../../services";
 
 interface TransactionItem {
   icon: JSX.Element;
@@ -11,7 +11,9 @@ interface TransactionItem {
   amountNum: number;
   amountText: string;
   color: string;
-  date?: string;
+  date?: string;       // ISO string
+  displayDate?: string; // รูปแบบวันที่สำหรับแสดงผล
+  displayTime?: string; // รูปแบบเวลา (ชั่วโมง:นาที) สำหรับแสดงผล
 }
 
 interface UserType {
@@ -27,15 +29,55 @@ const HistoryPay = () => {
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [userid, setUserid] = useState<number>(Number(localStorage.getItem("userid")) || 0);
 
   // format ตัวเลข
   const fmt = (n: number) =>
     n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  // format วันที่/เวลา
+  const fmtDate = (d: string | Date) =>
+    new Date(d).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+  const fmtTime = (d: string | Date) =>
+    new Date(d).toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+  // เลือกไอคอน/สีจาก Method
+  const pickStyleByMethod = (methodId?: number, methodName?: string) => {
+    const name = (methodName || "").toLowerCase();
+    if (methodId === 2 || name.includes("coin") || name.includes("coins")) {
+      return {
+        icon: <FaCoins className="text-base text-white" />,
+        bg: "bg-blue-400",
+        title: methodName || "Coins",
+        desc: "ชำระด้วย Coins",
+      };
+    }
+    // ค่าเริ่มต้นให้เป็น QR / PromptPay
+    return {
+      icon: <FaPaypal className="text-base text-white" />,
+      bg: "bg-blue-500",
+      title: methodName || "QR Payment",
+      desc: "ชำระผ่าน PromptPay/QR",
+    };
+  };
+
   // โหลดข้อมูล user
   useEffect(() => {
     const fetchUser = async () => {
-      const res = await getUserByID(1); // TODO: เปลี่ยนเป็น user จริง
+      const _uid = Number(localStorage.getItem("userid")) || userid || 0;
+      setUserid(_uid);
+      if (_uid === 0) return;
+
+      const res = await getUserByID(_uid);
       setUser({
         FirstName: res?.FirstName ?? "",
         LastName: res?.LastName ?? "",
@@ -46,75 +88,67 @@ const HistoryPay = () => {
     fetchUser();
   }, []);
 
-  // โหลด history + รวมยอด (filter UserID = 1)
+  // โหลด history + รวมยอด จาก ListPaymentsByUserID
   useEffect(() => {
     const fetchHistory = async () => {
+      if (!userid) return;
       setLoading(true);
       try {
-        const paymentList = await ListPayments();
-        const paymentCoinsList = await ListPaymentCoins();
+        const list = await ListPaymentsByUserID(userid); // ✅ ใช้ service ใหม่ตัวเดียว
 
-        const pay = (paymentList ?? [])
-          .filter((it: any) => it.UserID === 1)
-          .map((it: any) => {
-            const amount = Number(it.Amount) || 0;
-            return {
-              icon: <FaPaypal className="text-base text-white" />,
-              bg: "bg-blue-500",
-              title: "PromptPay",
-              desc: "ชำระผ่าน PromptPay",
-              amountNum: amount,
-              amountText: `$${fmt(amount)}`,
-              color: "text-green-600",
-              date: it.CreatedAt || "",
-            } as TransactionItem;
-          });
+        const payments = (list ?? []).map((it: any) => {
+          const amount = Number(it.Amount) || 0;
+          // รองรับ Method.Medthod (สะกดแบบตัวอย่าง JSON) และ Method.Name / Method
+          const methodName: string =
+            it?.Method?.Medthod || it?.Method?.Method || it?.Method?.Name || "";
+          const methodId: number | undefined = it?.MethodID;
 
-        const coin = (paymentCoinsList ?? [])
-          .filter((it: any) => it.UserID === 1)
-          .map((it: any) => {
-            const amount = Number(it.Amount) || 0;
-            return {
-              icon: <FaCoins className="text-base text-white" />,
-              bg: "bg-blue-400",
-              title: "Coins",
-              desc: "ชำระด้วย Coins",
-              amountNum: amount,
-              amountText: `$${fmt(amount)}`,
-              color: "text-green-600",
-              date: it.CreatedAt || "",
-            } as TransactionItem;
-          });
+          const style = pickStyleByMethod(methodId, methodName);
 
-        const merged = [...pay, ...coin].sort((a, b) => {
-          const da = a.date ? new Date(a.date).getTime() : 0;
-          const db = b.date ? new Date(b.date).getTime() : 0;
-          return db - da; // ใหม่สุดอยู่บน
+          // ใช้ CreatedAt ก่อน ถ้าไม่มีค่อย fallback ไป Date
+          const dateRaw: string = it?.CreatedAt || it?.Date || "";
+
+          return {
+            icon: style.icon,
+            bg: style.bg,
+            title: style.title,
+            desc: style.desc,
+            amountNum: amount,
+            amountText: `$${fmt(amount)}`,
+            color: "text-green-600",
+            date: dateRaw,
+            displayDate: dateRaw ? fmtDate(dateRaw) : "",
+            displayTime: dateRaw ? fmtTime(dateRaw) : "",
+          } as TransactionItem;
         });
 
-        setTransactions(merged);
+        // เรียงใหม่สุดอยู่บน
+        payments.sort((a, b) => {
+          const da = a.date ? new Date(a.date).getTime() : 0;
+          const db = b.date ? new Date(b.date).getTime() : 0;
+          return db - da;
+        });
 
-        const sumPayments = (paymentList ?? [])
-          .filter((it: any) => it.UserID === 1)
-          .reduce((acc: number, cur: any) => acc + (Number(cur.Amount) || 0), 0);
+        setTransactions(payments);
 
-        const sumPaymentCoins = (paymentCoinsList ?? [])
-          .filter((it: any) => it.UserID === 1)
-          .reduce((acc: number, cur: any) => acc + (Number(cur.Amount) || 0), 0);
-
-        setTotalAmount(sumPayments + sumPaymentCoins);
+        // ✅ รวมธุรกรรมทั้งหมด = ผลรวม Amount ของผู้ใช้คนนี้
+        const sum = (list ?? []).reduce(
+          (acc: number, cur: any) => acc + (Number(cur.Amount) || 0),
+          0
+        );
+        setTotalAmount(sum);
       } finally {
         setLoading(false);
       }
     };
     fetchHistory();
-  }, []);
+  }, [userid]);
 
   const coinBalance = useMemo(() => user?.Coin ?? 0, [user]);
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col font-sans">
-      {/* HEADER — มินิมอล ฟ้า เนียน */}
+      {/* HEADER */}
       <header
         className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden w-full"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -138,7 +172,7 @@ const HistoryPay = () => {
         </div>
       </header>
 
-      {/* PROFILE & SUMMARY — การ์ดเดียว คลีน */}
+      {/* PROFILE & SUMMARY */}
       <section className="mx-auto w-full max-w-screen-sm px-4 pt-4">
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-3">
@@ -172,13 +206,14 @@ const HistoryPay = () => {
             </div>
             <div className="rounded-xl bg-blue-50 p-3">
               <div className="text-[11px] text-blue-900">รวมธุรกรรมทั้งหมด</div>
+              {/* ✅ ใช้ผลรวม Amount ทั้งหมดของ user */}
               <div className="mt-1 text-lg font-bold text-blue-700">${fmt(totalAmount)}</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* HISTORY LIST — โชว์แค่ ~5 รายการ แล้วค่อย Scroll */}
+      {/* HISTORY LIST */}
       <main className="mx-auto w-full max-w-screen-sm px-4 pb-6">
         <div className="mt-4 text-sm font-bold text-gray-900">ประวัติการชำระเงิน</div>
 
@@ -194,8 +229,7 @@ const HistoryPay = () => {
           ) : transactions.length === 0 ? (
             <div className="p-6 text-center text-sm text-gray-400">No history.</div>
           ) : (
-            // ตั้งความสูงให้เห็นประมาณ 5 แถวพอดี แล้วเลื่อนต่อได้
-            <ul className="divide-y divide-gray-100 max-h-[340px] overflow-y-auto">
+            <ul className="divide-y divide-gray-100 max-h-[360px] overflow-y-auto">
               {transactions.map((item, idx) => (
                 <li key={idx} className="flex items-center gap-3 px-4 py-3">
                   <div className={`shrink-0 h-10 w-10 rounded-xl ${item.bg} text-white flex items-center justify-center`}>
@@ -203,14 +237,18 @@ const HistoryPay = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
+                      {/* ✅ ชื่อวิธีชำระ */}
                       <div className="truncate text-sm font-semibold text-gray-900">{item.title}</div>
+                      {/* ✅ จำนวนเงินของรายการนั้น ๆ */}
                       <div className={`text-sm font-bold ${item.color}`}>{item.amountText}</div>
                     </div>
-                    <div className="mt-0.5 flex items-center justify-between gap-3">
+                    <div className="mt-1 flex items-center justify-between gap-3">
                       <div className="truncate text-[12px] text-gray-500">{item.desc}</div>
-                      {item.date && (
-                        <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] text-gray-500">
-                          {new Date(item.date).toLocaleDateString()}
+                      {(item.displayDate || item.displayTime) && (
+                        <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] text-gray-600">
+                          {/* ✅ แสดงทั้งวันที่และเวลา */}
+                          {item.displayDate}
+                          {item.displayTime ? ` • ${item.displayTime}` : ""}
                         </span>
                       )}
                     </div>

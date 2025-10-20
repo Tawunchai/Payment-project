@@ -8,7 +8,18 @@ export const ProfileNavbar: React.FC = () => {
         <Button
           size="small"
           type="link"
-          className="text-white hover:!text-blue-200 focus:!text-blue-200 active:!text-blue-300"
+          aria-label="Edit profile"
+          className="
+            !text-white font-semibold tracking-wide
+            rounded-lg px-3 py-1 transition
+            hover:!text-white focus:!text-white active:!text-white
+            hover:!bg-white/30 focus:!bg-white/35 active:!bg-white/40
+            hover:!border hover:!border-white/60 focus:!border focus:!border-white/70
+            hover:shadow-md focus:shadow-md
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+            active:scale-[0.98]
+          "
+          style={{ color: "#fff" }}
         >
           EDIT PROFILE
         </Button>

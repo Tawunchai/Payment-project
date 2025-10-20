@@ -1,7 +1,7 @@
 import React from "react";
 import { AvatarWithInfo } from "./AvatarWithInfo";
 import { ProfileNavbar } from "./ProfileNavbar";
-import EVCAR from "../../../../../assets/EV Car.jpeg";
+import EVCAR from "../../../../../assets/solar-profile.png";
 
 const ProfileBanner: React.FC = () => {
   return (

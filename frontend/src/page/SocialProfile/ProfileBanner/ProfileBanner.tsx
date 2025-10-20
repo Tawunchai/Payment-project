@@ -3,7 +3,7 @@ import { getEmployeeByID } from "../../../services";
 import { EmployeeInterface } from "../../../interface/IEmployee";
 import { AvatarWithInfo } from "./AvatarWithInfo";
 import { ProfileNavbar } from "./ProfileNavbar";
-import EVCAR from "../../../assets/EV Car.jpeg";
+import EVCAR from "../../../assets/solar-profile.png";
 import { Spin } from "antd";
 
 const ProfileBanner: React.FC = () => {

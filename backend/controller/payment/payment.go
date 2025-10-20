@@ -86,6 +86,37 @@ func ListPayment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, payments)
 }
+// GET /payments/user/:user_id
+func ListPaymentByUserID(c *gin.Context) {
+	// ดึงค่า user_id จาก path parameter
+	userIDParam := c.Param("user_id")
+	userID, err := strconv.ParseUint(userIDParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
+		return
+	}
+
+	var payments []entity.Payment
+	db := config.DB()
+
+	// ดึงข้อมูลการชำระเงินทั้งหมดของ user_id นั้น พร้อม preload ความสัมพันธ์
+	result := db.Preload("User").Preload("Method").
+		Where("user_id = ?", uint(userID)).
+		Find(&payments)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	// ถ้าไม่พบข้อมูล
+	if len(payments) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"message": "no payments found for this user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, payments)
+}
 
 func CreatePayment(c *gin.Context) {
 	var filePath string

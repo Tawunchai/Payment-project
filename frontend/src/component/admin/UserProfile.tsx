@@ -5,99 +5,126 @@ import { useNavigate } from "react-router-dom";
 import { userProfileData } from '../../assets/admin/dummy';
 import { useStateContext } from '../../contexts/ContextProvider';
 import { useEffect, useState } from 'react';
-import { getEmployeeByID,apiUrlPicture } from '../../services';
+import { getEmployeeByID, apiUrlPicture } from '../../services';
 import { EmployeeInterface } from '../../interface/IEmployee';
 
 const UserProfile = () => {
   const { currentColor } = useStateContext();
   const navigate = useNavigate();
 
-  // ✅ ใช้ข้อมูลที่ได้จาก backend
   const [employee, setEmployee] = useState<EmployeeInterface | null>(null);
 
   useEffect(() => {
     const employeeID = localStorage.getItem("employeeid");
-    if (employeeID) {
-      getEmployeeByID(Number(employeeID))
-        .then((res) => {
-          if (res) {
-            setEmployee(res);
-            console.log("ข้อมูล employee:", res);
-          }
-        })
-        .catch((err) => {
-          console.error("ดึงข้อมูล employee ไม่สำเร็จ:", err);
-        });
-    }
+    if (!employeeID) return;
+    getEmployeeByID(Number(employeeID))
+      .then((res) => res && setEmployee(res))
+      .catch(() => {});
   }, []);
 
   const handleLogout = () => {
     localStorage.clear();
     message.success("ออกจากระบบ");
-    setTimeout(() => {
-      navigate("/login");
-    }, 3500);
+    setTimeout(() => navigate("/login"), 1200);
   };
 
+  const profileSrc = employee?.User?.Profile
+    ? `${apiUrlPicture}${employee.User.Profile}`
+    : "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%233b82f6' font-family='Arial, Helvetica, sans-serif'>EV</text></svg>";
+
   return (
-    <div className="nav-item absolute right-1 top-16 bg-white dark:bg-[#42464D] p-8 rounded-lg w-96">
-      <div className="flex justify-between items-center">
-        <p className="font-semibold text-lg dark:text-gray-200">User Profile</p>
-        <Button
-          icon={<MdOutlineCancel />}
-          color="rgb(153, 171, 180)"
-          bgHoverColor="light-gray"
-          size="2xl"
-          borderRadius="50%"
-        />
-      </div>
-      <div className="flex gap-5 items-center mt-6 border-color border-b-1 pb-6">
-        <img
-          className="rounded-full h-24 w-24"
-          src={`${apiUrlPicture}${employee?.User?.Profile?? 'default-profile.png'}`}
-          alt="user-profile"
-        />
-        <div>
-          <p className="font-semibold text-xl dark:text-gray-200">
-            {employee?.User?.FirstName} {employee?.User?.LastName}
-          </p>
-          <p className="text-gray-500 text-sm dark:text-gray-400">
-            {employee?.User?.UserRole?.RoleName}
-          </p>
-          <p className="text-gray-500 text-sm font-semibold dark:text-gray-400">
-            {employee?.User?.Email}
-          </p>
+    <div
+      className="
+        fixed right-3 top-16 z-50
+        w-[calc(100vw-24px)] max-w-sm
+        rounded-2xl overflow-hidden
+        bg-white dark:bg-white
+        border border-gray-100
+        shadow-[0_12px_36px_rgba(37,99,235,0.15)]
+      "
+      style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
+    >
+      {/* Header: EV blue gradient */}
+      <div className="relative">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 h-12" />
+        <div className="absolute inset-0 flex items-center justify-between px-3">
+          <p className="text-white text-sm font-semibold">User Profile</p>
+          <Button
+            icon={<MdOutlineCancel />}
+            color="#ffffff"
+            bgHoverColor="rgba(255,255,255,0.15)"
+            size="2xl"
+            borderRadius="50%"
+            // ถ้าต้องการปิด ให้ใส่ onClick={() => setShow(false)} จากพาเรนต์
+          />
         </div>
       </div>
-      <div>
-        {userProfileData.map((item, index) => (
-          <div
-            key={index}
-            onClick={() => navigate('/admin/Line')}
-            className="flex gap-5 border-b-1 border-color p-4 hover:bg-light-gray cursor-pointer dark:hover:bg-[#42464D]"
-          >
-            <button
-              type="button"
-              style={{ color: item.iconColor, backgroundColor: item.iconBg }}
-              className="text-xl rounded-lg p-3 hover:bg-light-gray"
-            >
-              {item.icon}
-            </button>
 
-            <div>
-              <p className="font-semibold dark:text-gray-200">{item.title}</p>
-              <p className="text-gray-500 text-sm dark:text-gray-400">{item.desc}</p>
-            </div>
+      {/* Header card (avatar + name) */}
+      <div className="px-4 pt-4 pb-3 bg-white">
+        <div className="flex gap-4 items-center">
+          <img
+            className="h-16 w-16 rounded-2xl object-cover ring-2 ring-blue-100 bg-blue-50"
+            src={profileSrc}
+            alt="user-profile"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src =
+                "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%233b82f6' font-family='Arial, Helvetica, sans-serif'>EV</text></svg>";
+            }}
+          />
+          <div className="min-w-0">
+            <p className="text-base font-semibold text-gray-900 truncate">
+              {employee?.User?.FirstName} {employee?.User?.LastName}
+            </p>
+            <p className="text-[12px] text-blue-700 font-medium">
+              {employee?.User?.UserRole?.RoleName ?? "—"}
+            </p>
+            <p className="text-[12px] text-gray-500 truncate">
+              {employee?.User?.Email}
+            </p>
           </div>
-        ))}
+        </div>
       </div>
-      <div className="mt-5">
+
+      {/* Actions list */}
+      <div className="px-2 pb-1 bg-white">
+        <div className="rounded-xl overflow-hidden border border-gray-100 bg-white">
+          {userProfileData.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={() => navigate('/admin/Line')}
+              className="
+                w-full flex items-center gap-3 px-3 py-3
+                hover:bg-blue-50 transition-colors
+              "
+            >
+              <span
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-xl"
+                style={{ color: item.iconColor, backgroundColor: item.iconBg }}
+              >
+                {item.icon}
+              </span>
+              <div className="text-left min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {item.title}
+                </p>
+                <p className="text-[12px] text-gray-500 truncate">
+                  {item.desc}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Logout */}
+      <div className="px-4 pt-3 pb-4 bg-white">
         <Button
-          color="white"
-          bgColor={currentColor}
+          color="#ffffff"
+          bgColor={currentColor || "#2563eb"}
           text="Logout"
-          borderRadius="10px"
-          width="full"
+          borderRadius="12px"
+          width="100%"
           onClick={handleLogout}
         />
       </div>

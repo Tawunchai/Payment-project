@@ -78,6 +78,7 @@ func main() {
 
 		//payment
 		public.GET("/payments", payment.ListPayment)
+		public.GET("/payments/user/:user_id", payment.ListPaymentByUserID)
 		public.GET("/banks", payment.ListBank)
 		public.PATCH("/banks/:id", payment.UpdateBank)
 		public.POST("/create-payments", payment.CreatePayment)
@@ -148,8 +149,8 @@ func main() {
 		c.String(http.StatusOK, "API RUNNING... PORT: %s", PORT)
 	})
 
-	r.Run("localhost:" + PORT)
-	//r.Run("0.0.0.0:" + PORT)
+	//r.Run("localhost:" + PORT)
+	r.Run("0.0.0.0:" + PORT)
 }
 
 func CORSMiddleware() gin.HandlerFunc {
