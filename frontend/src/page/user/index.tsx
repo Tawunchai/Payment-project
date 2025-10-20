@@ -27,24 +27,37 @@ const Index = () => {
   const isMobile = useIsMobile(768);
 
   return (
-    <div className='user'>
+    <div
+      className="user"
+      // กันไม่ให้คอนเทนต์โดนทับโดยแถบ footer (เฉพาะมือถือ)
+      style={{
+        paddingBottom: isMobile ? "calc(84px + env(safe-area-inset-bottom))" : 0,
+      }}
+    >
       <div>
         <Header
           scrollToValue={() => valueRef.current?.scrollIntoView({ behavior: "smooth" })}
           scrollToNew={() => newRef.current?.scrollIntoView({ behavior: "smooth" })}
         />
         <Hero scrollToValue={() => valueRef.current?.scrollIntoView({ behavior: "smooth" })} />
-        <div className='white-gradient' />
+        <div className="white-gradient" />
       </div>
-      <Car />
+
+      {isMobile && <Car />}
+
       <div ref={valueRef}>
         <Value />
       </div>
+
       <div ref={newRef}>
         {isMobile ? <NewMobile /> : <New />}
       </div>
-      <Review /><br />
-      <Footer />
+
+      <Review />
+      <br /><br /><br />
+
+      {/* ✅ แสดง Footer เฉพาะมือถือ */}
+      {isMobile && <Footer />}
     </div>
   );
 };

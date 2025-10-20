@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { CreateReview } from "../../../../services";
 import StarRating from "../../../../feature/star";
 import { ReviewInterface } from "../../../../interface/IReview";
-import { FaStar, FaTimes, FaCommentDots } from "react-icons/fa";
+import { FaStar, FaTimes, FaBolt } from "react-icons/fa";
 
 interface ModalProps {
   open: boolean;
@@ -30,43 +30,37 @@ const ModalCreate: React.FC<ModalProps> = ({
 
   const onFinish = async (values: ReviewInterface) => {
     if (rating === undefined || rating < 1 || rating > 5) {
-      messageApi.warning("กรุณาให้คะแนนสวนสัตว์");
+      messageApi.warning("กรุณาให้คะแนนการชาร์จ");
       return;
     }
-
     const trimmedComment = values.Comment?.trim() || "";
     if (trimmedComment.length === 0 || trimmedComment.length > 500) {
-      messageApi.warning("กรุณากรอกข้อความรีวิวให้ถูกต้อง (1-500 ตัวอักษร)");
+      messageApi.warning("กรุณากรอกข้อความรีวิวให้ถูกต้อง (1–500 ตัวอักษร)");
       return;
     }
 
-    const reviewData = {
-      rating,
-      comment: trimmedComment,
-      user_id: UserID,
-    };
+    const reviewData = { rating, comment: trimmedComment, user_id: UserID };
 
     setLoading(true);
     try {
       const res = await CreateReview(reviewData);
       if (res) {
-        messageApi.success("การรีวิวสำเร็จ");
+        messageApi.success("ส่งรีวิวสำเร็จ");
         setTimeout(() => {
           onClose();
           onReviewCreated(res.id);
           navigate("/user");
-        }, 1500);
+        }, 800);
       } else {
         messageApi.error("การรีวิวไม่สำเร็จ");
       }
-    } catch (err) {
+    } catch {
       messageApi.error("เกิดข้อผิดพลาดขณะส่งรีวิว");
     } finally {
       setLoading(false);
     }
   };
 
-  // ฟังก์ชันปิด modal พร้อมไปหน้า /user (สำหรับปุ่ม "รีวิวทีหลัง")
   const handleReviewLater = () => {
     onClose();
     navigate("/user");
@@ -76,148 +70,124 @@ const ModalCreate: React.FC<ModalProps> = ({
     <>
       {contextHolder}
 
-      {/* Overlay */}
+      {/* Overlay: กลางหน้าจอ & เบลอบางลง */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40"
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]" // ← เบลอเบาลง
         onClick={onClose}
       />
 
-      {/* Modal Container */}
+      {/* Modal: จัดกึ่งกลางแนวตั้ง/แนวนอน */}
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
         <div
-          className="bg-gradient-to-tr from-orange-50 via-white to-orange-100 rounded-2xl shadow-md p-8 w-full max-w-md sm:max-w-xl lg:max-w-2xl mx-auto relative overflow-y-auto max-h-[90vh] border border-orange-200
-          animate-softFadeIn scale-97 transition-transform duration-350 ease-in-out"
+          className="w-full max-w-md sm:max-w-lg mx-auto relative overflow-y-auto max-h-[92vh]
+                     rounded-2xl border border-blue-100 bg-white shadow-lg animate-softFadeIn
+                     font-sans" // ← โทนตัวอักษรเรียบขึ้น
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-5 right-5 text-orange-400 hover:text-orange-600 transition"
-            aria-label="Close modal"
-          >
-            <FaTimes size={22} />
-          </button>
-
-          {/* หัวข้อแบบ Soft */}
-          <h2
-            className="text-3xl font-semibold text-center mb-6 text-orange-400 flex items-center justify-center gap-3 select-none"
-            style={{
-              textShadow:
-                "0 0 5px rgba(251, 191, 36, 0.4), 0 0 10px rgba(251, 191, 36, 0.3)",
-              fontWeight: 500,
-            }}
-          >
-            รีวิวการชาร์จไฟฟ้า EV
-          </h2>
-
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={onFinish}
-            className="space-y-5"
-          >
-            <Form.Item
-              label={
-                <span className="flex items-center gap-2 font-medium text-orange-600 select-none">
-                  <FaStar className="text-yellow-300" /> ให้คะแนน
-                </span>
-              }
-            >
-              <StarRating rating={rating ?? 0} onRatingChange={setRating} />
-            </Form.Item>
-
-            <Form.Item
-              name="Comment"
-              label={
-                <span className="flex items-center gap-2 font-medium text-orange-600 select-none">
-                  <FaCommentDots className="text-orange-400" /> รีวิวของคุณ
-                </span>
-              }
-              rules={[
-                { required: true, message: "กรุณาเขียนรีวิว" },
-                { max: 500, message: "ไม่เกิน 500 ตัวอักษร" },
-              ]}
-            >
-              <Input.TextArea
-                rows={6}
-                maxLength={500}
-                placeholder="เขียนรีวิวของคุณที่นี่..."
-                className="resize-none rounded-lg border border-orange-200 focus:border-orange-400 shadow-sm focus:shadow-md transition"
-              />
-            </Form.Item>
-
-            <div className="flex justify-end gap-4 pt-4">
-              <Tooltip title="รีวิวทีหลัง">
-                <button
-                  type="button"
-                  onClick={handleReviewLater}
-                  className="flex items-center gap-2 bg-gray-100 text-gray-600 px-6 py-2 rounded-full hover:bg-gray-200 shadow-sm transition"
-                >
-                  <FaTimes /> รีวิวทีหลัง
-                </button>
-              </Tooltip>
-
-              <Tooltip title={loading ? "กำลังส่งรีวิว กรุณารอ..." : "ส่งรีวิว"}>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`flex items-center gap-2 px-6 py-2 rounded-full font-semibold text-white transition shadow-sm
-                    ${
-                      loading
-                        ? "bg-orange-200 cursor-not-allowed"
-                        : "bg-gradient-to-r from-orange-400 to-orange-500 hover:opacity-90 shadow-md"
-                    }`}
-                >
-                  {loading ? (
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8H4z"
-                      ></path>
-                    </svg>
-                  ) : (
-                    <FaStar />
-                  )}
-                  {loading ? "กำลังส่ง..." : "ส่งรีวิว"}
-                </button>
-              </Tooltip>
+          {/* Header (ปรับฟอนต์/ไอคอนให้นิ่งขึ้น) */}
+          <div className="sticky top-0 flex items-center justify-between gap-3 px-5 py-4
+                          bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
+                <FaBolt className="text-white" />
+              </span>
+              <h2 className="text-[15px] font-semibold tracking-wide">
+                รีวิวการชาร์จ EV
+              </h2>
             </div>
-          </Form>
+            <button
+              onClick={onClose}
+              className="h-9 w-9 inline-flex items-center justify-center rounded-xl active:bg-white/15 transition"
+              aria-label="Close modal"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="px-5 py-5 text-[15px] leading-relaxed"> {/* ← เปลี่ยนสไตล์ตัวอักษร */}
+            <Form form={form} layout="vertical" onFinish={onFinish} className="space-y-5">
+              <Form.Item
+                label={
+                  <span className="flex items-center gap-2 font-medium text-blue-700 select-none">
+                    การให้คะแนน
+                  </span>
+                }
+              >
+                <StarRating rating={rating ?? 0} onRatingChange={setRating} />
+              </Form.Item>
+
+              <Form.Item
+                name="Comment"
+                label={
+                  <span className="flex items-center gap-2 font-medium text-blue-700 select-none">
+                    ความคิดเห็นของคุณ
+                  </span>
+                }
+                rules={[
+                  { required: true, message: "กรุณาเขียนรีวิว" },
+                  { max: 500, message: "ไม่เกิน 500 ตัวอักษร" },
+                ]}
+              >
+                <Input.TextArea
+                  rows={6}
+                  maxLength={500}
+                  placeholder="เล่าประสบการณ์การชาร์จของคุณ เช่น ความเร็ว/ความสะดวก/ความสะอาด ฯลฯ"
+                  className="resize-none rounded-xl border border-blue-100 focus:border-blue-300 focus:shadow-sm transition"
+                />
+              </Form.Item>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-2">
+                <Tooltip title="รีวิวทีหลัง">
+                  <button
+                    type="button"
+                    onClick={handleReviewLater}
+                    className="rounded-xl border border-gray-200 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    รีวิวทีหลัง
+                  </button>
+                </Tooltip>
+
+                <Tooltip title={loading ? "กำลังส่งรีวิว..." : "ส่งรีวิว"}>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`inline-flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white transition
+                      ${loading
+                        ? "bg-blue-300 cursor-not-allowed"
+                        : "bg-gradient-to-r from-blue-600 to-blue-500 hover:opacity-95"}`}
+                  >
+                    {loading ? (
+                      <svg
+                        className="h-5 w-5 animate-spin text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                    ) : (
+                      <FaStar />
+                    )}
+                    {loading ? "กำลังส่ง..." : "ส่งรีวิว"}
+                  </button>
+                </Tooltip>
+              </div>
+            </Form>
+          </div>
         </div>
       </div>
 
-      {/* Animation keyframes */}
-      <style>
-        {`
-          @keyframes softFadeIn {
-            from {
-              opacity: 0;
-              transform: scale(0.97);
-            }
-            to {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-          .animate-softFadeIn {
-            animation: softFadeIn 0.3s ease-in-out forwards;
-          }
-        `}
-      </style>
+      {/* Animations */}
+      <style>{`
+        @keyframes softFadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-softFadeIn { animation: softFadeIn .2s ease-out; }
+      `}</style>
     </>,
     document.body
   );

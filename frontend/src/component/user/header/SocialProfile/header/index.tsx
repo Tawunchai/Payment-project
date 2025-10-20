@@ -1,109 +1,43 @@
-import { useState, useEffect, CSSProperties } from "react";
-import { BiMenuAltRight } from "react-icons/bi";
-import { useNavigate } from "react-router-dom";
-import { message } from "antd";
-import Logo from "../../../../../assets/LogoEV2.png";
-import "./extra.css";
-import OutsideClickHandler from "react-outside-click-handler";
-import ReportModal from "../../report/index";
-import { TooltipComponent } from "@syncfusion/ej2-react-popups";
-import { getUserByID } from "../../../../../services";  
-import {UsersInterface} from "../../../../../interface/IUser"
+import React from "react";
 
-const Header = () => {
-  const [menuOpened, setMenuOpened] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [profile, setProfile] = useState<UsersInterface | null>(null);
+// EV bolt icon (minimal)
+const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+    <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
+  </svg>
+);
 
-  const navigate = useNavigate();
-
-  useEffect(() => {
-  const userIDString = localStorage.getItem("userid");
-  if (userIDString) {
-    const userID = Number(userIDString);
-    getUserByID(userID)
-      .then((user) => {
-        if (user) {
-          console.log("ข้อมูลผู้ใช้ที่ได้จาก getUserByID:", user); // <== ตรงนี้
-          setProfile(user);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to fetch user profile:", error);
-      });
-  }
-}, []);
-
-
-  const getMenuStyles = (menuOpened: boolean): CSSProperties | undefined => {
-    if (document.documentElement.clientWidth <= 800) {
-      return {
-        right: menuOpened ? "1.5rem" : "-100%",
-      };
-    }
-    return undefined;
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("isLogin");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userID"); // ถ้ามีเก็บ
-    localStorage.clear();
-
-    message.success("ออกจากระบบ");
-
-    setTimeout(() => {
-      navigate("/login");
-    }, 3500);
-  };
-
-  const closeReportModal = () => {
-    setModalOpen(false);
-  };
-
+const Header: React.FC<{ title?: string }> = ({ title = "EV" }) => {
   return (
-    <section className="ex-h-wrapper">
-      <div className="ex-h-container flex justify-between items-center w-full">
-        <img
-          src={Logo}
-          alt="logo"
-          width={180}
-          onClick={() => navigate("/user")}
-          style={{ cursor: "pointer" }}
-        />
+    <header
+      className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center gap-2">
+        <button
+          onClick={() => window.history.back()}
+          aria-label="ย้อนกลับ"
+          className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
 
-        <OutsideClickHandler onOutsideClick={() => setMenuOpened(false)}>
-          <div className="ex-h-menu flex items-center" style={getMenuStyles(menuOpened)}>
-            <button className="button" onClick={handleLogout}>
-              <a href="">Logout</a>
-            </button>
-
-            <TooltipComponent position="BottomCenter">
-              <div
-                className="flex items-center gap-2 cursor-pointer p-1 rounded-lg"
-                onClick={() => navigate("/user/profile")}
-              >
-                {profile ? (
-                  <img
-                    className="rounded-full w-10 h-10"
-                    src={`http://localhost:8000/${profile.Profile}`}
-                    alt="user-profile"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-300" />
-                )}
-              </div>
-            </TooltipComponent>
-          </div>
-        </OutsideClickHandler>
-
-        <div className="ex-menu-icon" onClick={() => setMenuOpened((prev) => !prev)}>
-          <BiMenuAltRight size={30} />
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
+            <BoltIcon className="h-5 w-5 text-white" />
+          </span>
+          <span className="text-sm font-semibold tracking-wide">{title}</span>
         </div>
       </div>
-
-      <ReportModal open={modalOpen} onClose={closeReportModal} />
-    </section>
+    </header>
   );
 };
 

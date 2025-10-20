@@ -1,16 +1,15 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { SlideLeft } from "./SlideLeft";
-import { ListGetStarted, DeleteGettingByID } from "../../services/index";
+import { ListGetStarted, DeleteGettingByID } from "../../services";
 import type { GetstartedInterface } from "../../interface/IGetstarted";
-import { FaTrash, FaEdit } from "react-icons/fa";
-import { Trash2 } from "react-feather";
+import { Edit2, Trash as TrashIcon, Trash2 } from "react-feather";
 import Modal from "../admin/get/Modal";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineDocumentText } from "react-icons/hi";
-import { message } from 'antd';
-//+
-const Editor = () => {
+import { message } from "antd";
+
+const Editor: React.FC = () => {
   const [getstartedList, setGetstartedList] = useState<GetstartedInterface[]>([]);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const selectedRef = useRef<GetstartedInterface | null>(null);
@@ -31,17 +30,16 @@ const Editor = () => {
   };
 
   const confirmDelete = async () => {
-    if (selectedRef.current) {
-      const result = await DeleteGettingByID(selectedRef.current.ID!);
-      if (result) {
-        message.success('ลบข้อมูลสำเร็จ');
-        fetchData();
-      } else {
-        message.error("เกิดข้อผิดพลาดในการลบ");
-      }
-      setOpenConfirmModal(false);
-      selectedRef.current = null;
+    if (!selectedRef.current) return;
+    const ok = await DeleteGettingByID(selectedRef.current.ID!);
+    if (ok) {
+      message.success("ลบข้อมูลสำเร็จ");
+      fetchData();
+    } else {
+      message.error("เกิดข้อผิดพลาดในการลบ");
     }
+    setOpenConfirmModal(false);
+    selectedRef.current = null;
   };
 
   const cancelDelete = () => {
@@ -59,93 +57,133 @@ const Editor = () => {
     });
   };
 
+  // ปุ่มไอคอนมินิมอล (ghost)
+  const IconGhostButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement> & { tone?: "blue" | "red"; label: string }
+  > = ({ tone = "blue", label, children, ...props }) => {
+    const toneClass =
+      tone === "blue"
+        ? "border-blue-200 text-blue-700 hover:border-blue-300 hover:bg-blue-50/70 focus:ring-blue-200"
+        : "border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50/70 focus:ring-red-200";
+    return (
+      <button
+        {...props}
+        className={`h-9 w-9 grid place-items-center rounded-lg border bg-white/80 backdrop-blur transition-all active:scale-[0.98] focus:outline-none focus:ring-4 ${toneClass}`}
+        aria-label={label}
+        title={label}
+      >
+        {children}
+      </button>
+    );
+  };
+
   return (
-    <div className="bg-[#f9f9f9]">
-      <div className="ContainerExtra py-24 paddings">
-        <div className="space-y-4 p-6 text-center max-w-[500px] mx-auto mb-5">
-          <h1 className="uppercase font-semibold text-black text-[32px]">
-            Total Getting Started Management
-          </h1>
+    <div
+      className="min-h-screen w-full bg-[linear-gradient(180deg,#eaf2ff_0%,#f6f9ff_60%,#ffffff_100%)] mt-14 sm:mt-0"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      {/* Top bar (EV Blue) */}
+      <div className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <h1 className="text-sm sm:text-base font-semibold tracking-wide">Getting Started Management</h1>
           <button
-            className="font-semibold text-2xl bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
-            onClick={() => window.location.href = "/admin/create-editor"}
+            onClick={() => navigate("/admin/create-editor")}
+            className="inline-flex items-center justify-center h-9 px-4 rounded-lg bg-white text-blue-700 text-sm font-semibold shadow-sm hover:bg-white/90 active:scale-[0.99] transition"
           >
             CREATE
           </button>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {/* Content */}
+      <div className="max-w-screen-xl mx-auto w-full px-4 sm:px-6 py-6">
+        {/* Summary */}
+        <div className="rounded-2xl bg-white border border-blue-100 p-4 sm:p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Total Items</p>
+              <p className="text-2xl font-extrabold text-blue-700">{getstartedList.length}</p>
+            </div>
+            <div className="hidden sm:block text-right">
+              <p className="text-xs text-white bg-blue-600/90 px-2 py-1 rounded-lg border border-white/20">EV Docs</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid list */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-5">
           {getstartedList.map((item, index) => {
-            const delay = 0.3 + index * 0.3;
+            const delay = 0.12 + index * 0.06;
             return (
               <motion.div
                 key={item.ID}
                 variants={SlideLeft(delay)}
                 initial="hidden"
                 whileInView="visible"
-                className="w-full space-y-2 p-6 rounded-xl shadow-[0_0_22px_0_rgba(0,0,0,0.15)] bg-white relative"
+                viewport={{ once: true, margin: "-50px" }}
+                className="group rounded-2xl bg-white border border-blue-100 p-4 shadow-sm hover:shadow-md transition-shadow relative"
               >
-                {/* ปุ่มแก้ไขและลบ */}
-                <div className="absolute top-3 right-3 flex gap-2">
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="text-blue-500 hover:text-blue-700"
-                    title="แก้ไข"
-                  >
-                    <FaEdit />
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(item)}
-                    className="text-red-500 hover:text-red-700"
-                    title="ลบ"
-                  >
-                    <FaTrash />
-                  </button>
+                {/* Actions (minimal) */}
+                <div className="absolute top-3 right-3 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+                  <IconGhostButton tone="blue" label="แก้ไข" onClick={() => handleEdit(item)}>
+                    <Edit2 size={16} strokeWidth={2} />
+                  </IconGhostButton>
+                  <IconGhostButton tone="red" label="ลบ" onClick={() => openDeleteModal(item)}>
+                    <TrashIcon size={16} strokeWidth={2} />
+                  </IconGhostButton>
                 </div>
 
-                {/* เนื้อหา */}
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center text-orange-500">
-                    <HiOutlineDocumentText size={32} />
+                {/* Row */}
+                <div className="flex items-start gap-3">
+                  <div className="h-16 w-16 rounded-xl overflow-hidden ring-1 ring-blue-100 bg-blue-50 grid place-items-center flex-shrink-0">
+                    <HiOutlineDocumentText className="text-blue-600" size={28} />
                   </div>
-                  <p className="font-semibold text-sm">{item.Title}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold text-gray-900 line-clamp-2">{item.Title}</p>
+                    <p className="mt-1 text-[13px] text-gray-500 line-clamp-3">{item.Description}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-500">{item.Description}</p>
               </motion.div>
             );
           })}
         </div>
+
+        {getstartedList.length === 0 && (
+          <div className="text-center text-gray-500 py-16">ยังไม่มีรายการ</div>
+        )}
       </div>
 
-      {/* Modal ยืนยันการลบ */}
+      {/* Confirm delete modal — EV Blue, minimal, mobile-first */}
       <Modal open={openConfirmModal} onClose={cancelDelete}>
-        <div className="text-center w-56">
-          <Trash2 size={56} className="mx-auto text-red-500" />
-          <div className="mx-auto my-4 w-48">
-            <h3 className="text-lg font-black text-gray-800">ยืนยันการลบ</h3>
-            <p className="text-sm text-gray-500">
-              คุณแน่ใจว่าต้องการลบ
-              {selectedRef.current?.Title && (
-                <>
-                  <br />
-                  <span className="font-semibold text-red-600">
-                    {selectedRef.current.Title}
-                  </span>
-                </>
-              )}
-              ใช่หรือไม่?
-            </p>
+        <div className="w-[min(92vw,280px)] text-center px-3 py-4">
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
+            <Trash2 size={22} className="text-blue-600" />
           </div>
-          <div className="flex gap-4">
+
+          <h3 className="text-base font-bold text-slate-900">ยืนยันการลบ</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            คุณต้องการลบ
+            {selectedRef.current?.Title && (
+              <>
+                <br />
+                <span className="font-semibold text-blue-700">“{selectedRef.current.Title}”</span>
+              </>
+            )}
+            ใช่หรือไม่?
+            <br />
+            <span className="text-xs text-slate-500">การดำเนินการนี้ไม่สามารถย้อนกลับได้</span>
+          </p>
+
+          <div className="mt-4 flex gap-2">
             <button
-              className="btn btn-danger w-full bg-red-500 hover:bg-red-600 text-white py-1 rounded"
               onClick={confirmDelete}
+              className="w-full h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-200 transition"
             >
               ลบ
             </button>
             <button
-              className="btn btn-light w-full bg-gray-200 hover:bg-gray-300 text-black py-1 rounded"
               onClick={cancelDelete}
+              className="w-full h-10 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-100 transition"
             >
               ยกเลิก
             </button>

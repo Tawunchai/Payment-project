@@ -44,7 +44,7 @@ interface ContextProviderProps {
 
 export const ContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
   const [screenSize, setScreenSize] = useState<number | undefined>(undefined);
-  const [currentColor, setCurrentColor] = useState<string>('#FB9678');
+  const [currentColor, setCurrentColor] = useState<string>('#1860e7ff');
   const [currentMode, setCurrentMode] = useState<string>('Light');
   const [themeSettings, setThemeSettings] = useState<boolean>(false);
   const [activeMenu, setActiveMenu] = useState<boolean>(true);

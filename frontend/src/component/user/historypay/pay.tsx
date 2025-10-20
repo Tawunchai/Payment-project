@@ -1,230 +1,284 @@
-import { JSX, useEffect, useState } from "react";
-import {
-    FaCoins,
-    FaPaypal,
-    FaWallet,
-} from "react-icons/fa";
+import { JSX, useEffect, useMemo, useState } from "react";
+import { FaCoins, FaPaypal, FaWallet } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { getUserByID, apiUrlPicture, ListPayments, ListPaymentCoins } from "../../../services";
+import { getUserByID, apiUrlPicture, ListPaymentsByUserID } from "../../../services";
 
 interface TransactionItem {
-    icon: JSX.Element;
-    bg: string;
-    title: string;
-    desc: string;
-    amount: string;
-    color: string;
-    date?: string; // ถ้ามี field วันที่
+  icon: JSX.Element;
+  bg: string;
+  title: string;
+  desc: string;
+  amountNum: number;
+  amountText: string;
+  color: string;
+  date?: string;       // ISO string
+  displayDate?: string; // รูปแบบวันที่สำหรับแสดงผล
+  displayTime?: string; // รูปแบบเวลา (ชั่วโมง:นาที) สำหรับแสดงผล
 }
 
 interface UserType {
-    FirstName: string;
-    LastName: string;
-    Profile: string;
-    Coin: number;
+  FirstName: string;
+  LastName: string;
+  Profile: string;
+  Coin: number;
 }
 
 const HistoryPay = () => {
-    const navigate = useNavigate();
-    const [user, setUser] = useState<UserType | null>(null);
-    const [transactions, setTransactions] = useState<TransactionItem[]>([]);
-    const [totalAmount, setTotalAmount] = useState(0);
+  const navigate = useNavigate();
+  const [user, setUser] = useState<UserType | null>(null);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [userid, setUserid] = useState<number>(Number(localStorage.getItem("userid")) || 0);
 
+  // format ตัวเลข
+  const fmt = (n: number) =>
+    n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // โหลดข้อมูล user
-    useEffect(() => {
-        const fetchUser = async () => {
-            const res = await getUserByID(1);
-            if (!res) {
-                setUser({
-                    FirstName: "",
-                    LastName: "",
-                    Profile: "",
-                    Coin: 0,
-                });
-                return;
-            }
-            setUser({
-                FirstName: res.FirstName ?? "",
-                LastName: res.LastName ?? "",
-                Profile: res.Profile ?? "",
-                Coin: res.Coin ?? 0,
-            });
-        };
-        fetchUser();
-    }, []);
+  // format วันที่/เวลา
+  const fmtDate = (d: string | Date) =>
+    new Date(d).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
 
-    // โหลดข้อมูล history ทั้ง 2 แบบ + filter UserID = 1
-    useEffect(() => {
-        const fetchHistory = async () => {
-            const paymentList = await ListPayments();
-            const paymentCoinsList = await ListPaymentCoins();
+  const fmtTime = (d: string | Date) =>
+    new Date(d).toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
 
-            // Payments
-            const payments: TransactionItem[] = (paymentList ?? [])
-                .filter((item: any) => item.UserID === 1)
-                .map((item: any) => ({
-                    icon: <FaPaypal className="text-2xl text-white" />,
-                    bg: "bg-blue-400",
-                    title: "promptpay",
-                    desc: "Lorem ipsum dolor sit amet",
-                    amount: `${item.Amount}$`,
-                    color: "text-green-400",
-                    date: item.CreatedAt || "",
-                }));
+  // เลือกไอคอน/สีจาก Method
+  const pickStyleByMethod = (methodId?: number, methodName?: string) => {
+    const name = (methodName || "").toLowerCase();
+    if (methodId === 2 || name.includes("coin") || name.includes("coins")) {
+      return {
+        icon: <FaCoins className="text-base text-white" />,
+        bg: "bg-blue-400",
+        title: methodName || "Coins",
+        desc: "ชำระด้วย Coins",
+      };
+    }
+    // ค่าเริ่มต้นให้เป็น QR / PromptPay
+    return {
+      icon: <FaPaypal className="text-base text-white" />,
+      bg: "bg-blue-500",
+      title: methodName || "QR Payment",
+      desc: "ชำระผ่าน PromptPay/QR",
+    };
+  };
 
-            // PaymentCoins
-            const paymentCoins: TransactionItem[] = (paymentCoinsList ?? [])
-                .filter((item: any) => item.UserID === 1)
-                .map((item: any) => ({
-                    icon: <FaCoins className="text-2xl text-white" />,
-                    bg: "bg-yellow-400",
-                    title: "coins",
-                    desc: "Lorem ipsum dolor sit amet",
-                    amount: `${item.Amount}$`,
-                    color: "text-green-500",
-                    date: item.CreatedAt || "",
-                }));
+  // โหลดข้อมูล user
+  useEffect(() => {
+    const fetchUser = async () => {
+      const _uid = Number(localStorage.getItem("userid")) || userid || 0;
+      setUserid(_uid);
+      if (_uid === 0) return;
 
-            // รวม 2 array แล้ว sort จากเก่าไปใหม่ (ใหม่สุดล่างสุด)
-            const merged = [...payments, ...paymentCoins].sort((a, b) => {
-                const dateA = a.date ? new Date(a.date).getTime() : 0;
-                const dateB = b.date ? new Date(b.date).getTime() : 0;
-                return dateA - dateB;
-            });
+      const res = await getUserByID(_uid);
+      setUser({
+        FirstName: res?.FirstName ?? "",
+        LastName: res?.LastName ?? "",
+        Profile: res?.Profile ?? "",
+        Coin: res?.Coin ?? 0,
+      });
+    };
+    fetchUser();
+  }, []);
 
-            setTransactions(merged);
+  // โหลด history + รวมยอด จาก ListPaymentsByUserID
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!userid) return;
+      setLoading(true);
+      try {
+        const list = await ListPaymentsByUserID(userid); // ✅ ใช้ service ใหม่ตัวเดียว
 
-            // === ส่วนนี้: คำนวณผลรวมยอดเงินทั้งหมดของ 2 รายการ ===
-            // ดึงยอดออกมาจาก original data (ไม่เอา string ที่ map แล้ว)
-            const sumPayments = (paymentList ?? [])
-                .filter((item: any) => item.UserID === 1)
-                .reduce((acc: number, curr: any) => acc + (Number(curr.Amount) || 0), 0);
+        const payments = (list ?? []).map((it: any) => {
+          const amount = Number(it.Amount) || 0;
+          // รองรับ Method.Medthod (สะกดแบบตัวอย่าง JSON) และ Method.Name / Method
+          const methodName: string =
+            it?.Method?.Medthod || it?.Method?.Method || it?.Method?.Name || "";
+          const methodId: number | undefined = it?.MethodID;
 
-            const sumPaymentCoins = (paymentCoinsList ?? [])
-                .filter((item: any) => item.UserID === 1)
-                .reduce((acc: number, curr: any) => acc + (Number(curr.Amount) || 0), 0);
+          const style = pickStyleByMethod(methodId, methodName);
 
-            setTotalAmount(sumPayments + sumPaymentCoins);
-        };
+          // ใช้ CreatedAt ก่อน ถ้าไม่มีค่อย fallback ไป Date
+          const dateRaw: string = it?.CreatedAt || it?.Date || "";
 
-        fetchHistory();
-    }, []);
+          return {
+            icon: style.icon,
+            bg: style.bg,
+            title: style.title,
+            desc: style.desc,
+            amountNum: amount,
+            amountText: `$${fmt(amount)}`,
+            color: "text-green-600",
+            date: dateRaw,
+            displayDate: dateRaw ? fmtDate(dateRaw) : "",
+            displayTime: dateRaw ? fmtTime(dateRaw) : "",
+          } as TransactionItem;
+        });
 
+        // เรียงใหม่สุดอยู่บน
+        payments.sort((a, b) => {
+          const da = a.date ? new Date(a.date).getTime() : 0;
+          const db = b.date ? new Date(b.date).getTime() : 0;
+          return db - da;
+        });
 
+        setTransactions(payments);
 
-    return (
-        <div className="min-h-screen w-full bg-gradient-to-b from-gray-200 via-gray-100 to-white flex flex-col items-center font-sans">
-            {/* Header + User Summary Card */}
-            <div className="relative w-full flex flex-col items-center">
-                {/* Header */}
-                <div className="w-full mx-auto h-[200px] rounded-b-3xl bg-gradient-to-br from-orange-600 to-yellow-500 p-6 pt-7 flex flex-col items-center relative shadow-md z-0">
-                    <div className="text-white text-lg md:text-2xl font-semibold tracking-wide mb-1 text-center">
-                        Financial Analysis
-                    </div>
-                    <div className="flex items-center space-x-2 mb-2">
-                        <FaWallet className="text-2xl md:text-3xl text-white" />
-                        <span className="text-3xl md:text-4xl font-bold tracking-widest text-white">
-                            {user ? `${user.Coin}$` : "-"}
-                        </span>
-                    </div>
-                </div>
+        // ✅ รวมธุรกรรมทั้งหมด = ผลรวม Amount ของผู้ใช้คนนี้
+        const sum = (list ?? []).reduce(
+          (acc: number, cur: any) => acc + (Number(cur.Amount) || 0),
+          0
+        );
+        setTotalAmount(sum);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [userid]);
 
-                {/* User Summary Card */}
-                <div
-                    className="
-        absolute left-1/2
-        -translate-x-1/2
-        -bottom-[140px] md:-bottom-[180px]
-        w-[95vw] 
-        bg-white rounded-xl p-5 md:p-8 flex flex-col items-center shadow-lg border
-        z-10
-    "
-                    style={{ minWidth: 240 }}
-                >
-                    <div className="flex flex-col items-center mb-3">
-                        {/* Profile image (user.Profile) */}
-                        {user?.Profile ? (
-                            <img
-                                src={`${apiUrlPicture}${user.Profile}`}
-                                alt="profile"
-                                className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-full border-4 border-orange-200 shadow mb-2"
-                            />
-                        ) : (
-                            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-orange-100 animate-pulse mb-2" />
-                        )}
-                        {/* FirstName + LastName */}
-                        <span className="font-bold text-lg md:text-2xl text-gray-800">
-                            {user ? `${user.FirstName} ${user.LastName}` : "Loading..."}
-                        </span>
-                    </div>
-                    <div className="flex justify-between w-full px-2 md:px-8 mb-1">
-                        <div className="flex flex-col items-center">
-                            <div className="flex items-center gap-1">
-                                <FaWallet className="text-orange-400" />
-                                <span className="text-lg md:text-xl font-semibold text-gray-700">
-                                    {totalAmount}$
-                                </span>
-                            </div>
-                        </div>
-                        {/* ปุ่มเติมเงิน */}
-                        <div className="flex flex-col items-center">
-                            <button
-                                className="
-                                    flex items-center gap-1
-                                    bg-gradient-to-r from-orange-400 to-yellow-400
-                                    text-white px-4 py-2
-                                    rounded-lg shadow font-semibold
-                                    hover:from-orange-500 hover:to-yellow-500
-                                    transition
-                                    md:text-base text-sm
-                                "
-                                onClick={() => navigate("/user/add-coins")}
-                                type="button"
-                            >
-                                <FaWallet className="text-lg md:text-xl" />
-                                เติมเงิน
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  const coinBalance = useMemo(() => user?.Coin ?? 0, [user]);
 
-            {/* Spacer */}
-            <div className="h-24"></div>
-
-            {/* History Title + List */}
-            <div className="w-full mx-auto mt-[80px] md:mt-[150px] px-4 md:px-8 lg:px-24">
-                <div className="text-lg md:text-2xl font-bold text-gray-800 mb-3">History</div>
-                <div className="
-    bg-white rounded-2xl shadow 
-    p-2 md:p-6
-    max-h-[370px]
-    overflow-y-auto
-">
-                    {transactions.length === 0 ? (
-                        <div className="text-center text-gray-400 py-6">No history.</div>
-                    ) : (
-                        // *** อย่า slice ตรงนี้ ***
-                        transactions.map((item, idx) => (
-                            <div key={idx} className="flex items-center py-2 px-2 md:py-3 md:px-4">
-                                <div className={`w-11 h-11 md:w-14 md:h-14 rounded-xl flex items-center justify-center ${item.bg} shadow-md mr-3`}>
-                                    {item.icon}
-                                </div>
-                                <div className="flex-1">
-                                    <div className="font-semibold md:text-lg text-gray-700">{item.title}</div>
-                                    <div className="text-xs md:text-base text-gray-400">{item.desc}</div>
-                                </div>
-                                <div className={`text-base md:text-xl font-bold ml-2 ${item.color}`}>
-                                    {item.amount}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen w-full bg-white flex flex-col font-sans">
+      {/* HEADER */}
+      <header
+        className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden w-full"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="ย้อนกลับ"
+            className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
+              <FaWallet className="text-white" />
+            </span>
+            <span className="text-sm font-semibold tracking-wide">Wallet & History</span>
+          </div>
         </div>
-    );
+      </header>
+
+      {/* PROFILE & SUMMARY */}
+      <section className="mx-auto w-full max-w-screen-sm px-4 pt-4">
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            {user?.Profile ? (
+              <img
+                src={`${apiUrlPicture}${user.Profile}`}
+                alt="profile"
+                className="h-14 w-14 rounded-full object-cover border-4 border-blue-50"
+              />
+            ) : (
+              <div className="h-14 w-14 rounded-full bg-blue-50 animate-pulse" />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-gray-900 truncate">
+                {user ? `${user.FirstName} ${user.LastName}` : "Loading..."}
+              </div>
+              <div className="text-xs text-gray-500 truncate">กระเป๋าเงินของฉัน</div>
+            </div>
+            <button
+              onClick={() => navigate("/user/add-coins")}
+              className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 active:bg-blue-800 transition"
+            >
+              เติมเงิน
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-blue-50 p-3">
+              <div className="text-[11px] text-blue-900">ยอดคงเหลือ (Coins)</div>
+              <div className="mt-1 text-lg font-bold text-blue-700">${fmt(coinBalance)}</div>
+            </div>
+            <div className="rounded-xl bg-blue-50 p-3">
+              <div className="text-[11px] text-blue-900">รวมธุรกรรมทั้งหมด</div>
+              {/* ✅ ใช้ผลรวม Amount ทั้งหมดของ user */}
+              <div className="mt-1 text-lg font-bold text-blue-700">${fmt(totalAmount)}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* HISTORY LIST */}
+      <main className="mx-auto w-full max-w-screen-sm px-4 pb-6">
+        <div className="mt-4 text-sm font-bold text-gray-900">ประวัติการชำระเงิน</div>
+
+        <div className="mt-2 rounded-2xl border border-gray-100 bg-white shadow-sm">
+          {loading ? (
+            <div className="p-4 space-y-3">
+              <div className="h-12 rounded-xl bg-gray-100 animate-pulse" />
+              <div className="h-12 rounded-xl bg-gray-100 animate-pulse" />
+              <div className="h-12 rounded-xl bg-gray-100 animate-pulse" />
+              <div className="h-12 rounded-xl bg-gray-100 animate-pulse" />
+              <div className="h-12 rounded-xl bg-gray-100 animate-pulse" />
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="p-6 text-center text-sm text-gray-400">No history.</div>
+          ) : (
+            <ul className="divide-y divide-gray-100 max-h-[360px] overflow-y-auto">
+              {transactions.map((item, idx) => (
+                <li key={idx} className="flex items-center gap-3 px-4 py-3">
+                  <div className={`shrink-0 h-10 w-10 rounded-xl ${item.bg} text-white flex items-center justify-center`}>
+                    {item.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      {/* ✅ ชื่อวิธีชำระ */}
+                      <div className="truncate text-sm font-semibold text-gray-900">{item.title}</div>
+                      {/* ✅ จำนวนเงินของรายการนั้น ๆ */}
+                      <div className={`text-sm font-bold ${item.color}`}>{item.amountText}</div>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-3">
+                      <div className="truncate text-[12px] text-gray-500">{item.desc}</div>
+                      {(item.displayDate || item.displayTime) && (
+                        <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] text-gray-600">
+                          {/* ✅ แสดงทั้งวันที่และเวลา */}
+                          {item.displayDate}
+                          {item.displayTime ? ` • ${item.displayTime}` : ""}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* CTA ล่าง */}
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex-1 h-10 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium active:bg-gray-50"
+          >
+            กลับ
+          </button>
+          <button
+            onClick={() => navigate("/user/add-coins")}
+            className="flex-1 h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800"
+          >
+            เติม Coins
+          </button>
+        </div>
+      </main>
+
+      <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
+    </div>
+  );
 };
 
 export default HistoryPay;

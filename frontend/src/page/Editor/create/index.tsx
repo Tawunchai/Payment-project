@@ -1,137 +1,176 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { message } from "antd";
-import { CreateGettingStarted } from "../../../services/index";
-import BackgroundImage from "../../../assets/admin/img/img.jpg";
-import "../new.css";
+import { CreateGettingStarted } from "../../../services";
 import { useNavigate } from "react-router-dom";
 
-const Index = () => {
+const Index: React.FC = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const navigate = useNavigate();
   const [employeeid, setEmployeeid] = useState<number>(
     Number(localStorage.getItem("employeeid")) || 0
   );
-  const employeeID = employeeid;
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setEmployeeid(Number(localStorage.getItem("employeeid")) || 0);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!title.trim() || !description.trim()) {
       message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
       return;
     }
 
-    const data = {
-      title,
-      description,
-      employeeID,
-    };
+    try {
+      setLoading(true);
+      const ok = await CreateGettingStarted({
+        title: title.trim(),
+        description: description.trim(),
+        employeeID: employeeid,
+      });
 
-    const result = await CreateGettingStarted(data);
-
-    if (result) {
-      message.success("สร้างข้อมูลสำเร็จ");
-      setTimeout(() => {
-        navigate("/admin/editor");
-        setTitle("");
-        setDescription("");
-      }, 2000);
-    } else {
-      message.error("สร้างข้อมูลล้มเหลว");
+      if (ok) {
+        message.success("สร้างข้อมูลสำเร็จ");
+        setTimeout(() => {
+          setTitle("");
+          setDescription("");
+          navigate("/admin/editor");
+        }, 700);
+      } else {
+        message.error("สร้างข้อมูลล้มเหลว");
+      }
+    } catch {
+      message.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    setEmployeeid(Number(localStorage.getItem("employeeid")));
-  }, []);
+  // Live Preview (ข้อความ)
+  const preview = useMemo(
+    () => ({
+      title: title || "หัวข้อของคุณจะปรากฏที่นี่",
+      description: description || "พิมพ์รายละเอียดเพื่อดูตัวอย่างข้อความ…",
+    }),
+    [title, description]
+  );
 
   return (
-    <div>
-      <main>
-        <section className="new-contact">
-          <div className="new-container">
-            <div className="new-left">
-              <div className="form-wrapper">
-                <div className="contact-heading">
-                  <h1>
-                    Getting Started<span>.</span>
-                  </h1>
-                  <p className="contact-text">
-                    writing by: <a>admin@gmail.com</a>
-                  </p>
-                </div>
+    <div className="min-h-screen w-full bg-[linear-gradient(180deg,#eaf2ff_0%,#f5f8ff_50%,#ffffff_100%)]">
+      {/* Header — EV Blue */}
+      <header
+        className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm w-full"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
+          <h1 className="text-base md:text-lg font-semibold tracking-wide">
+            Create Getting Started
+          </h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="h-9 px-3 rounded-lg bg-white/15 hover:bg-white/25 transition text-white text-sm font-medium"
+          >
+            กลับ
+          </button>
+        </div>
+      </header>
 
-                <form className="contact-form" onSubmit={handleSubmit}>
-
-                  <div className="input-wrap">
-                    <input
-                      className="contact-input"
-                      autoComplete="off"
-                      name="Title"
-                      type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      required
-                      placeholder="Title"
-                    />
-                    <i className="contact-icon fa-solid fa-heading"></i>
-                  </div>
-
-                  <div className="input-wrap input-wrap-textarea input-wrap-full">
-                    <textarea
-                      name="Description"
-                      autoComplete="off"
-                      className="contact-input"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      required
-                      placeholder="Description"
-                    ></textarea>
-                    <i className="contact-icon fa-solid fa-file-lines"></i>
-                  </div>
-
-                  <div className="contact-buttons">
-                    <button className="contact-btn" type="submit">
-                      Submit
-                    </button>
-                  </div>
-                </form>
-              </div>
+      {/* Content */}
+      <main className="mx-auto max-w-5xl px-4 py-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Left: Form Card */}
+          <div className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
+            <div className="mb-4">
+              <p className="text-xs text-gray-500">Docs Management</p>
+              <h2 className="text-xl font-bold text-blue-700">
+                EV Station • New Guide
+              </h2>
             </div>
 
-            <div className="new-right">
-              <div className="image-wrapper">
-                <img src={BackgroundImage} className="contact-img" alt="Contact" />
-                {/* SVGs */}
-                <div className="wave-wrap">
-                  <svg
-                    className="wave"
-                    viewBox="0 0 783 1536"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      id="wave"
-                      d="M236.705 1356.18C200.542 1483.72 64.5004 1528.54 1 1535V1H770.538C793.858 63.1213 797.23 196.197 624.165 231.531C407.833 275.698 274.374 331.715 450.884 568.709C627.393 805.704 510.079 815.399 347.561 939.282C185.043 1063.17 281.908 1196.74 236.705 1356.18Z"
-                    />
-                  </svg>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-800 mb-1">
+                  หัวข้อ (Title)
+                </label>
+                <input
+                  className="w-full rounded-xl border border-blue-100 bg-white px-3 py-3 text-sm outline-none ring-0 focus:border-blue-300 focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)] transition"
+                  name="Title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="เช่น วิธีเริ่มต้นใช้งานระบบ EV Station"
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-800 mb-1">
+                  รายละเอียด (Description)
+                </label>
+                <textarea
+                  name="Description"
+                  className="w-full min-h-[160px] rounded-xl border border-blue-100 bg-white px-3 py-3 text-sm outline-none ring-0 focus:border-blue-300 focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)] transition"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="อธิบายขั้นตอน / คำแนะนำ / ข้อมูลสำคัญสำหรับผู้ใช้ใหม่…"
+                  required
+                />
+                <div className="mt-1 text-[12px] text-gray-400">
+                  ผู้เขียน: admin@gmail.com
                 </div>
-                <svg
-                  className="dashed-wave"
-                  viewBox="0 0 345 877"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+              </div>
+
+              {/* Actions */}
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:scale-[0.99] disabled:opacity-60 transition"
                 >
-                  <path
-                    id="dashed-wave"
-                    d="M0.5 876C25.6667 836.167 73.2 739.8 62 673C48 589.5 35.5 499.5 125.5 462C215.5 424.5 150 365 87 333.5C24 302 44 237.5 125.5 213.5C207 189.5 307 138.5 246 87C185 35.5 297 1 344.5 1"
-                  />
-                </svg>
+                  {loading ? "กำลังบันทึก…" : "Submit"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/admin/editor")}
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 text-sm font-semibold transition"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Right: Live Preview */}
+          <div className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Live Preview</h3>
+              <p className="text-xs text-gray-500">ดูตัวอย่างเนื้อหาก่อนบันทึก</p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-base font-bold text-gray-900">{preview.title}</h4>
+              <p className="text-sm text-gray-600 whitespace-pre-line">
+                {preview.description}
+              </p>
+
+              <div className="flex items-center gap-2 pt-1">
+                <span className="inline-flex items-center h-7 px-3 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  EV Station
+                </span>
+                <span className="text-[12px] text-gray-400">Preview mode</span>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+
+        {/* Helper note */}
+        <p className="text-[12px] text-gray-500 text-center mt-6">
+          พื้นหลังโทนฟ้า • สไตล์มินิมอล • รองรับจอมือถือ • แบ่ง 2 คอลัมน์บน Desktop
+        </p>
       </main>
     </div>
   );
