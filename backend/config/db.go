@@ -216,7 +216,11 @@ func seedContent(db *gorm.DB) {
 		Title:       "Best price on the market",
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
 		EmployeeID:  empIDPtr,
-	}, entity.GettingStarted{Title: "Best price on the market"})
+	}
+
+	db.FirstOrCreate(&getting1, entity.GettingStarted{Title: "Best interest rates on the market"})
+	db.FirstOrCreate(&getting2, entity.GettingStarted{Title: "Prevent unstable prices"})
+	db.FirstOrCreate(&getting3, entity.GettingStarted{Title: "Best price on the market"})
 
 	// News
 	db.FirstOrCreate(&entity.New{
