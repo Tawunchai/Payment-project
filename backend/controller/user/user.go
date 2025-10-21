@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -384,22 +385,23 @@ func GetDataUserByRoleUser(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-func GetDataUserByRoleAdmin(c *gin.Context) {
+func GetDataUserByRoleAdminAndEmployee(c *gin.Context) {
 	var users []entity.User
+	roles := []string{"Admin", "Employee"}
 
 	db := config.DB()
-	err := db.Preload("UserRole").Preload("Gender").
-		Joins("JOIN user_roles ON user_roles.id = users.user_role_id").
-		Where("user_roles.role_name = ?", "Admin").
-		Find(&users).Error
+	if err := db.Preload("UserRole").Preload("Gender").
+		Joins("JOIN user_roles ur ON ur.id = users.user_role_id").
+		Where("ur.role_name IN ?", roles).
+		Find(&users).Error; err != nil {
 
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, users)
+	c.JSON(http.StatusOK, users) // ถ้าไม่เจอจะได้ [] ว่าง ๆ (200)
 }
+
 
 func UpdateUserByID(c *gin.Context) {
 	idParam := c.Param("id")
@@ -411,20 +413,22 @@ func UpdateUserByID(c *gin.Context) {
 
 	db := config.DB()
 
+	// หา user เดิมก่อน
 	var user entity.User
 	if err := db.First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
+	// รับ payload แบบหลวม แล้วจะกรอง field ทีหลัง
 	var input map[string]interface{}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
 	}
 
-	// Allowed fields
-	allowedFields := map[string]bool{
+	// allowed fields
+	allowed := map[string]bool{
 		"Username":    true,
 		"Password":    true,
 		"Email":       true,
@@ -437,24 +441,96 @@ func UpdateUserByID(c *gin.Context) {
 		"GenderID":    true,
 	}
 
-	// Clean input
-	for key := range input {
-		if !allowedFields[key] {
-			delete(input, key)
+	// กรอง field แปลก ๆ ออก
+	for k := range input {
+		if !allowed[k] {
+			delete(input, k)
 		}
 	}
-
-	// Remove nested structs if exist
 	delete(input, "UserRole")
 	delete(input, "Gender")
 
-	if err := db.Model(&user).Updates(input).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+	// ถ้ามี Password -> hash ก่อนเก็บ
+	if rawPass, ok := input["Password"].(string); ok && rawPass != "" {
+		hashed, err := config.HashPassword(rawPass)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+			return
+		}
+		input["Password"] = hashed
+	} else {
+		// ไม่อัพเดตรหัสผ่านถ้าไม่ได้ส่งมาหรือส่งค่าว่าง
+		delete(input, "Password")
+	}
+
+	// เตรียมค่าบทบาท "หลังอัปเดต"
+	targetRoleID := user.UserRoleID // ค่าเดิม
+	if v, ok := input["UserRoleID"]; ok {
+		switch t := v.(type) {
+		case float64:
+			targetRoleID = uint(t)
+		case int:
+			targetRoleID = uint(t)
+		case uint:
+			targetRoleID = t
+		case string:
+			if parsed, e := strconv.Atoi(t); e == nil {
+				targetRoleID = uint(parsed)
+			}
+		}
+	}
+
+	// ทำทุกอย่างใน transaction
+	err = db.Transaction(func(tx *gorm.DB) error {
+		// อัปเดต user ก่อน
+		if err := tx.Model(&user).Updates(input).Error; err != nil {
+			return err
+		}
+
+		// โหลดชื่อ role จาก targetRoleID เพื่อเทียบว่าเป็น "User" ไหม
+		var role entity.UserRoles
+		if err := tx.First(&role, targetRoleID).Error; err != nil {
+			return fmt.Errorf("role not found: %w", err)
+		}
+
+		// ถ้าไม่ใช่ "User" -> เช็ค/สร้าง Employee ที่ผูกกับ user นี้
+		if strings.ToLower(role.RoleName) != "user" {
+			var emp entity.Employee
+			err := tx.Where("user_id = ?", user.ID).First(&emp).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// ยังไม่มี -> สร้างใหม่แบบ default
+				emp = entity.Employee{
+					Bio:        fmt.Sprintf("Profile of %s %s", user.FirstName, user.LastName),
+					Experience: "",
+					Education:  "",
+					Salary:     0,
+					UserID:     &user.ID,
+				}
+				if err := tx.Create(&emp).Error; err != nil {
+					return fmt.Errorf("create employee failed: %w", err)
+				}
+			} else if err != nil {
+				return err
+			}
+			// ถ้ามีอยู่แล้ว -> ไม่ทำอะไร (ตามเงื่อนไขของคุณ)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user: " + err.Error()})
 		return
+	}
+
+	// reload user พร้อม preloads เพื่อให้ฝั่งหน้าเว็บแสดงค่าล่าสุดได้
+	if err := db.Preload("UserRole").Preload("Gender").First(&user, userID).Error; err != nil {
+		// ไม่ critical แต่แจ้งไว้
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully", "user": user})
 }
+
 
 func ListUserByID(c *gin.Context) {
 	idParam := c.Param("id")

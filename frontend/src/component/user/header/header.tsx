@@ -1,12 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BiMenuAltRight } from "react-icons/bi";
 import { GiTwoCoins } from "react-icons/gi";
+import { FaCarSide } from "react-icons/fa";
+import { MdOutlineReport, MdMap } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
 import OutsideClickHandler from "react-outside-click-handler";
 import ReportModal from "./report/index";
 import { getUserByID, apiUrlPicture } from "../../../services";
 import { UsersInterface } from "../../../interface/IUser";
+
+/* === Leaflet (แสดงแผนที่ใน dropdown เดสก์ท็อป) === */
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+// FIX ไอคอนของ Leaflet สำหรับ Vite/CRA
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+/** ------------------------- ข้อมูลสถานีเดียว (SUT) ------------------------- */
+type Station = {
+  id: number;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  open24h?: boolean;
+  status: "พร้อมใช้งาน" | "ไม่พร้อม" | "กำลังใช้งาน";
+};
+
+const SUT_STATION: Station = {
+  id: 1,
+  name: "มหาวิทยาลัยเทคโนโลยีสุรนารี (SUT)",
+  address: "111 ถ.มหาวิทยาลัย ต.สุรนารี อ.เมืองนครราชสีมา",
+  lat: 14.8819,
+  lng: 102.0170,
+  open24h: true,
+  status: "พร้อมใช้งาน",
+};
 
 type HeaderProps = {
   scrollToValue?: () => void;
@@ -20,6 +56,13 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
   const [user, setUser] = useState<UsersInterface | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
+  // desktop map dropdown state
+  const [mapOpen, setMapOpen] = useState(false);
+  const mapWrapRef = useRef<HTMLDivElement | null>(null);
+  const mapElRef = useRef<HTMLDivElement | null>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+
   useEffect(() => {
     const uid = Number(localStorage.getItem("userid") || 0);
     if (!uid) return;
@@ -27,6 +70,58 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
       .then((res) => res && setUser(res))
       .catch(() => {});
   }, []);
+
+  // ปิด dropdown เมื่อกดนอก/กด ESC
+  useEffect(() => {
+    if (!mapOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMapOpen(false);
+    const onClick = (e: MouseEvent) => {
+      if (!mapWrapRef.current) return;
+      if (!mapWrapRef.current.contains(e.target as Node)) setMapOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onClick);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onClick);
+    };
+  }, [mapOpen]);
+
+  // สร้าง/อัปเดต Leaflet map ใน dropdown เมื่อเปิด
+  useEffect(() => {
+    if (!mapOpen) return;
+    // ถ้ายังไม่มี instance ให้สร้างใหม่
+    if (!mapInstance.current && mapElRef.current) {
+      const map = L.map(mapElRef.current, {
+        center: [SUT_STATION.lat, SUT_STATION.lng],
+        zoom: 16,
+        zoomControl: true,
+      });
+      mapInstance.current = map;
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      const mk = L.marker([SUT_STATION.lat, SUT_STATION.lng]).addTo(map);
+      mk.bindPopup(`<b>${SUT_STATION.name}</b><br/>${SUT_STATION.address}`, {
+        closeButton: true,
+      });
+      markerRef.current = mk;
+
+      // เปิด popup ครั้งแรกเพื่อโชว์ชื่อ
+      setTimeout(() => mk.openPopup(), 200);
+    } else {
+      // ถ้ามีแล้ว แค่รีไซส์ + เซ็ตวิวอีกครั้ง
+      setTimeout(() => {
+        mapInstance.current?.invalidateSize();
+        mapInstance.current?.setView([SUT_STATION.lat, SUT_STATION.lng], 16, { animate: true });
+        markerRef.current?.openPopup();
+      }, 50);
+    }
+
+    // ไม่ลบ map ตอนปิด dropdown เพื่อให้เปิดใหม่ไวขึ้น
+  }, [mapOpen]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -39,17 +134,31 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
     setMenuOpened(false);
   };
 
+  const openGmapsNavigate = () => {
+    const { lat, lng, name } = SUT_STATION;
+    const urlByCoord = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
+    const urlByName = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+      name
+    )}&travelmode=driving&dir_action=navigate`;
+    window.open(urlByCoord, "_blank");
+    setTimeout(() => window.open(urlByName, "_blank"), 200);
+  };
+
+  // ปุ่มเดสก์ท็อปให้ขนาดเท่ากัน
+  const btnEqual =
+    "inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-blue-600 hover:bg-blue-50";
+
   return (
     <>
       {contextHolder}
 
-      {/* HEADER: blue, minimal, sticky */}
+      {/* HEADER */}
       <header
         className="sticky top-0 z-40 bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="mx-auto flex max-w-screen-xl items-center justify-between px-4 py-3">
-          {/* Left: Brand text (show on mobile too) */}
+          {/* Left: Brand */}
           <button
             className="flex items-center gap-2"
             onClick={() => navigate("/user")}
@@ -59,19 +168,85 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
           </button>
 
           {/* Right: Desktop menu */}
-          <nav className="hidden items-center gap-3 md:flex">
-
-            <button
-              onClick={openReportModal}
-              className="rounded-xl px-3 py-2 text-sm font-medium text-white/90 hover:bg-white/10"
-            >
-              Report
+          <nav className="relative hidden items-center gap-3 md:flex">
+            {/* Report */}
+            <button onClick={openReportModal} className={btnEqual} title="รายงานปัญหา">
+              <MdOutlineReport className="text-blue-600" />
+              <span>Report</span>
             </button>
 
+            {/* Map (Dropdown + Leaflet แสดงโลเคชัน SUT เดียว) */}
+            <div className="relative" ref={mapWrapRef}>
+              <button
+                onClick={() => setMapOpen((s) => !s)}
+                className={btnEqual}
+                title="Map"
+                aria-expanded={mapOpen}
+                aria-haspopup="dialog"
+              >
+                <MdMap className="text-blue-600" />
+                <span>Map</span>
+              </button>
+
+              {mapOpen && (
+                <div
+                  className="
+                    absolute right-0 mt-2 w-[560px] max-w-[92vw]
+                    rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden
+                  "
+                  role="dialog"
+                  aria-label="EV Map (SUT)"
+                >
+                  <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                    <div className="text-sm font-semibold text-gray-900">
+                      ตำแหน่งตัวอย่าง: {SUT_STATION.name}
+                    </div>
+                    <button
+                      onClick={() => setMapOpen(false)}
+                      className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                    >
+                      ปิด
+                    </button>
+                  </div>
+
+                  {/* แผนที่ Leaflet */}
+                  <div className="relative">
+                    <div
+                      ref={mapElRef}
+                      style={{ width: "100%", height: 360 }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 text-xs text-gray-600">
+                    <span className="truncate">
+                      {SUT_STATION.address}
+                    </span>
+                    <button
+                      onClick={openGmapsNavigate}
+                      className="ml-3 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100/60"
+                    >
+                      นำทางด้วย Google Maps
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ADD CAR */}
+            <button
+              onClick={() => navigate("/user/add-cars")}
+              className={btnEqual}
+              title="เพิ่มข้อมูลรถ"
+            >
+              <FaCarSide className="text-blue-600" />
+              <span>ADD CAR</span>
+            </button>
+
+            {/* My Coins */}
             {user && (
               <button
                 onClick={() => navigate("/user/my-coins")}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+                className={btnEqual}
                 title="ดู Coins"
               >
                 <GiTwoCoins className="text-blue-600" />
@@ -81,13 +256,12 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
               </button>
             )}
 
-            <button
-              onClick={handleLogout}
-              className="rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-blue-600 hover:bg-blue-50"
-            >
-              Logout
+            {/* Logout */}
+            <button onClick={handleLogout} className={btnEqual}>
+              <span>Logout</span>
             </button>
 
+            {/* Profile avatar */}
             <button
               onClick={() => navigate("/user/profile")}
               className="ml-1 inline-flex items-center justify-center"
@@ -135,6 +309,23 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
                   className="w-full rounded-xl px-4 py-3 text-left text-gray-800 hover:bg-gray-50"
                 >
                   Report
+                </button>
+
+                {/* Map (mobile) → เปิด Google Maps พิกัด SUT */}
+                <button
+                  onClick={() => {
+                    const { lat, lng, name } = SUT_STATION;
+                    const urlByCoord = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
+                    const urlByName = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                      name
+                    )}&travelmode=driving&dir_action=navigate`;
+                    window.open(urlByCoord, "_blank");
+                    setTimeout(() => window.open(urlByName, "_blank"), 200);
+                    setMenuOpened(false);
+                  }}
+                  className="w-full rounded-xl px-4 py-3 text-left text-gray-800 hover:bg-gray-50"
+                >
+                  Map
                 </button>
 
                 {user && (

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/controller/calendar"
+	"github.com/Tawunchai/work-project/controller/car"
 	"github.com/Tawunchai/work-project/controller/charging"
 	"github.com/Tawunchai/work-project/controller/employee"
 	"github.com/Tawunchai/work-project/controller/gender"
@@ -68,7 +69,7 @@ func main() {
 		public.DELETE("/delete-users/:id", user.DeleteUserByID)
 		public.GET("/users", user.ListUser)
 		public.GET("/users/by-role/user", user.GetDataUserByRoleUser)
-		public.GET("/users/by-role/admin", user.GetDataUserByRoleAdmin)
+		public.GET("/users/by-role/admin", user.GetDataUserByRoleAdminAndEmployee)
 		public.GET("/employees/user/:id", employee.GetEmployeeByUserID)
 		public.DELETE("/delete-admins/:id", employee.DeleteAdminByID)
 		public.PATCH("/update-boss-admins/:id", employee.UpdateAdminByID)
@@ -108,6 +109,9 @@ func main() {
 
 		//Method
 		public.GET("/methods", method.ListMethods)
+
+		//Car
+		public.POST("/car-create", car.CreateCar)
 
 		//review
 		public.GET("/reviews", review.ListReview)

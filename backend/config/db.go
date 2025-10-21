@@ -169,10 +169,10 @@ func SeedIfUsersEmpty(db *gorm.DB) {
 	if err := db.Create(&admin2).Error; err != nil { log.Fatal(err) }
 	if err := db.Create(&employeeUser).Error; err != nil { log.Fatal(err) }
 
-	// Cars (ตัวอย่าง many-to-many)
-	car1 := entity.Car{Brand: "Tesla", ModelCar: "Model 3", LicensePlate: "EV-001", City: "Bangkok", User: []entity.User{user1}}
-	car2 := entity.Car{Brand: "BYD", ModelCar: "Atto 3", LicensePlate: "EV-002", City: "Chiang Mai", User: []entity.User{user2}}
-	car3 := entity.Car{Brand: "MG", ModelCar: "ZS EV", LicensePlate: "EV-003", City: "Khon Kaen", User: []entity.User{user2}}
+	// Cars (ตัวอย่าง many-to-many: ตรวจโครงสร้าง struct ของคุณให้สอดคล้อง)
+	car1 := entity.Car{Brand: "Tesla", ModelCar: "Model 3", LicensePlate: "EV-001",SpecialNumber: true, City: "Bangkok", User: []entity.User{user1}}
+	car2 := entity.Car{Brand: "BYD", ModelCar: "Atto 3", LicensePlate: "EV-002",SpecialNumber: false, City: "Chiang Mai", User: []entity.User{user2}}
+	car3 := entity.Car{Brand: "MG", ModelCar: "ZS EV", LicensePlate: "EV-003",SpecialNumber: false, City: "Khon Kaen", User: []entity.User{user2}}
 	db.FirstOrCreate(&car1, entity.Car{LicensePlate: car1.LicensePlate})
 	db.FirstOrCreate(&car2, entity.Car{LicensePlate: car2.LicensePlate})
 	db.FirstOrCreate(&car3, entity.Car{LicensePlate: car3.LicensePlate})
@@ -199,17 +199,20 @@ func seedContent(db *gorm.DB) {
 	}
 
 	// GettingStarted
-	db.FirstOrCreate(&entity.GettingStarted{
+	getting1 := entity.GettingStarted{
+		Picture: "uploads/getting_started/gettingone.png",
 		Title:       "Best interest rates on the market",
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
 		EmployeeID:  empIDPtr,
-	}, entity.GettingStarted{Title: "Best interest rates on the market"})
-	db.FirstOrCreate(&entity.GettingStarted{
+	}
+	getting2 := entity.GettingStarted{
+		Picture: "uploads/getting_started/gettingtwo.png",
 		Title:       "Prevent unstable prices",
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
 		EmployeeID:  empIDPtr,
-	}, entity.GettingStarted{Title: "Prevent unstable prices"})
-	db.FirstOrCreate(&entity.GettingStarted{
+	}
+	getting3 := entity.GettingStarted{
+		Picture: "uploads/getting_started/gettingthree.png",
 		Title:       "Best price on the market",
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
 		EmployeeID:  empIDPtr,

@@ -1,35 +1,30 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Select, Checkbox, message } from "antd";
+import { CreateCar, CarInterface } from "../../../../services";
 
-/* =========================
-   EV Bolt Icon (minimal)
-   ========================= */
+const { Option } = Select;
+
+/* ============ Icon & Header ============ */
 const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+  <svg viewBox="0 0 24 24" className={className}>
     <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
   </svg>
 );
 
-/* =========================
-   Reusable EV Header (blue)
-   ========================= */
 const EVHeader: React.FC<{ title?: string; onBack?: () => void }> = ({
   title = "เพิ่มพาหนะ",
   onBack,
 }) => {
   const goBack = () => (onBack ? onBack() : window.history.back());
   return (
-    <header
-      className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-      aria-label="EV top navigation"
-    >
-      <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center gap-2">
+    <header className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md">
+      <div className="mx-auto max-w-screen-sm md:max-w-5xl px-4 py-3 flex items-center gap-2">
         <button
           type="button"
           onClick={goBack}
+          className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15"
           aria-label="ย้อนกลับ"
-          className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
         >
           <svg
             viewBox="0 0 24 24"
@@ -41,153 +36,34 @@ const EVHeader: React.FC<{ title?: string; onBack?: () => void }> = ({
             <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-
         <div className="flex items-center gap-2">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
             <BoltIcon className="h-5 w-5 text-white" />
           </span>
-          <span className="text-sm font-semibold tracking-wide">{title}</span>
+          <span className="text-sm md:text-base font-semibold tracking-wide">{title}</span>
         </div>
       </div>
     </header>
   );
 };
 
-/* =======================
-   Bottom Sheet Picker
-   ======================= */
-type SheetFor = "brand" | "model" | "province";
-
-type BottomSheetPickerProps = {
-  open: boolean;
-  title: string;
-  options: string[];
-  onClose: () => void;
-  onSelect: (val: string) => void;
-};
-
-const BottomSheetPicker: React.FC<BottomSheetPickerProps> = ({
-  open,
-  title,
-  options,
-  onClose,
-  onSelect,
-}) => {
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return options;
-    return options.filter((o) => o.toLowerCase().includes(q));
-  }, [options, query]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100]">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div
-        className="
-          absolute left-0 right-0 bottom-0
-          bg-white rounded-t-3xl shadow-2xl
-          pt-3 pb-6 animate-[sheetUp_180ms_ease-out]
-        "
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-gray-300" />
-        <div className="px-4 flex items-center justify-between">
-          <button type="button" onClick={onClose} className="text-blue-600 font-semibold">
-            ยกเลิก
-          </button>
-          <div className="text-gray-900 font-semibold">{title}</div>
-          <div className="w-[64px]" />
-        </div>
-
-        <div className="px-4 mt-3">
-          <div className="relative">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="ค้นหา"
-              className="
-                w-full rounded-2xl border border-gray-300 bg-white
-                pl-11 pr-4 py-3 outline-none
-                focus:border-blue-500 focus:ring-2 focus:ring-blue-200
-              "
-            />
-            <svg
-              viewBox="0 0 24 24"
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.3-4.3" />
-            </svg>
-          </div>
-        </div>
-
-        <div className="mt-2 max-h-[62vh] overflow-y-auto px-4">
-          {filtered.length === 0 ? (
-            <div className="py-8 text-center text-gray-500">ไม่พบรายการ</div>
-          ) : (
-            <ul className="divide-y divide-gray-100">
-              {filtered.map((opt) => (
-                <li key={opt}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(opt)}
-                    className="w-full text-left py-4 text-gray-800 hover:bg-gray-50"
-                  >
-                    {opt}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes sheetUp {
-          from { transform: translateY(100%); }
-          to   { transform: translateY(0%); }
-        }
-      `}</style>
-    </div>
-  );
-};
-
-/* =======================
-   Page: Add Vehicle Form
-   ======================= */
+/* ============ Page ============ */
 const Index: React.FC = () => {
   const navigate = useNavigate();
+  const [messageApi, contextHolder] = message.useMessage();
 
-  // form states
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
-  const [isSpecialReg, setIsSpecialReg] = useState(false);
-  const [plate, setPlate] = useState("");
-  const [province, setProvince] = useState("");
-  const [isDefault, setIsDefault] = useState(false);
+  // states
+  const [brand, setBrand] = useState<string>("");
+  const [model, setModel] = useState<string>("");
+  const [isSpecialReg, setIsSpecialReg] = useState<boolean>(false);
+  const [plate, setPlate] = useState<string>("");
+  const [province, setProvince] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
 
-  // data
-  const brandOptions = [
-    "AJ EV","Audi","BMW","BYD","Changan","Chery","FOMM","FORD","FOXCONN",
-    "GAC","GWM","Honda","Mazda","Nissan","Toyota","Tesla"
-  ];
+  const userID = Number(localStorage.getItem("userid")); // ดึง user id จาก localStorage
 
+  // options
+  const brandOptions = ["Toyota", "Honda", "Mazda", "Nissan", "BYD", "Tesla"];
   const modelOptionsByBrand: Record<string, string[]> = {
     Toyota: ["Corolla Cross", "Yaris Ativ", "bZ4X"],
     Honda: ["City", "Civic e:HEV", "HR-V"],
@@ -195,221 +71,200 @@ const Index: React.FC = () => {
     Nissan: ["Almera", "Kicks e-Power", "Leaf"],
     BYD: ["Atto 3", "Dolphin", "Seal"],
     Tesla: ["Model 3", "Model Y"],
-    BMW: ["iX1", "iX3", "i4"],
-    Audi: ["e-tron GT", "Q8 e-tron"],
-    GWM: ["ORA Good Cat"],
   };
-
-  const provinces = [
-    "กรุงเทพมหานคร","กระบี่","กาญจนบุรี","กาฬสินธุ์","กำแพงเพชร","ขอนแก่น","จันทบุรี","ฉะเชิงเทรา",
-    "ชลบุรี","ชัยนาท","ชัยภูมิ","ชุมพร","เชียงราย","เชียงใหม่","ตรัง","ตราด","ตาก","นครนายก",
-    "นครปฐม","นครพนม","นครราชสีมา","นครศรีธรรมราช","นครสวรรค์","นนทบุรี","นราธิวาส","น่าน",
-    "บึงกาฬ","บุรีรัมย์","ปทุมธานี","ประจวบคีรีขันธ์","ปราจีนบุรี","ปัตตานี","พระนครศรีอยุธยา","พังงา",
-    "พัทลุง","พิจิตร","พิษณุโลก","เพชรบุรี","เพชรบูรณ์","แพร่","พะเยา","ภูเก็ต","มหาสารคาม","มุกดาหาร",
-    "แม่ฮ่องสอน","ยโสธร","ยะลา","ร้อยเอ็ด","ระนอง","ระยอง","ราชบุรี","ลพบุรี","ลำปาง","ลำพูน","เลย",
-    "ศรีสะเกษ","สกลนคร","สงขลา","สตูล","สมุทรปราการ","สมุทรสงคราม","สมุทรสาคร","สระแก้ว","สระบุรี",
-    "สิงห์บุรี","สุโขทัย","สุพรรณบุรี","สุราษฎร์ธานี","สุรินทร์","หนองคาย","หนองบัวลำภู","อ่างทอง",
-    "อำนาจเจริญ","อุดรธานี","อุตรดิตถ์","อุทัยธานี","อุบลราชธานี"
-  ];
+  const provinces = ["กรุงเทพมหานคร", "เชียงใหม่", "ขอนแก่น", "ภูเก็ต", "นครราชสีมา"];
 
   const modelOptions = useMemo(() => modelOptionsByBrand[brand] ?? [], [brand]);
-  const canSubmit = brand && model && plate && province;
+  const canSubmit = Boolean(brand && model && plate && province);
 
-  // bottom sheet state
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [sheetTitle, setSheetTitle] = useState("เลือก");
-  const [sheetOptions, setSheetOptions] = useState<string[]>([]);
-  const sheetFor = useRef<SheetFor>("brand");
-
-  const openBrandSheet = () => {
-    sheetFor.current = "brand";
-    setSheetTitle("ยี่ห้อ");
-    setSheetOptions(brandOptions);
-    setSheetOpen(true);
-  };
-  const openModelSheet = () => {
-    if (!brand) return;
-    sheetFor.current = "model";
-    setSheetTitle("รุ่น");
-    setSheetOptions(modelOptions);
-    setSheetOpen(true);
-  };
-  const openProvinceSheet = () => {
-    sheetFor.current = "province";
-    setSheetTitle("จังหวัด");
-    setSheetOptions(provinces);
-    setSheetOpen(true);
-  };
-
-  const handlePick = (val: string) => {
-    if (sheetFor.current === "brand") {
-      setBrand(val);
-      setModel("");
-    } else if (sheetFor.current === "model") {
-      setModel(val);
-    } else {
-      setProvince(val);
-    }
-    setSheetOpen(false);
-  };
-
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
-    const payload = {
-      brand,
-      model,
-      special_registration: isSpecialReg,
-      plate,
-      province,
-      is_default: isDefault,
-    };
-    console.log("SUBMIT VEHICLE:", payload);
-    navigate(-1);
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    try {
+      const payload: CarInterface = {
+        brand: brand,
+        model_car: model,
+        license_plate: plate,
+        city: province,
+        user_id: userID,
+      };
+
+      const res = await CreateCar(payload);
+      if (res) {
+        messageApi.success({ content: "เพิ่มข้อมูลรถสำเร็จ", duration: 2 });
+        setTimeout(() => navigate("/"), 2000); // ⏳ delay 2 วิ แล้วค่อยไปหน้า /
+      } else {
+        messageApi.error("บันทึกไม่สำเร็จ กรุณาลองใหม่");
+      }
+    } catch (err) {
+      console.error(err);
+      messageApi.error("เกิดข้อผิดพลาดในการบันทึก");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <form onSubmit={submit} className="min-h-screen bg-white flex flex-col">
-      {/* EV Header */}
+    <form onSubmit={submit} className="min-h-screen bg-gray-50 flex flex-col ev-scope">
+      {contextHolder}
       <EVHeader title="เพิ่มพาหนะ" onBack={() => navigate(-1)} />
 
-      {/* Content */}
-      <div className="flex-1 px-4 pt-4 pb-28 sm:px-6">
-        {/* Brand */}
-        <label className="block">
-          <span className="text-gray-700 text-sm">
-            ยี่ห้อ <span className="text-red-500">*</span>
-          </span>
-          <button
-            type="button"
-            onClick={openBrandSheet}
-            className="mt-2 w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-left text-gray-900 relative focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          >
-            <span className={brand ? "" : "text-gray-400"}>{brand || "เลือกยี่ห้อ"}</span>
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">▾</span>
-          </button>
-        </label>
-
-        {/* Model */}
-        <label className="block mt-4">
-          <span className="text-gray-700 text-sm">
-            รุ่น <span className="text-red-500">*</span>
-          </span>
-          <button
-            type="button"
-            onClick={openModelSheet}
-            disabled={!brand}
-            className={`mt-2 w-full rounded-2xl border px-4 py-3 text-left relative ${
-              brand
-                ? "border-gray-300 bg-white text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                : "border-gray-300 bg-gray-100 text-gray-400"
-            }`}
-          >
-            {brand ? (model || "เลือกรุ่น") : "กรุณาเลือกยี่ห้อก่อน"}
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">▾</span>
-          </button>
-        </label>
-
-        {/* Supported connector */}
-        <div className="mt-5">
-          <div className="text-gray-700 text-sm">หัวชาร์จที่รองรับ</div>
-          <div className="mt-3 text-xl leading-none">-</div>
-        </div>
-
-        <div className="my-5 h-[1px] w-full bg-gray-100" />
-
-        {/* Special Reg */}
-        <div className="flex items-start gap-3">
-          <input
-            id="specialReg"
-            type="checkbox"
-            checked={isSpecialReg}
-            onChange={(e) => setIsSpecialReg(e.target.checked)}
-            className="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <label htmlFor="specialReg" className="flex-1">
-            <div className="text-gray-900 font-medium">พาหนะของคุณเป็นทะเบียนพิเศษ</div>
-            <p className="text-gray-500 text-sm mt-1">
-              พาหนะของหน่วยงานราชการ, บุคคลในคณะผู้แทนทางการทูต, ทะเบียนต่างประเทศ เป็นต้น
-            </p>
+      <div className="flex-1 px-4 pt-4 pb-28 md:pb-40 sm:px-6">
+        <div className="mx-auto w-full max-w-3xl space-y-6">
+          {/* BRAND */}
+          <label className="block">
+            <span className="text-sm text-gray-700">
+              ยี่ห้อ <span className="text-red-500">*</span>
+            </span>
+            <Select
+              className="ev-select mt-2 w-full"
+              popupClassName="ev-select-dropdown"
+              size="large"
+              allowClear
+              placeholder="เลือกยี่ห้อ"
+              value={brand || undefined}
+              onChange={(val) => {
+                setBrand(val || "");
+                setModel(""); // reset รุ่น
+              }}
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                String(option?.children ?? "").toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {brandOptions.map((b) => (
+                <Option key={b} value={b}>
+                  {b}
+                </Option>
+              ))}
+            </Select>
           </label>
-        </div>
 
-        {/* Plate */}
-        <label className="block mt-6">
-          <span className="text-gray-700 text-sm">
-            ทะเบียนพาหนะ <span className="text-red-500">*</span>
-          </span>
-          <input
-            type="text"
-            placeholder="เช่น 1กก 1234"
-            value={plate}
-            onChange={(e) => setPlate(e.target.value)}
-            className="mt-2 w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            required
-          />
-        </label>
+          {/* MODEL */}
+          <label className="block">
+            <span className="text-sm text-gray-700">
+              รุ่น <span className="text-red-500">*</span>
+            </span>
+            <Select
+              className="ev-select mt-2 w-full"
+              popupClassName="ev-select-dropdown"
+              size="large"
+              allowClear
+              placeholder={brand ? "เลือกรุ่น" : "กรุณาเลือกยี่ห้อก่อน"}
+              value={model || undefined}
+              onChange={(val) => setModel(val || "")}
+              disabled={!brand}
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                String(option?.children ?? "").toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {modelOptions.map((m) => (
+                <Option key={m} value={m}>
+                  {m}
+                </Option>
+              ))}
+            </Select>
+          </label>
 
-        {/* Province */}
-        <label className="block mt-4">
-          <span className="text-gray-700 text-sm">
-            จังหวัด <span className="text-red-500">*</span>
-          </span>
-          <button
-            type="button"
-            onClick={openProvinceSheet}
-            className="mt-2 w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-left text-gray-900 relative focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          >
-            <span className={province ? "" : "text-gray-400"}>{province || "เลือกจังหวัด"}</span>
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">▾</span>
-          </button>
-        </label>
+          {/* SPECIAL REG */}
+          <div className="flex items-center gap-2">
+            <Checkbox checked={isSpecialReg} onChange={(e) => setIsSpecialReg(e.target.checked)} />
+            <span>พาหนะของคุณเป็นทะเบียนพิเศษ</span>
+          </div>
 
-        {/* Default toggle */}
-        <div className="mt-8 flex items-center justify-between">
-          <div className="text-gray-900 font-semibold">ตั้งเป็นค่าเริ่มต้น</div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={isDefault}
-            onClick={() => setIsDefault((v) => !v)}
-            className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
-              isDefault ? "bg-blue-600" : "bg-gray-300"
-            }`}
-          >
-            <span
-              className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition ${
-                isDefault ? "translate-x-6" : "translate-x-1"
-              }`}
+          {/* PLATE */}
+          <label className="block">
+            <span className="text-sm text-gray-700">
+              ทะเบียน <span className="text-red-500">*</span>
+            </span>
+            <input
+              value={plate}
+              onChange={(e) => setPlate(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              placeholder="เช่น 1กก 1234"
             />
-          </button>
+          </label>
+
+          {/* PROVINCE */}
+          <label className="block">
+            <span className="text-sm text-gray-700">
+              จังหวัด <span className="text-red-500">*</span>
+            </span>
+            <Select
+              className="ev-select mt-2 w-full"
+              popupClassName="ev-select-dropdown"
+              size="large"
+              allowClear
+              placeholder="เลือกจังหวัด"
+              value={province || undefined}
+              onChange={(val) => setProvince(val || "")}
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                String(option?.children ?? "").toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {provinces.map((p) => (
+                <Option key={p} value={p}>
+                  {p}
+                </Option>
+              ))}
+            </Select>
+          </label>
         </div>
       </div>
 
-      {/* Save */}
-      <div
-        className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-gradient-to-t from-white via-white/90 to-transparent"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
+      {/* Save button */}
+      <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 bg-white">
         <button
           type="submit"
-          disabled={!canSubmit}
-          className={`w-full h-14 rounded-2xl font-semibold text-white shadow-lg active:scale-[0.99] transition ${
-            canSubmit ? "bg-blue-600" : "bg-blue-300 cursor-not-allowed"
+          disabled={!canSubmit || submitting}
+          className={`w-full h-14 rounded-2xl font-semibold text-white shadow-lg ${
+            canSubmit && !submitting ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-300"
           }`}
         >
-          บันทึก
+          {submitting ? "กำลังบันทึก..." : "บันทึก"}
         </button>
       </div>
 
-      {/* Sheets */}
-      <BottomSheetPicker
-        open={sheetOpen}
-        title={sheetTitle}
-        options={sheetOptions}
-        onClose={() => setSheetOpen(false)}
-        onSelect={handlePick}
-      />
+      {/* Scoped CSS for rounded Antd Select */}
+      <style>{`
+        .ev-scope .ev-select .ant-select-selector {
+          border-radius: 0.75rem !important;        /* rounded-xl */
+          border-color: #e2e8f0 !important;         /* slate-300 */
+          height: 44px !important;
+          padding: 0 12px !important;
+          display: flex;
+          align-items: center;
+          background-color: #ffffff !important;
+        }
+        .ev-scope .ev-select:hover .ant-select-selector {
+          border-color: #cbd5e1 !important;         /* slate-300 hover */
+        }
+        .ev-scope .ev-select.ant-select-focused .ant-select-selector,
+        .ev-scope .ev-select .ant-select-selector:focus,
+        .ev-scope .ev-select .ant-select-selector:active {
+          border-color: #2563eb !important;         /* blue-600 */
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
+        }
+        .ev-scope .ev-select .ant-select-selection-item,
+        .ev-scope .ev-select .ant-select-selection-placeholder {
+          line-height: 42px !important;             /* center vertically */
+        }
+        .ev-scope .ev-select .ant-select-clear,
+        .ev-scope .ev-select .ant-select-arrow {
+          top: 50%;
+          transform: translateY(-50%);
+        }
+        .ev-scope .ev-select-dropdown {
+          border-radius: 0.75rem !important;        /* rounded dropdown */
+          overflow: hidden !important;
+        }
+      `}</style>
     </form>
   );
 };

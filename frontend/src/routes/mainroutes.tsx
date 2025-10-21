@@ -21,7 +21,7 @@ const AddCar = Loadable(lazy(() => import("../component/user/car/create")));
 const Map = Loadable(lazy(() => import("../component/user/map")));
 const AllNews = Loadable(lazy(() => import("../component/user/new/all")));
 const News = Loadable(lazy(() => import("../component/user/new/event")));
-
+const AfterPayment = Loadable(lazy(() => import("../component/user/payment/after")));
 // Admin Role 
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
 const MainLayout = Loadable(lazy(() => import("../component/admin/MainLayout")));
@@ -58,18 +58,19 @@ const UserRoutes = (): RouteObject[] => [
     path: "/user",
     children: [
       { index: true, element: <User /> },
-      { path: "profile", element: <Profile /> }, //edit
-      { path: "evs-selector", element: <EVInputUser /> }, // edit
-      { path: "payment", element: <PaymentUser /> }, // edit
-      { path: "payment-by-qrcode", element: <PaymentQr /> }, //edit
-      { path: "charging", element: <ChargingEV/> },//edit
-      { path: "my-coins", element: <MyCoins/> }, //edit
-      { path: "add-coins", element: <PayCoins/> }, //edit
-      { path: "intro-cars", element: <IntroCar/> }, //edit
-      { path: "add-cars", element: <AddCar/> }, //edit
-      { path: "map", element: <Map/> }, //edit
-      { path: "all-news", element: <AllNews/> }, //edit
-      { path: "one-news", element: <News/> }, //edit
+      { path: "profile", element: <Profile /> }, //edit real
+      { path: "evs-selector", element: <EVInputUser /> }, // edit real
+      { path: "payment", element: <PaymentUser /> }, // edit real
+      { path: "payment-by-qrcode", element: <PaymentQr /> }, //edit real
+      { path: "charging", element: <ChargingEV/> },//edit real
+      { path: "my-coins", element: <MyCoins/> }, //edit real
+      { path: "add-coins", element: <PayCoins/> }, //edit real
+      { path: "intro-cars", element: <IntroCar/> }, //edit real
+      { path: "add-cars", element: <AddCar/> }, //edit real
+      { path: "map", element: <Map/> }, //edit real
+      { path: "all-news", element: <AllNews/> }, //edit real
+      { path: "one-news", element: <News/> }, //edit real
+      { path: "after-payment", element: <AfterPayment/> }, //edit real
     ],
   },
 ];

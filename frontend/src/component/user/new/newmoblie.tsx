@@ -1,11 +1,13 @@
 import "./new.css";
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom"; // ✅ เพิ่ม useNavigate
 import { ListNews, apiUrlPicture } from "../../../services";
 import { NewsInterface } from "../../../interface/INews";
 
 const NewsCarousel = () => {
   const [newsList, setNewsList] = useState<NewsInterface[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); // ✅ ตัวนี้ไว้ใช้ navigate
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -18,6 +20,13 @@ const NewsCarousel = () => {
     };
     fetchNews();
   }, []);
+
+  // ✅ ฟังก์ชันเวลาคลิกข่าว
+  const handleClick = (news: NewsInterface) => {
+    navigate("/user/one-news", {
+      state: { news, id: news.ID }, // ส่งทั้ง object และ id ไปด้วย
+    });
+  };
 
   return (
     <section
@@ -35,8 +44,9 @@ const NewsCarousel = () => {
         <h2 className="text-[15px] md:text-base font-bold tracking-tight text-blue-800">
           ข่าวสารและกิจกรรม
         </h2>
-        <a
-          href="#"
+
+        <Link
+          to="/user/all-news"
           className="
             inline-flex items-center gap-1
             text-[12px] font-semibold
@@ -49,7 +59,7 @@ const NewsCarousel = () => {
         >
           ดูทั้งหมด
           <span aria-hidden>›</span>
-        </a>
+        </Link>
       </div>
 
       {/* List */}
@@ -77,6 +87,7 @@ const NewsCarousel = () => {
             : newsList.map((item) => (
                 <article
                   key={item.ID}
+                  onClick={() => handleClick(item)} // ✅ เมื่อคลิกข่าวนี้
                   className="
                     snap-start shrink-0
                     w-72 md:w-80
@@ -84,7 +95,8 @@ const NewsCarousel = () => {
                     shadow-[0_8px_24px_rgba(37,99,235,0.06)]
                     overflow-hidden
                     transition-transform
-                    active:scale-[0.98]
+                    cursor-pointer
+                    hover:scale-[1.02] active:scale-[0.98]
                   "
                   role="button"
                   tabIndex={0}
@@ -97,7 +109,6 @@ const NewsCarousel = () => {
                       className="absolute inset-0 h-full w-full object-cover"
                       loading="lazy"
                     />
-                    {/* gradient overlay + title */}
                     <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/50 via-black/10 to-transparent">
                       <h3
                         className="
@@ -110,8 +121,6 @@ const NewsCarousel = () => {
                         {item.Title}
                       </h3>
                     </div>
-
-                    {/* top-left badge */}
                     <span
                       className="
                         absolute left-2 top-2
@@ -124,11 +133,10 @@ const NewsCarousel = () => {
                       EV NEWS
                     </span>
                   </div>
-
-                  {/* meta */}
                   <div className="p-3">
                     <p className="text-[12px] leading-5 text-gray-600 line-clamp-2">
-                      {item.Description || "อัปเดตกิจกรรมและข่าวสารเกี่ยวกับการชาร์จไฟฟ้า EV"}
+                      {item.Description ||
+                        "อัปเดตกิจกรรมและข่าวสารเกี่ยวกับการชาร์จไฟฟ้า EV"}
                     </p>
                   </div>
                 </article>

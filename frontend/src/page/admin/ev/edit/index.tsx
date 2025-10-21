@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Upload, message } from "antd";
+import { Upload, message, Select } from "antd";
 import ImgCrop from "antd-img-crop";
 import { StatusInterface } from "../../../../interface/IStatus";
 import { TypeInterface } from "../../../../interface/IType";
@@ -26,18 +26,19 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [price, setPrice] = useState<number | string>("");
-  const [statusID, setStatusID] = useState<number | "">("");
-  const [typeID, setTypeID] = useState<number | "">("");
+  const [statusID, setStatusID] = useState<number | undefined>(undefined);
+  const [typeID, setTypeID] = useState<number | undefined>(undefined);
   const [fileList, setFileList] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!open) return;
     if (evCharging) {
-      setName(evCharging.Name || "");
-      setDescription(evCharging.Description || "");
+      setName(evCharging.Name ?? "");
+      setDescription(evCharging.Description ?? "");
       setPrice(evCharging.Price ?? "");
-      setStatusID(evCharging.StatusID ?? "");
-      setTypeID(evCharging.TypeID ?? "");
+      setStatusID(typeof evCharging.StatusID === "number" ? evCharging.StatusID : undefined);
+      setTypeID(typeof evCharging.TypeID === "number" ? evCharging.TypeID : undefined);
 
       if (evCharging.Picture) {
         setFileList([
@@ -53,7 +54,7 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
         setFileList([]);
       }
     }
-  }, [evCharging]);
+  }, [open, evCharging]);
 
   const handleSubmit = async () => {
     if (!evCharging?.ID) {
@@ -66,12 +67,12 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
     }
 
     const formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
-    formData.append("price", price.toString());
-    formData.append("statusID", statusID.toString());
-    formData.append("typeID", typeID.toString());
-    formData.append("employeeID", "1"); // ปรับตามระบบจริง
+    formData.append("name", String(name));
+    formData.append("description", String(description));
+    formData.append("price", String(price));
+    formData.append("statusID", String(statusID));
+    formData.append("typeID", String(typeID));
+    formData.append("employeeID", "1"); // TODO: ผูกค่าจริง
 
     if (fileList.length > 0 && fileList[0].originFileObj) {
       formData.append("picture", fileList[0].originFileObj);
@@ -101,7 +102,7 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
         reader.onload = () => resolve(reader.result as string);
       });
     }
-    const imgWindow = window.open(src);
+    const imgWindow = window.open(src as string);
     imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
   };
 
@@ -116,13 +117,14 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={submitting ? undefined : onClose}
         aria-hidden="true"
       />
 
       {/* Sheet/Dialog */}
-      <div className="relative w-full md:max-w-[600px] mx-auto">
-        <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-[600px] mx-4 md:mx-auto mb-8 md:mb-0">
+        {/* โค้งมนทุกมุม + ring บาง ๆ ให้ฟีล EV */}
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
           {/* Header — EV Blue */}
           <div className="px-5 pt-3 pb-4 md:pt-4 md:pb-4 bg-blue-600 text-white">
             <div className="mx-auto w-10 h-1.5 md:hidden rounded-full bg-white/60 mb-3" />
@@ -133,7 +135,8 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
               </div>
               <button
                 onClick={onClose}
-                className="p-2 -m-2 rounded-lg hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                disabled={submitting}
+                className="p-2 -m-2 rounded-lg hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60"
                 aria-label="ปิดหน้าต่าง"
               >
                 <FaTimes />
@@ -147,6 +150,7 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
             <div className="flex justify-center mb-3">
               <ImgCrop rotationSlider>
                 <Upload
+                  accept="image/*"
                   listType="picture-card"
                   fileList={fileList}
                   onChange={({ fileList: newList }) => setFileList(newList)}
@@ -188,31 +192,31 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
                 onChange={(e) => setPrice(e.target.value)}
               />
 
-              <select
-                className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              {/* Status — Antd Select โค้งมน */}
+              <Select
+                className="ev-select w-full"
+                popupClassName="ev-select-dropdown"
+                placeholder="เลือกสถานะ"
                 value={statusID}
-                onChange={(e) => setStatusID(e.target.value === "" ? "" : Number(e.target.value))}
-              >
-                <option value="">เลือกสถานะ</option>
-                {statusList.map((s) => (
-                  <option key={s.ID} value={s.ID}>
-                    {s.Status}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setStatusID(val as number)}
+                options={statusList.map((s) => ({ label: s.Status, value: s.ID }))}
+                allowClear
+                showSearch={false}
+                size="large"
+              />
 
-              <select
-                className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              {/* Type */}
+              <Select
+                className="ev-select w-full"
+                popupClassName="ev-select-dropdown"
+                placeholder="เลือกประเภท"
                 value={typeID}
-                onChange={(e) => setTypeID(e.target.value === "" ? "" : Number(e.target.value))}
-              >
-                <option value="">เลือกประเภท</option>
-                {typeList.map((t) => (
-                  <option key={t.ID} value={t.ID}>
-                    {t.Type}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setTypeID(val as number)}
+                options={typeList.map((t) => ({ label: t.Type, value: t.ID }))}
+                allowClear
+                showSearch={false}
+                size="large"
+              />
 
               <textarea
                 className="md:col-span-2 w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
@@ -225,26 +229,27 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-4 bg-white border-t border-slate-100 flex gap-2 justify-end">
+          <div className="px-5 py-4 bg-white border-t border-blue-100 flex gap-2 justify-end">
             <button
               onClick={onClose}
-              className="px-4 h-10 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-100 transition"
+              disabled={submitting}
+              className="px-4 h-10 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50 active:scale-[0.99] disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-blue-100 transition"
             >
               ยกเลิก
             </button>
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="px-4 h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-200 transition disabled:opacity-60"
+              className="px-4 h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 active:scale-[0.99] disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-blue-200 transition"
             >
               {submitting ? "กำลังบันทึก…" : "บันทึก"}
             </button>
           </div>
+
+          {/* ✅ Safe area (iOS) ภายในกล่อง เพื่อให้ความโค้งล่างไม่ถูกบัง */}
+          <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
-
-      {/* Safe area (iOS) */} 
-      <div className="h-[env(safe-area-inset-bottom)]" />
     </div>
   );
 };

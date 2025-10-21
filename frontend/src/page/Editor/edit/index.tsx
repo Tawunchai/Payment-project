@@ -1,24 +1,29 @@
+// src/pages/getting-started/edit/index.tsx
 import { useEffect, useMemo, useState } from "react";
-import { message } from "antd";
+import { message, Upload } from "antd";
+import ImgCrop from "antd-img-crop";
+import { PlusOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
-import { UpdateGettingStartedByID } from "../../../services";
+import { UpdateGettingStartedByID, apiUrlPicture } from "../../../services"; // ปรับ path ให้ตรงโปรเจกต์
 
 const EditGettingStarted: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // รับค่าเริ่มต้นจากหน้าเดิม
+  // รับค่าเริ่มต้นจากหน้าเดิม (รวมรูปเดิมด้วย)
   const {
     id,
     initialTitle = "",
     initialDescription = "",
+    initialPicture = "",
   } = (location.state || {}) as {
     id?: number;
     initialTitle?: string;
     initialDescription?: string;
+    initialPicture?: string; // ตัวอย่างเช่น "uploads/getting_started/173....jpg"
   };
 
-  // ถ้าไม่มี id ให้เด้งกลับ
+  // ถ้าไม่มี id ให้เด้งกลับกันเข้าตรง
   useEffect(() => {
     if (!id) {
       message.warning("ไม่พบข้อมูลที่จะอัปเดต");
@@ -28,12 +33,41 @@ const EditGettingStarted: React.FC = () => {
 
   const [title, setTitle] = useState<string>(initialTitle);
   const [description, setDescription] = useState<string>(initialDescription);
-  const [employeeID, setEmployeeID] = useState<number>(Number(localStorage.getItem("employeeid")) || 0);
+  const [employeeID, setEmployeeID] = useState<number>(
+    Number(localStorage.getItem("employeeid")) || 0
+  );
+  const [fileList, setFileList] = useState<any[]>(
+    initialPicture
+      ? [
+          {
+            uid: "-1",
+            name: "current.jpg",
+            status: "done",
+            url: `${apiUrlPicture}${initialPicture}`, // เสิร์ฟจาก r.Static("/uploads", "./uploads")
+          },
+        ]
+      : []
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setEmployeeID(Number(localStorage.getItem("employeeid")) || 0);
   }, []);
+
+  const onChange = ({ fileList: newFileList }: any) => setFileList(newFileList);
+
+  const onPreview = async (file: any) => {
+    let src = file.url;
+    if (!src && file.originFileObj) {
+      src = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file.originFileObj);
+        reader.onload = () => resolve(reader.result as string);
+      });
+    }
+    const imgWindow = window.open(src);
+    imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +81,14 @@ const EditGettingStarted: React.FC = () => {
     const formData = new FormData();
     formData.append("title", title.trim());
     formData.append("description", description.trim());
-    formData.append("employeeID", String(employeeID));
+    // backend รองรับ pointer *uint — ส่งเฉพาะเมื่อมีค่า
+    if (employeeID) formData.append("employeeID", String(employeeID));
+
+    // แนบรูปเฉพาะกรณีมีการเลือกไฟล์ใหม่ (originFileObj)
+    const hasNewImage = fileList.length > 0 && fileList[0].originFileObj;
+    if (hasNewImage) {
+      formData.append("picture", fileList[0].originFileObj);
+    }
 
     try {
       setLoading(true);
@@ -65,18 +106,28 @@ const EditGettingStarted: React.FC = () => {
     }
   };
 
-  // พรีวิวข้อความ (memo ไม่จำเป็นมาก แต่เผื่อป้องกัน re-render หนัก ๆ หากต่อยอด)
-  const preview = useMemo(
-    () => ({
-      title: title || "หัวข้อของคุณจะปรากฏที่นี่",
-      description: description || "พิมพ์รายละเอียดเพื่อดูตัวอย่างข้อความ…",
-    }),
-    [title, description]
-  );
+  // สร้าง preview URL รองรับทั้งรูปเดิมและรูปใหม่
+  const previewUrl = useMemo(() => {
+    const f = fileList[0];
+    if (!f) return "";
+    if (f.url) return f.url;
+    if (f.originFileObj) return URL.createObjectURL(f.originFileObj);
+    return "";
+  }, [fileList]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl?.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(previewUrl);
+        } catch {}
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <div className="min-h-screen w-full bg-[linear-gradient(180deg,#eaf2ff_0%,#f5f8ff_50%,#ffffff_100%)]">
-      {/* Header แบบ News */}
+      {/* Header */}
       <header
         className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm w-full"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -107,6 +158,43 @@ const EditGettingStarted: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  รูปภาพ (อัปเดตได้)
+                </label>
+                <ImgCrop rotationSlider>
+                  <Upload
+                    fileList={fileList}
+                    onChange={onChange}
+                    onPreview={onPreview}
+                    accept="image/png,image/jpeg,image/gif"
+                    beforeUpload={(file) => {
+                      // ให้สอดคล้องกับ allow-list ฝั่ง Go: jpeg/png/gif
+                      const allow = ["image/jpeg", "image/png", "image/gif"];
+                      if (!allow.includes(file.type)) {
+                        message.error("อนุญาตเฉพาะ .jpg .png .gif");
+                        return Upload.LIST_IGNORE;
+                      }
+                      return false; // ไม่อัปโหลดอัตโนมัติ
+                    }}
+                    maxCount={1}
+                    multiple={false}
+                    listType="picture-card"
+                  >
+                    {fileList.length < 1 && (
+                      <div>
+                        <PlusOutlined />
+                        <div style={{ marginTop: 8 }}>Upload</div>
+                      </div>
+                    )}
+                  </Upload>
+                </ImgCrop>
+                <p className="mt-2 text-[12px] text-gray-500">
+                  รองรับไฟล์รูปภาพ .jpg .png .gif
+                </p>
+              </div>
+
               {/* Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -168,13 +256,23 @@ const EditGettingStarted: React.FC = () => {
               <p className="text-xs text-gray-500">ดูตัวอย่างเนื้อหาที่กำลังแก้ไข</p>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-base font-bold text-gray-900">
-                {preview.title}
-              </h4>
-              <p className="text-sm text-gray-600 whitespace-pre-line">
-                {preview.description}
-              </p>
+            <div className="space-y-4">
+              <div className="w-full aspect-[16/9] bg-blue-50/60 border border-blue-100 rounded-xl overflow-hidden grid place-items-center">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="preview" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-blue-400 text-sm">ยังไม่มีรูปภาพ</span>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-base font-bold text-gray-900">
+                  {title || "หัวข้อของคุณจะปรากฏที่นี่"}
+                </h4>
+                <p className="text-sm text-gray-600 whitespace-pre-line">
+                  {description || "พิมพ์รายละเอียดเพื่อดูตัวอย่างข้อความ…"}
+                </p>
+              </div>
 
               <div className="flex items-center gap-2 pt-1">
                 <span className="inline-flex items-center h-7 px-3 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">

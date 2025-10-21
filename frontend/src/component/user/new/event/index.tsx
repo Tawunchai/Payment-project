@@ -1,5 +1,3 @@
-// pages/user/news/OneNews.tsx (หรือไฟล์ตามที่คุณตั้ง)
-// เส้นทาง: http://localhost:5173/user/one-news
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { RiNewspaperLine } from "react-icons/ri";
@@ -25,10 +23,9 @@ const OneNews: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { news: passedNews, id: passedId } = (location.state as NavState) || {};
-
   const [news, setNews] = useState<NewsInterface | null>(passedNews ?? null);
 
-  // เผื่อผู้ใช้เข้าหน้านี้โดยตรง: มี id มาจาก state/id ก็ลองโหลดจาก service
+  // โหลดข้อมูลเมื่อเข้าหน้าโดยตรง
   useEffect(() => {
     if (news || !passedId) return;
     (async () => {
@@ -47,39 +44,52 @@ const OneNews: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header (ตามสไตล์ที่ขอ) */}
+      {/* Header */}
       <header
         className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden w-full"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center gap-2">
+        <div className="mx-auto max-w-screen-lg px-4 py-3 flex items-center gap-2">
           <button
             onClick={() => navigate(-1)}
             aria-label="ย้อนกลับ"
             className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                d="M15 18l-6-6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
+
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
               <RiNewspaperLine className="text-white" />
             </span>
-            <span className="text-sm font-semibold tracking-wide">ข่าวสารและกิจกรรม</span>
+            <span className="text-sm md:text-base font-semibold tracking-wide">
+              ข่าวสารและกิจกรรม
+            </span>
           </div>
         </div>
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-screen-sm px-4 py-4">
+      <main className="mx-auto w-full max-w-screen-lg px-4 py-8 md:py-10">
         {!news ? (
           <div className="py-20 text-center text-gray-500">ไม่พบข้อมูลข่าว</div>
         ) : (
-          <>
+          <div className="flex flex-col md:flex-row md:gap-8 items-start">
             {/* รูปภาพหัวเรื่อง */}
             {img && (
-              <div className="rounded-2xl bg-blue-50 ring-1 ring-blue-100 overflow-hidden shadow-sm">
+              <div className="md:w-1/2 rounded-2xl bg-blue-50 ring-1 ring-blue-100 overflow-hidden shadow-sm mb-5 md:mb-0">
                 <img
                   src={img}
                   alt={news.Title}
@@ -91,32 +101,41 @@ const OneNews: React.FC = () => {
               </div>
             )}
 
-            {/* จุดสีน้ำเงินเล็กคั่น */}
-            <div className="flex justify-center py-3">
-              <span className="h-2 w-2 rounded-full bg-blue-500" />
+            {/* เนื้อหา */}
+            <div className="md:w-1/2">
+              <div className="flex justify-center md:justify-start py-3 md:py-0">
+                <span className="h-2 w-2 rounded-full bg-blue-500" />
+              </div>
+
+              <h1 className="text-[22px] md:text-[26px] font-bold text-gray-800 leading-snug">
+                {news.Title}
+              </h1>
+
+              <div className="mt-2 flex items-center gap-2 text-gray-500">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+                <span className="text-[14px] md:text-[15px]">
+                  {formatThaiDate(
+                    (news as any)?.CreatedAt || (news as any)?.createdAt
+                  )}
+                </span>
+              </div>
+
+              <article className="prose prose-sm md:prose-base mt-4 max-w-none">
+                <p className="text-[15px] md:text-[16px] leading-7 md:leading-8 text-gray-700 whitespace-pre-line">
+                  {news.Description}
+                </p>
+              </article>
             </div>
-
-            {/* ชื่อข่าว */}
-            <h1 className="text-[22px] font-bold text-gray-800">{news.Title}</h1>
-
-            {/* วันที่ */}
-            <div className="mt-2 flex items-center gap-2 text-gray-500">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-              <span className="text-[14px]">
-                {formatThaiDate((news as any)?.CreatedAt || (news as any)?.createdAt)}
-              </span>
-            </div>
-
-            {/* รายละเอียด */}
-            <article className="prose prose-sm mt-4 max-w-none">
-              <p className="text-[15px] leading-7 text-gray-600 whitespace-pre-line">
-                {news.Description}
-              </p>
-            </article>
-          </>
+          </div>
         )}
       </main>
     </div>
