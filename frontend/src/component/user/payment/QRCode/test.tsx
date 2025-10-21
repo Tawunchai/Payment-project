@@ -127,9 +127,9 @@ const PayPalCard: React.FC = () => {
       }
 
       setTimeout(() => {
-        navigate("/user/charging");
+        navigate("/user/after-payment");
         setLoading(false);
-      }, 1200);
+      }, 800);
     } catch {
       message.error("เกิดข้อผิดพลาดในการส่งหลักฐาน");
       setLoading(false);

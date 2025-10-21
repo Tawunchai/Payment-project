@@ -13,7 +13,7 @@ const Header: React.FC<{ title?: string }> = ({ title = "EV" }) => {
       className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center gap-2">
+      <div className="mx-auto max-w-screen-sm md:max-w-6xl px-4 py-3 flex items-center gap-2">
         <button
           onClick={() => window.history.back()}
           aria-label="ย้อนกลับ"
@@ -34,7 +34,7 @@ const Header: React.FC<{ title?: string }> = ({ title = "EV" }) => {
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
             <BoltIcon className="h-5 w-5 text-white" />
           </span>
-          <span className="text-sm font-semibold tracking-wide">{title}</span>
+          <span className="text-sm md:text-base font-semibold tracking-wide">{title}</span>
         </div>
       </div>
     </header>

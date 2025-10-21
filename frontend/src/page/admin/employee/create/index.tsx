@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { UserroleInterface } from "../../../../interface/IUserrole";
 import { CreateEmployeeInput } from "../../../../interface/IEmployee";
-import { message } from "antd";
+import { message, Select } from "antd";
 import {
   FaUserPlus,
   FaTimes,
@@ -31,10 +31,10 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [salary, setSalary] = useState<string>("");
-  const [userRoleID, setUserRoleID] = useState<number | "">("");
+  const [userRoleID, setUserRoleID] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    if (userRoles?.length && userRoleID === "") {
+    if (userRoles?.length && userRoleID === undefined) {
       setUserRoleID(userRoles[0].ID!);
     }
   }, [userRoles]);
@@ -54,26 +54,25 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
       message.warning("กรุณากรอก Salary เป็นตัวเลข");
       return false;
     }
+    if (!userRoleID) {
+      message.warning("กรุณาเลือกบทบาท");
+      return false;
+    }
     return true;
   };
 
   const handleSubmit = () => {
     if (!validate()) return;
 
-    const base: CreateEmployeeInput = {
+    const payload: CreateEmployeeInput = {
       username,
       password,
       firstName,
       lastName,
       email,
       salary: Number(salary),
+      ...(userRoleID ? { userRoleID } : {}),
     };
-
-    // แนบ userRoleID ไปด้วย (แคสเพื่อให้ผ่าน type ของ onCreated)
-    const payload = {
-      ...base,
-      ...(userRoleID !== "" ? { userRoleID: Number(userRoleID) } : {}),
-    } as unknown as CreateEmployeeInput;
 
     onCreated(payload);
     message.success("สร้างข้อมูลพนักงานสำเร็จ");
@@ -83,9 +82,11 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+      className="fixed inset-0 z-50 flex items-start md:items-center justify-center"
       role="dialog"
       aria-modal="true"
+      // กันชิดขอบบนบนมือถือ: เคารพ safe-area + ระยะเผื่อ
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       {/* Backdrop */}
       <div
@@ -94,18 +95,17 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
         aria-hidden="true"
       />
 
-      {/* Sheet / Dialog */}
-      <div className="relative w-full md:max-w-[640px] mx-auto">
-        <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden">
+      {/* Sheet / Dialog — mobile: มีระยะขอบซ้ายขวาและขยับลงจากบน */}
+      <div className="relative w-full max-w-[640px] mx-4 md:mx-auto mt-24 md:mt-0 mb-8 md:mb-0">
+        {/* กล่องโค้งมนทุกมุม + ring บาง ๆ + จำกัดความสูงและให้เลื่อนภายใน */}
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100 max-h-[85vh] flex flex-col">
           {/* Header — EV Blue */}
           <div className="px-5 pt-3 pb-4 md:pt-4 md:pb-4 bg-blue-600 text-white">
             <div className="mx-auto w-10 h-1.5 md:hidden rounded-full bg-white/60 mb-3" />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FaUserPlus className="opacity-90" />
-                <h2 className="text-base md:text-lg font-semibold">
-                  สร้างพนักงานใหม่
-                </h2>
+                <h2 className="text-base md:text-lg font-semibold">สร้างพนักงานใหม่</h2>
               </div>
               <button
                 onClick={onClose}
@@ -117,8 +117,8 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
             </div>
           </div>
 
-          {/* Body */}
-          <div className="px-5 py-5 bg-blue-50/40">
+          {/* Body — ทำให้เลื่อนในกล่องได้บนมือถือ */}
+          <div className="px-5 py-5 bg-blue-50/40 overflow-y-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Username */}
               <label className="flex flex-col gap-1">
@@ -174,7 +174,7 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
                 />
               </label>
 
-              {/* Email — full width on md via col-span-2 */}
+              {/* Email (full width) */}
               <label className="flex flex-col gap-1 md:col-span-2">
                 <span className="text-xs text-slate-700">Email</span>
                 <div className="flex items-center bg-white rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500/50">
@@ -191,7 +191,7 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
                 </div>
               </label>
 
-              {/* Salary — full width */}
+              {/* Salary (full width) */}
               <label className="flex flex-col gap-1 md:col-span-2">
                 <span className="text-xs text-slate-700">Salary</span>
                 <div className="flex items-center bg-white rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500/50">
@@ -209,36 +209,31 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
                 </div>
               </label>
 
-              {/* Role (ถ้ามีข้อมูล) */}
+              {/* Role — Antd Select โค้งมนแบบเดียวกับ EV */}
               {userRoles?.length > 0 && (
                 <label className="flex flex-col gap-1 md:col-span-2">
                   <span className="text-xs text-slate-700">บทบาท (Role)</span>
-                  <div className="flex items-center bg-white rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500/50">
-                    <span className="pl-3 pr-2 text-blue-500">
-                      {/* ใช้ FaUser เพื่อความสม่ำเสมอ */}
-                      <FaUser />
-                    </span>
-                    <select
-                      className="w-full px-3 py-2.5 rounded-xl outline-none bg-transparent"
-                      value={userRoleID}
-                      onChange={(e) =>
-                        setUserRoleID(e.target.value === "" ? "" : Number(e.target.value))
-                      }
-                    >
-                      {userRoles.map((r) => (
-                        <option key={r.ID} value={r.ID}>
-                          {r.RoleName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    className="ev-select w-full"
+                    popupClassName="ev-select-dropdown"
+                    placeholder="เลือกบทบาท"
+                    value={userRoleID}
+                    onChange={(val) => setUserRoleID(val as number)}
+                    options={userRoles.map((r) => ({
+                      label: r.RoleName,
+                      value: r.ID,
+                    }))}
+                    allowClear={false}
+                    showSearch={false}
+                    size="large"
+                  />
                 </label>
               )}
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-4 bg-white border-t border-slate-100 flex gap-2 justify-end">
+          <div className="px-5 py-4 bg-white border-t border-blue-100 flex gap-2 justify-end">
             <button
               onClick={onClose}
               className="px-4 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 transition-colors"
@@ -252,11 +247,11 @@ const CreateAdminModal: React.FC<CreateEmployeeModalProps> = ({
               สร้าง
             </button>
           </div>
+
+          {/* Safe area (iOS) ภายในกล่อง เพื่อให้ความโค้งล่างไม่ถูกบัง */}
+          <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
-
-      {/* Safe area for iOS */}
-      <div className="h-[env(safe-area-inset-bottom)]" />
     </div>
   );
 };

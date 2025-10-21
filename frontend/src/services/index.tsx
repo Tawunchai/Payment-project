@@ -66,6 +66,38 @@ const postRequestOptions = (body: any) => {
     body: JSON.stringify(body),
   };
 };
+export interface CarInterface {
+  brand: string;
+  model_car: string;
+  license_plate: string;
+  city: string;
+  special_number?: boolean;
+  user_id: number; // ✅ เพิ่มฟิลด์ user_id
+}
+
+export const CreateCar = async (
+  carData: CarInterface
+): Promise<{ message: string; data: CarInterface } | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/car-create`, carData, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating car:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 
 export const GetInverterStatus = async (): Promise<InverterStatus | null> => {
   try {
@@ -724,15 +756,21 @@ export const ListGetStarted = async (): Promise<GetstartedInterface[] | null> =>
   }
 };
 
-export const CreateGettingStarted = async (data: { title: string; description: string; employeeID: number }): Promise<{ message: string; data: any } | null> => {
+export type CreateGettingStartedInput = {
+  title: string;
+  description: string;
+  employeeID?: number;
+  picture: File; // บังคับมีไฟล์
+};
+
+export const CreateGettingStarted = async (formData: FormData): Promise<{ message: string; data: any } | null> => {
   try {
-    const response = await axios.post(`${apiUrl}/create-getting`, data, {
+    const response = await axios.post(`${apiUrl}/create-getting`, formData, {
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "multipart/form-data",
         ...getAuthHeader(),
       },
     });
-
     if (response.status === 201) {
       return response.data;
     } else {
@@ -740,10 +778,11 @@ export const CreateGettingStarted = async (data: { title: string; description: s
       return null;
     }
   } catch (error: any) {
-    console.error("Error creating getting started:", error.response?.data || error.message);
+    console.error("Error creating gettings:", error.response?.data || error.message);
     return null;
   }
 };
+
 
 export const UpdateGettingStartedByID = async (
   id: number,
@@ -764,10 +803,11 @@ export const UpdateGettingStartedByID = async (
       return null;
     }
   } catch (error: any) {
-    console.error("Error updating GettingStarted:", error.response?.data || error.message);
+    console.error("Error updating news:", error.response?.data || error.message);
     return null;
   }
 };
+
 
 export const DeleteGettingByID = async (
   id: number

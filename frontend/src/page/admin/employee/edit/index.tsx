@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { Select, message } from "antd"; // ⬅️ ใช้ antd Select
 import { UserroleInterface } from "../../../../interface/IUserrole";
 import { UpdateAdminByID } from "../../../../services/index";
 import { EmployeeInterface } from "../../../../interface/IEmployee";
-import { message } from "antd";
 import { FaTimes, FaMoneyBill, FaUserTag, FaEdit } from "react-icons/fa";
 
 interface EditAdminModalProps {
@@ -22,7 +22,8 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
 }) => {
   // เก็บเป็น string เพื่อพิมพ์/ลบได้สะดวกบนมือถือ แล้วค่อยแปลงตอน submit
   const [salary, setSalary] = useState<string>("");
-  const [userRoleID, setUserRoleID] = useState<number | "">("");
+  // ใช้ number | undefined ให้ทำงานกับ antd Select ได้ดี
+  const [userRoleID, setUserRoleID] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (employee) {
@@ -31,7 +32,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
           ? String(employee.Salary)
           : employee.Salary ?? "";
       setSalary(s);
-      setUserRoleID(employee.UserRole?.ID ?? employee.UserRoleID ?? "");
+      setUserRoleID(employee?.UserRole?.ID ?? employee?.UserRoleID ?? undefined);
     }
   }, [employee]);
 
@@ -50,7 +51,9 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
       payload.Salary = num;
     }
 
-    if (userRoleID !== "") payload.userRoleID = Number(userRoleID);
+    if (typeof userRoleID === "number") {
+      payload.userRoleID = userRoleID;
+    }
 
     const ok = await UpdateAdminByID(employee.EmployeeID, payload);
     if (ok) {
@@ -66,7 +69,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center ev-scope"
       role="dialog"
       aria-modal="true"
     >
@@ -79,7 +82,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
 
       {/* Sheet (mobile) / Dialog (desktop) */}
       <div className="relative w-full md:max-w-[520px] mx-auto">
-        <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
           {/* Header: EV Blue */}
           <div className="px-5 pt-3 pb-4 md:pt-4 md:pb-4 bg-blue-600 text-white">
             {/* drag handle for mobile */}
@@ -123,29 +126,26 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
                 </div>
               </label>
 
-              {/* Role */}
+              {/* Role — ใช้ antd Select (โค้งมน) */}
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-slate-700">บทบาท (Role)</span>
-                <div className="flex items-center bg-white rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500/50">
-                  <span className="pl-3 pr-2 text-blue-500">
+                <div className="flex items-center gap-2">
+                  <span className="pl-0 pr-0 text-blue-500">
                     <FaUserTag />
                   </span>
-                  <select
-                    name="UserRoleID"
-                    className="w-full px-3 py-2.5 rounded-xl outline-none bg-transparent"
+                  <Select
+                    className="ev-select w-full"
+                    popupClassName="ev-select-dropdown"
+                    placeholder="เลือกบทบาท"
+                    size="large"
+                    allowClear
                     value={userRoleID}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setUserRoleID(v === "" ? "" : Number(v));
-                    }}
-                  >
-                    <option value="">เลือกบทบาท</option>
-                    {userRoles.map((r) => (
-                      <option key={r.ID} value={r.ID}>
-                        {r.RoleName}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setUserRoleID(val as number | undefined)}
+                    options={userRoles.map((r) => ({
+                      label: r.RoleName,
+                      value: r.ID,
+                    }))}
+                  />
                 </div>
               </label>
             </div>
@@ -170,6 +170,41 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
       </div>
 
       <div className="h-[env(safe-area-inset-bottom)]" />
+
+      {/* Scoped CSS — ทำให้ Select โค้งมน สไตล์ EV Blue */}
+      <style>{`
+        .ev-scope .ev-select .ant-select-selector {
+          border-radius: 0.75rem !important;        /* rounded-xl */
+          border-color: #e2e8f0 !important;         /* slate-200 */
+          height: 44px !important;                  /* ให้สูงพอดีกับ input */
+          padding: 0 12px !important;
+          display: flex;
+          align-items: center;
+          background-color: #ffffff !important;
+        }
+        .ev-scope .ev-select:hover .ant-select-selector {
+          border-color: #cbd5e1 !important;         /* slate-300 */
+        }
+        .ev-scope .ev-select.ant-select-focused .ant-select-selector,
+        .ev-scope .ev-select .ant-select-selector:focus,
+        .ev-scope .ev-select .ant-select-selector:active {
+          border-color: #2563eb !important;         /* blue-600 */
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important; /* focus ring */
+        }
+        .ev-scope .ev-select .ant-select-selection-item,
+        .ev-scope .ev-select .ant-select-selection-placeholder {
+          line-height: 42px !important;             /* จัดกลางแนวตั้ง */
+        }
+        .ev-scope .ev-select .ant-select-clear,
+        .ev-scope .ev-select .ant-select-arrow {
+          top: 50%;
+          transform: translateY(-50%);
+        }
+        .ev-scope .ev-select-dropdown {
+          border-radius: 0.75rem !important;        /* dropdown โค้งมน */
+          overflow: hidden !important;
+        }
+      `}</style>
     </div>
   );
 };

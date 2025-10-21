@@ -1,12 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { SlideLeft } from "./SlideLeft";
-import { ListGetStarted, DeleteGettingByID } from "../../services";
+import { ListGetStarted, DeleteGettingByID, apiUrlPicture } from "../../services";
 import type { GetstartedInterface } from "../../interface/IGetstarted";
 import { Edit2, Trash as TrashIcon, Trash2 } from "react-feather";
 import Modal from "../admin/get/Modal";
 import { useNavigate } from "react-router-dom";
-import { HiOutlineDocumentText } from "react-icons/hi";
 import { message } from "antd";
 
 const Editor: React.FC = () => {
@@ -53,6 +52,7 @@ const Editor: React.FC = () => {
         id: item.ID,
         initialTitle: item.Title,
         initialDescription: item.Description,
+        initialPicture: item.Picture, // ส่ง path ไปหน้าแก้ไขด้วย (เผื่อโชว์รูปเดิม)
       },
     });
   };
@@ -76,6 +76,20 @@ const Editor: React.FC = () => {
       </button>
     );
   };
+
+  // ฟังก์ชันช่วยประกอบ URL รูป (รองรับทั้งเก็บเป็น relative path และเป็น URL เต็ม)
+  const toImageUrl = (path?: string) => {
+    if (!path) return "";
+    if (/^https?:\/\//i.test(path)) return path;
+    return `${apiUrlPicture}${path}`;
+  };
+
+  // fallback svg (สีฟ้าอ่อน โทน EV)
+  const FALLBACK_SVG =
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><rect width="160" height="160" fill="#e8f1ff"/><g fill="#3b82f6"><rect x="28" y="40" width="104" height="12" rx="6"/><rect x="28" y="68" width="88" height="12" rx="6"/><rect x="28" y="96" width="72" height="12" rx="6"/></g></svg>`
+    );
 
   return (
     <div
@@ -114,6 +128,7 @@ const Editor: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-5">
           {getstartedList.map((item, index) => {
             const delay = 0.12 + index * 0.06;
+            const imgSrc = toImageUrl(item.Picture);
             return (
               <motion.div
                 key={item.ID}
@@ -135,9 +150,29 @@ const Editor: React.FC = () => {
 
                 {/* Row */}
                 <div className="flex items-start gap-3">
-                  <div className="h-16 w-16 rounded-xl overflow-hidden ring-1 ring-blue-100 bg-blue-50 grid place-items-center flex-shrink-0">
-                    <HiOutlineDocumentText className="text-blue-600" size={28} />
+                  {/* Thumbnail: ใช้รูปจริงแทนไอคอน */}
+                  <div className="h-16 w-16 rounded-xl overflow-hidden ring-1 ring-blue-100 bg-blue-50 flex-shrink-0">
+                    {imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={item.Title || "Getting Started"}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          // ถ้ารูปเสีย ให้ใช้ fallback svg
+                          (e.currentTarget as HTMLImageElement).src = FALLBACK_SVG;
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={FALLBACK_SVG}
+                        alt="no image"
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    )}
                   </div>
+
                   <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-semibold text-gray-900 line-clamp-2">{item.Title}</p>
                     <p className="mt-1 text-[13px] text-gray-500 line-clamp-3">{item.Description}</p>

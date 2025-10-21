@@ -42,11 +42,10 @@ type RowType = {
   Role: string;
   Status: string;
   Phone: string;
-  Salary: number; // เก็บเป็น number เพื่อ sort/render ได้เสถียร
+  Salary: number;
   Raw: any;
 };
 
-// ===== Inline EV Blue Minimal Modal =====
 const EvModal: React.FC<{
   open: boolean;
   onClose: () => void;
@@ -54,11 +53,23 @@ const EvModal: React.FC<{
 }> = ({ open, onClose, children }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div className="relative w-full md:max-w-[320px] mx-auto px-3 md:px-0">
-        <div className="mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      {/* Dialog */}
+      <div className="relative w-full max-w-[420px] mx-4">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
           {children}
+          {/* safe-area ล่างบนมือถือ */}
+          <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
     </div>
@@ -84,7 +95,7 @@ const Employees: React.FC = () => {
   const fetchAdmins = async (): Promise<void> => {
     setLoading(true);
     try {
-      const users: any[] = (await ListUsersByRoleAdmin()) ?? []; // กัน null
+      const users: any[] = (await ListUsersByRoleAdmin()) ?? [];
       if (users.length === 0) {
         setTableData([]);
         return;
@@ -133,7 +144,7 @@ const Employees: React.FC = () => {
   };
 
   const fetchUserRoles = async (): Promise<void> => {
-    const roles: any[] = (await ListUserRoles()) ?? []; // กัน null
+    const roles: any[] = (await ListUserRoles()) ?? [];
     setUserRoles(roles);
   };
 
@@ -210,7 +221,6 @@ const Employees: React.FC = () => {
   const handleCreated = async (payload: any): Promise<void> => {
     const ok = await createEmployeeByAdmin(payload);
     if (ok) {
-      message.success("สร้างพนักงานใหม่สำเร็จ");
       setCreateOpen(false);
       fetchAdmins();
     } else {
@@ -395,25 +405,32 @@ const Employees: React.FC = () => {
         />
       )}
 
-      {/* Confirm Delete (Single) */}
+      {/* Confirm Delete (Single) — ข้อความจัดกลาง 100% */}
       <EvModal open={openConfirmModal} onClose={cancelDelete}>
-        <div className="w-[min(92vw,320px)] text-center px-4 py-5">
-          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
+        <div className="w-[min(92vw,420px)] px-5 py-5 flex flex-col items-center text-center">
+          <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
             <Trash2 size={22} className="text-blue-600" />
           </div>
 
-          <h3 className="text-base font-bold text-slate-900">ยืนยันการลบผู้ดูแลระบบ</h3>
+          <h3 className="text-base font-bold text-slate-900">
+            ยืนยันการลบผู้ดูแลระบบ
+          </h3>
+
           <p className="mt-2 text-sm leading-6 text-slate-600">
             คุณต้องการลบ
             {selectedEmployeeRef.current?.Name && (
               <>
                 <br />
-                <span className="font-semibold text-blue-700">“{selectedEmployeeRef.current.Name}”</span>
+                <span className="font-semibold text-blue-700">
+                  “{selectedEmployeeRef.current.Name}”
+                </span>
               </>
             )}{" "}
             ใช่หรือไม่?
             <br />
-            <span className="text-xs text-slate-500">การดำเนินการนี้ไม่สามารถย้อนกลับได้</span>
+            <span className="text-xs text-slate-500">
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </span>
           </p>
 
           <div className="mt-4 flex items-center justify-center gap-2">

@@ -25,11 +25,11 @@ const Contact: React.FC = () => {
 
   return (
     <Card
-      title={<span className="text-gray-900 text-sm font-bold">{t("Contact")}</span>}
-      className="mt-4 rounded-2xl shadow-sm border border-gray-100"
+      title={<span className="text-gray-900 text-sm md:text-base font-bold">{t("Contact")}</span>}
+      className="mt-4 md:mt-0 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100"
       classNames={{
-        body: "pt-2",
-        header: "border-0 bg-white rounded-t-2xl",
+        body: "pt-2 md:pt-3",
+        header: "border-0 bg-white rounded-t-2xl md:rounded-t-3xl",
       }}
       bordered={false}
     >
@@ -43,7 +43,7 @@ const Contact: React.FC = () => {
             <Text type="secondary" className="text-[12px] block">
               Email
             </Text>
-            <Link href={`mailto:${email}`} target="_blank" className="text-sm">
+            <Link href={`mailto:${email}`} target="_blank" className="text-sm md:text-base">
               {email || "-"}
             </Link>
           </div>
@@ -58,7 +58,7 @@ const Contact: React.FC = () => {
             <Text type="secondary" className="text-[12px] block">
               Web page
             </Text>
-            <Link href="#" target="_blank" className="text-sm">
+            <Link href="#" target="_blank" className="text-sm md:text-base">
               example.com
             </Link>
           </div>
@@ -73,7 +73,7 @@ const Contact: React.FC = () => {
             <Text type="secondary" className="text-[12px] block">
               Phone
             </Text>
-            <Link href={`tel:${phone}`} target="_blank" className="text-sm">
+            <Link href={`tel:${phone}`} target="_blank" className="text-sm md:text-base">
               {phone || "-"}
             </Link>
           </div>

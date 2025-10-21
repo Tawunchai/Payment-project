@@ -50,19 +50,31 @@ type RowType = {
   Raw: any;
 };
 
-// ===== Inline EV Blue Minimal Modal (single delete confirm) =====
-const EvModal: React.FC<{ open: boolean; onClose: () => void; children: React.ReactNode; }> = ({ open, onClose, children }) => {
+const EvModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ open, onClose, children }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center" // 👈 center บน mobile ด้วย
+      role="dialog"
+      aria-modal="true"
+    >
+      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative w-full md:max-w-[320px] mx-auto px-3 md:px-0">
-        <div className="mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+
+      {/* Dialog */}
+      <div className="relative w-full max-w-[420px] mx-4 md:mx-auto"> {/* ตัด mb-8 ออก */}
+        <div className="mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
           {children}
+          {/* Safe area (iOS) ภายในกล่อง (ไม่บังมุมโค้ง) */}
+          <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
     </div>
@@ -332,7 +344,7 @@ const EV: React.FC = () => {
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
           />
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -401,7 +413,7 @@ const EV: React.FC = () => {
 
       {/* Confirm Delete (Single) */}
       <EvModal open={openConfirmModal} onClose={cancelDelete}>
-        <div className="w-[min(92vw,320px)] text-center px-4 py-5">
+        <div className="w-[min(92vw,420px)] text-center px-5 py-5">
           <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
             <Trash2 size={22} className="text-blue-600" />
           </div>

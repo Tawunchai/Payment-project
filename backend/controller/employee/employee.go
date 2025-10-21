@@ -101,22 +101,46 @@ func UpdateEmployeeProfile(c *gin.Context) {
 }
 
 func DeleteAdminByID(c *gin.Context) {
-	id := c.Param("id")
+    id := c.Param("id")
+    db := config.DB()
 
-	db := config.DB()
-	var admin entity.Employee
-	if err := db.First(&admin, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Admin not found"})
-		return
-	}
+    // ดึง Employee พร้อม UserID
+    var admin entity.Employee
+    if err := db.Preload("User").First(&admin, "id = ?", id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Admin not found"})
+        return
+    }
 
-	if err := db.Delete(&admin).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+    tx := db.Begin()
+    if tx.Error != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot start transaction"})
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{"message": "Admin deleted successfully"})
+    // 1) ลบ Employee (soft delete ตาม gorm.Model)
+    if err := tx.Delete(&admin).Error; err != nil {
+        tx.Rollback()
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "delete employee failed"})
+        return
+    }
+
+    // 2) ลบ User ที่เกี่ยวข้อง (ถ้ามี) — ไม่แตะตารางอื่น
+    if admin.UserID != nil {
+        if err := tx.Delete(&entity.User{}, *admin.UserID).Error; err != nil {
+            tx.Rollback()
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "delete user failed"})
+            return
+        }
+    }
+
+    if err := tx.Commit().Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "commit failed"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Admin and related user deleted successfully"})
 }
+
 
 func UpdateAdminByID(c *gin.Context) {
 	id := c.Param("id")
@@ -190,55 +214,104 @@ func ListEmployeeByID(c *gin.Context) {
 }
 
 type CreateEmployeeWithUserInput struct {
-	Username  string  `json:"username" binding:"required"`
-	Password  string  `json:"password" binding:"required"`
-	FirstName string  `json:"firstName" binding:"required"`
-	LastName  string  `json:"lastName" binding:"required"`
-	Email     string  `json:"email" binding:"required,email"`
-	Salary    float64 `json:"salary" binding:"required"`
+	Username   string  `json:"username"`
+	Password   string  `json:"password"`
+	FirstName  string  `json:"firstName"`
+	LastName   string  `json:"lastName"`
+	Email      string  `json:"email"`
+	Salary     float64 `json:"salary"`
+	UserRoleID uint    `json:"userRoleId"` // <<— เพิ่มฟิลด์นี้
 }
 
+// POST /admin/employees
 func CreateEmployeeByAdmin(c *gin.Context) {
 	var input CreateEmployeeWithUserInput
-
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง"})
 		return
 	}
 
+	db := config.DB()
+
+	// เริ่ม transaction เพื่อให้การสร้าง User/Employee เป็น atomic
+	tx := db.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถเริ่มธุรกรรมได้"})
+		return
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 1) ตรวจว่า UserRoleID ที่รับมามีอยู่จริง
+	var role entity.UserRoles
+	if err := tx.First(&role, input.UserRoleID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ไม่พบสิทธิ์ผู้ใช้ (UserRole) ตามที่ระบุ"})
+		return
+	}
+
+	// 2) กัน username / email ซ้ำ
+	var count int64
+	if err := tx.Model(&entity.User{}).
+		Where("username = ? OR email = ?", input.Username, input.Email).
+		Count(&count).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "เกิดข้อผิดพลาดในการตรวจสอบผู้ใช้ซ้ำ"})
+		return
+	}
+	if count > 0 {
+		tx.Rollback()
+		c.JSON(http.StatusConflict, gin.H{"error": "มี Username หรือ Email นี้อยู่ในระบบแล้ว"})
+		return
+	}
+
+	// 3) เข้ารหัสรหัสผ่าน
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถเข้ารหัสรหัสผ่านได้"})
 		return
 	}
 
+	// 4) สร้าง User โดยใช้ UserRoleID ที่รับมา
 	user := entity.User{
-		Username:  input.Username,
-		Password:  string(hashedPassword),
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
-		Email:     input.Email,
-		UserRoleID: 1, 
+		Username:   input.Username,
+		Password:   string(hashedPassword),
+		FirstName:  input.FirstName,
+		LastName:   input.LastName,
+		Email:      input.Email,
+		UserRoleID: input.UserRoleID, // <<— ใช้ค่าที่รับมาแทนการ fix เป็น 1
 	}
 
-	db := config.DB()
-
-	if err := db.Create(&user).Error; err != nil {
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้าง User ใหม่ได้"})
 		return
 	}
 
-	// สร้าง Employee ที่เชื่อมกับ User.ID
+	// 5) สร้าง Employee ผูกกับ User.ID
 	employee := entity.Employee{
 		Salary: input.Salary,
 		UserID: &user.ID,
-		// Bio, Experience, Education ไม่ใส่ (เป็นค่า default หรือ null ได้)
 	}
 
-	if err := db.Create(&employee).Error; err != nil {
+	if err := tx.Create(&employee).Error; err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้าง Employee ใหม่ได้"})
 		return
 	}
+
+	// commit
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถยืนยันธุรกรรมได้"})
+		return
+	}
+
+	// ไม่คืนรหัสผ่าน
+	user.Password = ""
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message":  "สร้าง User และ Employee สำเร็จ",
