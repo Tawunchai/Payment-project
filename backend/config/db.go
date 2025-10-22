@@ -77,6 +77,7 @@ func enableSQLitePragmas(sqlDB *sql.DB) error {
 
 // --------------------- Migrate & Seed ---------------------
 func SetupDatabase() {
+	// AutoMigrate
 	if err := db.AutoMigrate(
 		&entity.User{},
 		&entity.Car{},
@@ -98,15 +99,19 @@ func SetupDatabase() {
 		&entity.EVChargingPayment{},
 		&entity.Bank{},
 	); err != nil {
-		panic("auto-migrate error: " + err.Error())
+		log.Fatalf("automigrate failed: %v", err)
 	}
 
-	// seed หลัก
+	// Master data (idempotent)
 	seedMasters(db)
+
+	// Seed Users/Employees/Cars… only if users table is empty
 	SeedIfUsersEmpty(db)
+
+	// ต่อด้วย seed ข้อมูลที่เหลือ (ดึง Employee คนแรกมาอ้างอิง)
 	seedContent(db)
 
-	// ตัวอย่าง: seed payments รายเดือน ถ้ายังไม่มี
+	// ตัวอย่าง: seed payments หากยังไม่มี
 	userID := uint(1)
 	methodID := uint(1)
 	if err := SeedPayments(db, userID, methodID); err != nil {
@@ -115,31 +120,42 @@ func SetupDatabase() {
 }
 
 // ----------------------------- Master seeds -----------------------------
+
 func seedMasters(db *gorm.DB) {
 	// Genders
-	db.FirstOrCreate(&entity.Genders{Gender: "Male"}, &entity.Genders{Gender: "Male"})
-	db.FirstOrCreate(&entity.Genders{Gender: "Female"}, &entity.Genders{Gender: "Female"})
+	genderMale := entity.Genders{Gender: "Male"}
+	genderFemale := entity.Genders{Gender: "Female"}
+	db.FirstOrCreate(&genderMale, &entity.Genders{Gender: "Male"})
+	db.FirstOrCreate(&genderFemale, &entity.Genders{Gender: "Female"})
 
-	// Methods
-	db.FirstOrCreate(&entity.Method{Medthod: "QR Payment"}, &entity.Method{Medthod: "QR Payment"})
-	db.FirstOrCreate(&entity.Method{Medthod: "Coin Payment"}, &entity.Method{Medthod: "Coin Payment"})
+	// Methods (แก้คำสะกดให้ตรงกัน)
+	method1 := entity.Method{Medthod: "QR Payment"}
+	method2 := entity.Method{Medthod: "Coin Payment"}
+	db.FirstOrCreate(&method1, &entity.Method{Medthod: "QR Payment"})
+	db.FirstOrCreate(&method2, &entity.Method{Medthod: "Coin Payment"})
 
 	// Roles
-	db.FirstOrCreate(&entity.UserRoles{RoleName: "Admin"}, &entity.UserRoles{RoleName: "Admin"})
-	db.FirstOrCreate(&entity.UserRoles{RoleName: "Employee"}, &entity.UserRoles{RoleName: "Employee"})
-	db.FirstOrCreate(&entity.UserRoles{RoleName: "User"}, &entity.UserRoles{RoleName: "User"})
+	adminRole := entity.UserRoles{RoleName: "Admin"}
+	employeeRole := entity.UserRoles{RoleName: "Employee"}
+	userRole := entity.UserRoles{RoleName: "User"}
+	db.FirstOrCreate(&adminRole, &entity.UserRoles{RoleName: "Admin"})
+	db.FirstOrCreate(&employeeRole, &entity.UserRoles{RoleName: "Employee"})
+	db.FirstOrCreate(&userRole, &entity.UserRoles{RoleName: "User"})
 
-	// Banking
-	db.FirstOrCreate(&entity.Bank{
+	// Banking (ตัวอย่าง)
+	banking := entity.Bank{
 		PromptPay: "0935096372",
 		Manager:   "MR. TAWANCHAI BURAKHON",
 		Banking:   "006",
 		Minimum:   100,
-	}, &entity.Bank{PromptPay: "0935096372"})
+	}
+	db.FirstOrCreate(&banking, &entity.Bank{PromptPay: "0935096372"})
 }
 
 // ----------------------------- Conditional seed (Users Empty) -----------------------------
+
 func SeedIfUsersEmpty(db *gorm.DB) {
+	// 1) เช็คว่ามี user อยู่แล้วหรือยัง
 	var userCount int64
 	if err := db.Model(&entity.User{}).Count(&userCount).Error; err != nil {
 		log.Fatalf("count users failed: %v", err)
@@ -149,19 +165,87 @@ func SeedIfUsersEmpty(db *gorm.DB) {
 		return
 	}
 
-	hashedPassword, err := HashPassword("123") // ใช้ฟังก์ชันเดิมของคุณ
+	// 2) ยังไม่มีข้อมูล -> seed block นี้
+	hashedPassword, err := HashPassword("123")
 	if err != nil {
 		log.Fatalf("failed to hash password: %v", err)
 	}
 
 	// Users
-	user1 := entity.User{Username: "user1", FirstName: "Janis", LastName: "Green", Email: "janis.green@example.com", Password: hashedPassword, Profile: "uploads/user/avatar1.jpg", PhoneNumber: "0935096372", Coin: 0, GenderID: 1, UserRoleID: 3}
-	user2 := entity.User{Username: "user2", FirstName: "Chris", LastName: "Taylor", Email: "chris.taylor@example.com", Password: hashedPassword, Profile: "uploads/user/avatar2.jpg", PhoneNumber: "0895845671", Coin: 0, GenderID: 2, UserRoleID: 3}
-	user3 := entity.User{Username: "user3", FirstName: "Alex", LastName: "Smith", Email: "alex.smith@example.com", Password: hashedPassword, Profile: "uploads/user/avatar3.png", PhoneNumber: "0938473272", Coin: 0, GenderID: 1, UserRoleID: 3}
-	admin1 := entity.User{Username: "admin1", FirstName: "Kanyapron", LastName: "KD", Email: "Kanyapron@gmail.com", Password: hashedPassword, Profile: "uploads/user/avatar4.jpg", PhoneNumber: "0981183502", Coin: 0, GenderID: 1, UserRoleID: 1}
-	admin2 := entity.User{Username: "admin2", FirstName: "JoJo", LastName: "Smoke", Email: "Smoke@gmail.com", Password: hashedPassword, Profile: "uploads/user/avatar1.jpg", PhoneNumber: "0981183502", Coin: 0, GenderID: 2, UserRoleID: 1}
-	employeeUser := entity.User{Username: "employee1", FirstName: "JoJo", LastName: "Smoke", Email: "employee1@example.com", Password: hashedPassword, Profile: "uploads/user/avatar1.jpg", PhoneNumber: "0981183502", Coin: 0, GenderID: 2, UserRoleID: 2}
+	user1 := entity.User{
+		Username:    "user1",
+		FirstName:   "Janis",
+		LastName:    "Green",
+		Email:       "janis.green@example.com",
+		Password:    hashedPassword,
+		Profile:     "uploads/user/avatar1.jpg",
+		PhoneNumber: "0935096372",
+		Coin:        0,
+		GenderID:    1,
+		UserRoleID:  3,
+	}
+	user2 := entity.User{
+		Username:    "user2",
+		FirstName:   "Chris",
+		LastName:    "Taylor",
+		Email:       "chris.taylor@example.com",
+		Password:    hashedPassword,
+		Profile:     "uploads/user/avatar2.jpg",
+		PhoneNumber: "0895845671",
+		Coin:        0,
+		GenderID:    2,
+		UserRoleID:  3,
+	}
+	user3 := entity.User{
+		Username:    "user3",
+		FirstName:   "Alex",
+		LastName:    "Smith",
+		Email:       "alex.smith@example.com",
+		Password:    hashedPassword,
+		Profile:     "uploads/user/avatar3.png",
+		PhoneNumber: "0938473272",
+		Coin:        0,
+		GenderID:    1,
+		UserRoleID:  3,
+	}
+	admin1 := entity.User{
+		Username:    "admin1",
+		FirstName:   "Kanyapron",
+		LastName:    "KD",
+		Email:       "Kanyapron@gmail.com",
+		Password:    hashedPassword,
+		Profile:     "uploads/user/avatar4.jpg",
+		PhoneNumber: "0981183502",
+		Coin:        0,
+		GenderID:    1,
+		UserRoleID:  1,
+	}
+	admin2 := entity.User{
+		Username:    "admin2",
+		FirstName:   "JoJo",
+		LastName:    "Smoke",
+		Email:       "Smoke@gmail.com",
+		Password:    hashedPassword,
+		Profile:     "uploads/user/avatar1.jpg",
+		PhoneNumber: "0981183502",
+		Coin:        0,
+		GenderID:    2,
+		UserRoleID:  1,
+	}
+	employeeUser := entity.User{
+		Username:    "employee1",
+		FirstName:   "JoJo",
+		LastName:    "Smoke",
+		Email:       "employee1@example.com",
+		Password:    hashedPassword,
+		Profile:     "uploads/user/avatar1.jpg",
+		PhoneNumber: "0981183502",
+		Coin:        0,
+		GenderID:    2,
+		UserRoleID:  2,
+	}
 
+	// ใช้ Create รวดเดียว (ตาราง users ยังว่าง)
 	if err := db.Create(&user1).Error; err != nil { log.Fatal(err) }
 	if err := db.Create(&user2).Error; err != nil { log.Fatal(err) }
 	if err := db.Create(&user3).Error; err != nil { log.Fatal(err) }
@@ -177,20 +261,40 @@ func SeedIfUsersEmpty(db *gorm.DB) {
 	db.FirstOrCreate(&car2, entity.Car{LicensePlate: car2.LicensePlate})
 	db.FirstOrCreate(&car3, entity.Car{LicensePlate: car3.LicensePlate})
 
-	// Employees
-	emp1 := entity.Employee{Bio: "Admin Thailand", Experience: "5 years of experience as an admin with Tesla company", Education: "Master degree of marketing at Harvard university", Salary: 25000, UserID: &admin1.ID}
-	emp2 := entity.Employee{Bio: "Admin Korean", Experience: "100 years of experience as an admin with Tesla company", Education: "Master degree of marketing at Harvard university", Salary: 50000, UserID: &admin2.ID}
-	emp3 := entity.Employee{Bio: "Staff Thailand", Experience: "5 years of experience with Tesla company", Education: "Master degree of marketing at Harvard university", Salary: 25000, UserID: &employeeUser.ID}
+	// Employees (อ้าง UserID จริง ไม่ hard-code)
+	emp1 := entity.Employee{
+		Bio:        "Admin Thailand",
+		Experience: "5 years of experience as an admin with Tesla company",
+		Education:  "Master degree of marketing at Harvard university",
+		Salary:     25000,
+		UserID:     &admin1.ID,
+	}
+	emp2 := entity.Employee{
+		Bio:        "Admin Korean",
+		Experience: "100 years of experience as an admin with Tesla company",
+		Education:  "Master degree of marketing at Harvard university",
+		Salary:     50000,
+		UserID:     &admin2.ID,
+	}
+	emp3 := entity.Employee{
+		Bio:        "Staff Thailand",
+		Experience: "5 years of experience with Tesla company",
+		Education:  "Master degree of marketing at Harvard university",
+		Salary:     25000,
+		UserID:     &employeeUser.ID,
+	}
 	db.FirstOrCreate(&emp1, entity.Employee{UserID: &admin1.ID})
 	db.FirstOrCreate(&emp2, entity.Employee{UserID: &admin2.ID})
 	db.FirstOrCreate(&emp3, entity.Employee{UserID: &employeeUser.ID})
 }
 
 // ----------------------------- Seed other content -----------------------------
+
 func seedContent(db *gorm.DB) {
-	// เอา Employee คนแรก (ถ้ามี)
+	// หา Employee คนแรก (เอาไว้เป็นเจ้าของข้อมูลอื่น ๆ)
 	var emp entity.Employee
 	if err := db.First(&emp).Error; err != nil {
+		// ถ้าไม่มี ก็ไม่ต้องผูก
 		emp = entity.Employee{}
 	}
 	var empIDPtr *uint
@@ -217,118 +321,156 @@ func seedContent(db *gorm.DB) {
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
 		EmployeeID:  empIDPtr,
 	}
-
 	db.FirstOrCreate(&getting1, entity.GettingStarted{Title: "Best interest rates on the market"})
 	db.FirstOrCreate(&getting2, entity.GettingStarted{Title: "Prevent unstable prices"})
 	db.FirstOrCreate(&getting3, entity.GettingStarted{Title: "Best price on the market"})
 
 	// News
-	db.FirstOrCreate(&entity.New{
+	news1 := entity.New{
 		Picture:     "uploads/new/news1.png",
 		Title:       "Personalized Profession Online Tutor on Your Schedule 1",
 		Description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Necessitatibus atque voluptas labore nemo ipsam voluptatum maxime facere hic...",
 		EmployeeID:  empIDPtr,
-	}, entity.New{Title: "Personalized Profession Online Tutor on Your Schedule 1"})
-	db.FirstOrCreate(&entity.New{
+	}
+	news2 := entity.New{
 		Picture:     "uploads/new/news2.png",
 		Title:       "Personalized Profession Online Tutor on Your Schedule 2",
 		Description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Necessitatibus atque voluptas labore nemo ipsam voluptatum maxime facere hic...",
 		EmployeeID:  empIDPtr,
-	}, entity.New{Title: "Personalized Profession Online Tutor on Your Schedule 2"})
+	}
+	db.FirstOrCreate(&news1, entity.New{Title: "Personalized Profession Online Tutor on Your Schedule 1"})
+	db.FirstOrCreate(&news2, entity.New{Title: "Personalized Profession Online Tutor on Your Schedule 2"})
 
-	// Reviews
+	// Reviews (ตัวอย่างใช้ UserID = 1,2,3 ถ้ามี)
 	uid1, uid2, uid3 := uint(1), uint(2), uint(3)
-	db.FirstOrCreate(&entity.Review{Rating: 5, Comment: "The zoo was incredibly well-maintained and the animals looked happy and healthy...", ReviewDate: time.Now(), Status: true, UserID: &uid1}, &entity.Review{UserID: &uid1})
-	db.FirstOrCreate(&entity.Review{Rating: 4, Comment: "Wide variety of animals, some areas overcrowded...", ReviewDate: time.Now(), Status: true, UserID: &uid2}, &entity.Review{UserID: &uid2})
-	db.FirstOrCreate(&entity.Review{Rating: 3, Comment: "Interesting animals, facilities could be cleaner...", ReviewDate: time.Now(), Status: true, UserID: &uid3}, &entity.Review{UserID: &uid3})
+	review1 := &entity.Review{
+		Rating:     5,
+		Comment:    "The zoo was incredibly well-maintained and the animals looked happy and healthy...",
+		ReviewDate: time.Now(),
+		Status:     true,
+		UserID:     &uid1,
+	}
+	review2 := &entity.Review{
+		Rating:     4,
+		Comment:    "Wide variety of animals, some areas overcrowded...",
+		ReviewDate: time.Now(),
+		Status:     true,
+		UserID:     &uid2,
+	}
+	review3 := &entity.Review{
+		Rating:     3,
+		Comment:    "Interesting animals, facilities could be cleaner...",
+		ReviewDate: time.Now(),
+		Status:     true,
+		UserID:     &uid3,
+	}
+	db.FirstOrCreate(review1, &entity.Review{UserID: &uid1})
+	db.FirstOrCreate(review2, &entity.Review{UserID: &uid2})
+	db.FirstOrCreate(review3, &entity.Review{UserID: &uid3})
 
 	// Status & Type
-	db.FirstOrCreate(&entity.Status{Status: "Available"}, &entity.Status{Status: "Available"})
-	db.FirstOrCreate(&entity.Status{Status: "Unavailable"}, &entity.Status{Status: "Unavailable"})
-	db.FirstOrCreate(&entity.Type{Type: "DC Fast Charger"}, &entity.Type{Type: "DC Fast Charger"})
-	db.FirstOrCreate(&entity.Type{Type: "Level 2 Charger"}, &entity.Type{Type: "Level 2 Charger"})
-	db.FirstOrCreate(&entity.Type{Type: "Level 1 Charger"}, &entity.Type{Type: "Level 1 Charger"})
+	status1 := entity.Status{Status: "Available"}
+	status2 := entity.Status{Status: "Unavailable"}
+	db.FirstOrCreate(&status1, entity.Status{Status: "Available"})
+	db.FirstOrCreate(&status2, entity.Status{Status: "Unavailable"})
 
-	// EVcharging
-	db.FirstOrCreate(&entity.EVcharging{
+	type1 := entity.Type{Type: "DC Fast Charger"}
+	type2 := entity.Type{Type: "Level 2 Charger"}
+	type3 := entity.Type{Type: "Level 1 Charger"}
+	db.FirstOrCreate(&type1, entity.Type{Type: "DC Fast Charger"})
+	db.FirstOrCreate(&type2, entity.Type{Type: "Level 2 Charger"})
+	db.FirstOrCreate(&type3, entity.Type{Type: "Level 1 Charger"})
+
+	// EVcharging (อ้าง Employee คนแรกถ้ามี)
+	ev1 := entity.EVcharging{
 		Name:        "Charger A1",
 		Description: "Charger A1 is Good",
 		Price:       10,
 		Picture:     "uploads/evcharging/product1.jpg",
 		EmployeeID:  empIDPtr,
-		StatusID:    1,
-		TypeID:      1,
-	}, entity.EVcharging{Name: "Charger A1"})
-	db.FirstOrCreate(&entity.EVcharging{
+		StatusID:    status1.ID,
+		TypeID:      type1.ID,
+	}
+	ev2 := entity.EVcharging{
 		Name:        "Charger B2",
 		Description: "Charger B2 is Bad",
 		Price:       20,
 		Picture:     "uploads/evcharging/product2.jpg",
 		EmployeeID:  empIDPtr,
-		StatusID:    2,
-		TypeID:      2,
-	}, entity.EVcharging{Name: "Charger B2"})
+		StatusID:    status2.ID,
+		TypeID:      type2.ID,
+	}
+	db.FirstOrCreate(&ev1, entity.EVcharging{Name: "Charger A1"})
+	db.FirstOrCreate(&ev2, entity.EVcharging{Name: "Charger B2"})
 
-	// Calendar
-	db.FirstOrCreate(&entity.Calendar{
+	// Calendar (อ้าง Employee คนแรกถ้ามี)
+	calendar1 := entity.Calendar{
 		Title:       "Staff Meeting",
 		Location:    "Room A101",
 		Description: "Monthly all-staff meeting",
 		StartDate:   time.Date(2025, 7, 1, 9, 0, 0, 0, time.Local),
 		EndDate:     time.Date(2025, 7, 1, 10, 30, 0, 0, time.Local),
 		EmployeeID:  empIDPtr,
-	}, entity.Calendar{Title: "Staff Meeting"})
-	db.FirstOrCreate(&entity.Calendar{
+	}
+	calendar2 := entity.Calendar{
 		Title:       "EV Maintenance",
 		Location:    "EV Station Zone B",
 		Description: "Routine maintenance for EV chargers",
 		StartDate:   time.Date(2025, 7, 3, 13, 0, 0, 0, time.Local),
 		EndDate:     time.Date(2025, 7, 3, 15, 0, 0, 0, time.Local),
 		EmployeeID:  empIDPtr,
-	}, entity.Calendar{Title: "EV Maintenance"})
+	}
+	db.FirstOrCreate(&calendar1, entity.Calendar{Title: "Staff Meeting"})
+	db.FirstOrCreate(&calendar2, entity.Calendar{Title: "EV Maintenance"})
 
-	// PaymentCoin
-	db.FirstOrCreate(&entity.PaymentCoin{
+	// PaymentCoin (ตัวอย่าง)
+	payment1 := entity.PaymentCoin{
 		Date:            time.Now(),
 		Amount:          100.00,
 		ReferenceNumber: "REF2024071401",
 		Picture:         "uploads/payment/1751999510090771300.jpg",
 		UserID:          uint(1),
-	}, entity.PaymentCoin{ReferenceNumber: "REF2024071401"})
-	db.FirstOrCreate(&entity.PaymentCoin{
+	}
+	payment2 := entity.PaymentCoin{
 		Date:            time.Now().Add(-24 * time.Hour),
 		Amount:          250.50,
 		ReferenceNumber: "REF2024071402",
 		Picture:         "uploads/payment/1751999510090771300.jpg",
 		UserID:          uint(1),
-	}, entity.PaymentCoin{ReferenceNumber: "REF2024071402"})
+	}
+	db.FirstOrCreate(&payment1, entity.PaymentCoin{ReferenceNumber: "REF2024071401"})
+	db.FirstOrCreate(&payment2, entity.PaymentCoin{ReferenceNumber: "REF2024071402"})
 
-	// Reports
+	// Reports (ตัวอย่าง)
 	userID1, userID2, userID3 := uint(1), uint(2), uint(3)
-	db.FirstOrCreate(&entity.Report{
+	report1 := &entity.Report{
 		Picture:     "uploads/reports/avatar1.jpg",
 		Description: "พบว่าสัตว์ในสวนสัตว์มีสุขภาพดีและได้รับการดูแลอย่างดี...",
 		Status:      "Pending",
 		UserID:      &userID1,
 		EmployeeID:  nil,
-	}, entity.Report{UserID: &userID1})
-	db.FirstOrCreate(&entity.Report{
+	}
+	report2 := &entity.Report{
 		Picture:     "uploads/reports/avatar2.jpg",
 		Description: "สวนสัตว์สะอาดและปลอดภัย แต่ควรเพิ่มพื้นที่...",
 		Status:      "Pending",
 		UserID:      &userID2,
 		EmployeeID:  nil,
-	}, entity.Report{UserID: &userID2})
-	db.FirstOrCreate(&entity.Report{
+	}
+	report3 := &entity.Report{
 		Picture:     "uploads/reports/avatar3.png",
 		Description: "สถานที่และอุปกรณ์บางส่วนเริ่มทรุดโทรม...",
 		Status:      "Pending",
 		UserID:      &userID3,
 		EmployeeID:  nil,
-	}, entity.Report{UserID: &userID3})
+	}
+	db.FirstOrCreate(report1, entity.Report{UserID: &userID1})
+	db.FirstOrCreate(report2, entity.Report{UserID: &userID2})
+	db.FirstOrCreate(report3, entity.Report{UserID: &userID3})
 }
 
 // ----------------------------- Seed Payments -----------------------------
+
 func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 	var count int64
 	if err := db.Model(&entity.Payment{}).Count(&count).Error; err != nil {
