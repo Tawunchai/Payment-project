@@ -1,9 +1,50 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { AvatarWithInfo } from "./AvatarWithInfo";
 import { ProfileNavbar } from "./ProfileNavbar";
+import { GetUserByID } from "../../../../../services/httpLogin";
+import { UsersInterface } from "../../../../../interface/IUser";
+import { Spin } from "antd";
 import EVCAR from "../../../../../assets/solar-profile.png";
 
 const ProfileBanner: React.FC = () => {
+  const [userData, setUserData] = useState<UsersInterface | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // 📦 ดึงข้อมูลผู้ใช้จาก localStorage + backend
+  const fetchUser = async () => {
+    try {
+      const userID = Number(localStorage.getItem("userid"));
+      if (!userID) return;
+
+      const data = await GetUserByID(userID);
+      if (data) setUserData(data);
+    } catch (error) {
+      console.error("❌ Error fetching user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  // Loading state
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Spin size="large" tip="Loading Profile..." />
+      </div>
+    );
+
+  // No data
+  if (!userData)
+    return (
+      <div className="text-center text-gray-500 py-12">
+        ไม่พบข้อมูลผู้ใช้
+      </div>
+    );
+
   return (
     <section className="mt-4 md:mt-6">
       {/* Banner */}
@@ -17,14 +58,15 @@ const ProfileBanner: React.FC = () => {
       >
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/35 to-black/25 md:from-black/55 md:via-black/30 md:to-black/20" />
+
         {/* Content */}
         <div className="relative z-10 px-4 md:px-8 py-8 md:py-10">
-          {/* Avatar + name/role */}
-          <AvatarWithInfo inverted size={96} />
+          {/* Avatar + Info */}
+          <AvatarWithInfo inverted size={96} userData={userData} />
 
-          {/* Navbar */}
+          {/* Navbar (แก้ไขข้อมูลส่วนตัว) */}
           <div className="mt-4 md:mt-6">
-            <ProfileNavbar />
+            <ProfileNavbar userData={userData} onProfileUpdated={fetchUser} />
           </div>
         </div>
       </div>

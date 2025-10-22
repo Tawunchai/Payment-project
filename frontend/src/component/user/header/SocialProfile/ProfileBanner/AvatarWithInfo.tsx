@@ -7,24 +7,30 @@ type Props = {
   inverted?: boolean;
   showRole?: boolean;
   size?: number;
+  userData?: UsersInterface; // ✅ เพิ่ม prop นี้
 };
 
 export const AvatarWithInfo: React.FC<Props> = ({
   inverted = false,
   showRole = true,
   size = 84,
+  userData,
 }) => {
-  const [user, setUser] = useState<UsersInterface | null>(null);
+  const [user, setUser] = useState<UsersInterface | null>(userData ?? null);
   const [imgOk, setImgOk] = useState(true);
 
   useEffect(() => {
+    if (userData) return; 
+
     const uid = Number(localStorage.getItem("userid")) || 0;
+    if (!uid) return;
+
     const fetchUser = async () => {
       const res = await getUserByID(uid);
       if (res) setUser(res);
     };
     fetchUser();
-  }, []);
+  }, [userData]);
 
   const textMain = inverted ? "text-white" : "text-gray-900";
   const ringClr = inverted ? "ring-white/25" : "ring-blue-100";
@@ -81,7 +87,9 @@ export const AvatarWithInfo: React.FC<Props> = ({
       </div>
 
       <div className="min-w-0">
-        <div className={`text-lg sm:text-xl md:text-2xl font-semibold ${textMain} truncate`}>
+        <div
+          className={`text-lg sm:text-xl md:text-2xl font-semibold ${textMain} truncate`}
+        >
           {isLoading ? (
             <span className="inline-block h-5 w-40 bg-gray-200 animate-pulse rounded" />
           ) : (
@@ -102,8 +110,15 @@ export const AvatarWithInfo: React.FC<Props> = ({
                 ].join(" ")}
                 title={user?.UserRole?.RoleName || "User"}
               >
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true">
-                  <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-3.5 w-3.5"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z"
+                    fill="currentColor"
+                  />
                 </svg>
                 <span className="truncate max-w-[12rem] md:max-w-[16rem]">
                   {user?.UserRole?.RoleName || "User"}

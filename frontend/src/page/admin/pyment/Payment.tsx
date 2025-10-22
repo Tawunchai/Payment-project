@@ -22,14 +22,12 @@ const Payment = () => {
   useEffect(() => {
     fetchPayments();
     fetchBanks();
-    // eslint-disable-next-line
   }, []);
 
   const fetchPayments = async () => {
     setTableLoading(true);
     const data = await ListPayments();
     setTimeout(() => {
-      // loader 2 วิ เพื่อให้ transition นุ่ม
       setPaymentData(data || []);
       setTableLoading(false);
     }, 2000);
@@ -69,8 +67,8 @@ const Payment = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[linear-gradient(180deg,#eaf2ff_0%,#f5f8ff_55%,#ffffff_100%)] mt-14 sm:mt-0">
-      {/* Header — EV Blue */}
+    <div className="min-h-screen w-full bg-gradient-to-b from-blue-50 via-white to-white mt-14 sm:mt-0">
+      {/* Header */}
       <header
         className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -83,10 +81,10 @@ const Payment = () => {
       </header>
 
       <main className="mx-auto max-w-screen-xl px-4 sm:px-6 py-6 space-y-6">
-        {/* Bank Info (EV Blue Card) */}
-        <section className="rounded-2xl bg-white border border-blue-100 shadow-sm overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-blue-100 bg-blue-50/40">
-            <h2 className="text-[15px] sm:text-base font-semibold text-blue-900">
+        {/* Bank Info */}
+        <section className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/60">
+            <h2 className="text-[15px] sm:text-base font-semibold text-gray-800">
               ข้อมูลธนาคารปัจจุบัน
             </h2>
           </div>
@@ -101,52 +99,24 @@ const Payment = () => {
                 <table className="min-w-[720px] w-full text-gray-700 ev-table">
                   <thead>
                     <tr>
-                      <th>
-                        <div className="flex items-center gap-2">
-                          <BanknotesIcon className="h-5 w-5 text-blue-600" />
-                          PROMPTPAY
-                        </div>
-                      </th>
-                      <th>
-                        <div className="flex items-center gap-2">
-                          <UserIcon className="h-5 w-5 text-blue-600" />
-                          MANAGER
-                        </div>
-                      </th>
-                      <th>
-                        <div className="flex items-center gap-2">
-                          <CreditCardIcon className="h-5 w-5 text-blue-600" />
-                          BANKING
-                        </div>
-                      </th>
-                      <th>
-                        <div className="flex items-center gap-2">
-                          <CreditCardIcon className="h-5 w-5 text-blue-600" />
-                          MINIMUM
-                        </div>
-                      </th>
+                      <th>PROMPTPAY</th>
+                      <th>MANAGER</th>
+                      <th>BANKING</th>
+                      <th>MINIMUM</th>
                       <th className="text-center">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bankData.map((bank) => (
                       <tr key={bank.ID}>
-                        <td title={bank.PromptPay} className="truncate">
-                          {bank.PromptPay}
-                        </td>
-                        <td title={bank.Manager} className="truncate">
-                          {bank.Manager}
-                        </td>
-                        <td title={bank.Banking} className="truncate">
-                          {bank.Banking}
-                        </td>
-                        <td title={`${bank.Minimum} บาท`} className="truncate">
-                          {bank.Minimum} บาท
-                        </td>
+                        <td>{bank.PromptPay}</td>
+                        <td>{bank.Manager}</td>
+                        <td>{bank.Banking}</td>
+                        <td>{bank.Minimum} บาท</td>
                         <td className="text-center">
                           <Button
                             type="primary"
-                            className="bg-blue-600 hover:bg-blue-700 border-blue-600"
+                            className="bg-blue-600 hover:bg-blue-700 border-blue-600 rounded-lg"
                             onClick={() => setEditBank(bank)}
                           >
                             แก้ไข
@@ -161,136 +131,173 @@ const Payment = () => {
           )}
         </section>
 
-        {/* Chart (EV Blue Card) */}
-        <section className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
+        {/* Chart */}
+        <section className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4 sm:p-6">
           <LineChart />
         </section>
 
         {/* Payment History */}
-        <section className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
+        <section className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4 sm:p-6">
           {tableLoading ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <PaymentHistoryTable data={paymentData} />
+            <PaymentHistoryTable data={paymentData} onReload={fetchPayments} />
           )}
         </section>
 
         {/* Payment Coins */}
-        <section className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
+        <section className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4 sm:p-6">
           {tableLoading ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <PaymentCoinsTable />
+            // ...
+            <PaymentCoinsTable/>
+            // ...
           )}
         </section>
       </main>
 
-      {/* Edit Bank Modal — EV Minimal */}
+      {/* ✅ Modal — EV Clean White Style */}
       <Modal
-        title={
-          <div className="flex items-center gap-2">
-            <BanknotesIcon className="h-6 w-6 text-blue-600" />
-            <span className="text-[15px] sm:text-base font-semibold">
-              แก้ไขข้อมูลธนาคาร
-            </span>
-          </div>
-        }
         open={!!editBank}
         onCancel={() => setEditBank(null)}
-        onOk={handleBankUpdate}
-        confirmLoading={loading}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
+        footer={null}
         centered
-        bodyStyle={{ padding: "1.25rem 1.5rem" }}
+        destroyOnClose
+        width={420}
+        styles={{
+          content: {
+            borderRadius: 20,
+            padding: 0,
+            overflow: "hidden",
+            background: "#ffffff",
+          },
+        }}
       >
         {editBank && (
-          <div className="space-y-4">
-            <label className="block">
-              <span className="text-gray-700 text-sm font-medium flex items-center mb-1">
-                <BanknotesIcon className="h-5 w-5 mr-1 text-blue-600" />
-                PromptPay
-              </span>
-              <Input
-                value={editBank.PromptPay}
-                onChange={(e) => handleBankChange("PromptPay", e.target.value)}
-                className="rounded-lg border-blue-200 focus:ring-2 focus:ring-blue-500/40"
-                placeholder="เลข PromptPay"
-              />
-            </label>
+          <div className="px-5 py-6 text-gray-800">
+            {/* Header */}
+            <div className="flex items-center justify-center mb-4 border-b border-gray-100 pb-3">
+              <BanknotesIcon className="h-6 w-6 text-blue-600 mr-2" />
+              <h2 className="text-base sm:text-lg font-semibold text-blue-700">
+                แก้ไขข้อมูลธนาคาร
+              </h2>
+            </div>
 
-            <label className="block">
-              <span className="text-gray-700 text-sm font-medium flex items-center mb-1">
-                <UserIcon className="h-5 w-5 mr-1 text-blue-600" />
-                Manager
-              </span>
-              <Input
-                value={editBank.Manager}
-                onChange={(e) => handleBankChange("Manager", e.target.value)}
-                className="rounded-lg border-blue-200 focus:ring-2 focus:ring-blue-500/40"
-                placeholder="ชื่อผู้จัดการ"
-              />
-            </label>
+            {/* Inputs */}
+            <div className="space-y-4">
+              <label className="block">
+                <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
+                  <BanknotesIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  PromptPay
+                </span>
+                <Input
+                  value={editBank.PromptPay}
+                  onChange={(e) => handleBankChange("PromptPay", e.target.value)}
+                  className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="เลข PromptPay"
+                />
+              </label>
 
-            <label className="block">
-              <span className="text-gray-700 text-sm font-medium flex items-center mb-1">
-                <CreditCardIcon className="h-5 w-5 mr-1 text-blue-600" />
-                Banking
-              </span>
-              <Input
-                value={editBank.Banking}
-                onChange={(e) => handleBankChange("Banking", e.target.value)}
-                className="rounded-lg border-blue-200 focus:ring-2 focus:ring-blue-500/40"
-                placeholder="ชื่อธนาคาร / สาขา"
-              />
-            </label>
+              <label className="block">
+                <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
+                  <UserIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Manager
+                </span>
+                <Input
+                  value={editBank.Manager}
+                  onChange={(e) => handleBankChange("Manager", e.target.value)}
+                  className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="ชื่อผู้จัดการ"
+                />
+              </label>
 
-            <label className="block">
-              <span className="text-gray-700 text-sm font-medium flex items-center mb-1">
-                <CreditCardIcon className="h-5 w-5 mr-1 text-blue-600" />
-                Minimum (บาท)
-              </span>
-              <Input
-                type="number"
-                min={0}
-                value={editBank.Minimum}
-                onChange={(e) => handleBankChange("Minimum", e.target.value)}
-                className="rounded-lg border-blue-200 focus:ring-2 focus:ring-blue-500/40"
-                placeholder="จำนวนเงินขั้นต่ำ"
-              />
-            </label>
+              <label className="block">
+                <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
+                  <CreditCardIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Banking
+                </span>
+                <Input
+                  value={editBank.Banking}
+                  onChange={(e) => handleBankChange("Banking", e.target.value)}
+                  className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="ชื่อธนาคาร / สาขา"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
+                  <CreditCardIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Minimum (บาท)
+                </span>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editBank.Minimum}
+                  onChange={(e) => handleBankChange("Minimum", e.target.value)}
+                  className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="จำนวนเงินขั้นต่ำ"
+                />
+              </label>
+            </div>
+
+            {/* Buttons */}
+            <div className="mt-6 flex gap-3">
+              <Button
+                onClick={() => setEditBank(null)}
+                block
+                style={{
+                  height: 42,
+                  borderRadius: 10,
+                  fontWeight: 500,
+                  border: "1px solid #d1d5db",
+                  color: "#374151",
+                }}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="primary"
+                loading={loading}
+                block
+                onClick={handleBankUpdate}
+                style={{
+                  height: 42,
+                  borderRadius: 10,
+                  fontWeight: 600,
+                  background:
+                    "linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)",
+                  border: "none",
+                  boxShadow: "0 4px 10px rgba(37,99,235,0.2)",
+                }}
+              >
+                บันทึก
+              </Button>
+            </div>
           </div>
         )}
       </Modal>
 
-      {/* EV Table style overrides */}
+      {/* Table styles */}
       <style>{`
         .ev-table thead th {
-          background: #fff;
-          color: #0f172a;
-          border-bottom: 1px solid rgba(2,6,23,0.08);
+          background: #f9fafb;
+          color: #374151;
+          border-bottom: 1px solid #e5e7eb;
           font-weight: 700;
           font-size: 13px;
-          letter-spacing: .2px;
           text-align: left;
           padding: 12px 10px;
-          white-space: nowrap;
         }
         .ev-table tbody td {
-          border-top: 1px solid rgba(2,6,23,0.06);
+          border-top: 1px solid #f1f5f9;
           padding: 12px 10px;
-          max-width: 240px;
         }
         .ev-table tbody tr:nth-child(even) td {
-          background: #fcfcff;
+          background: #f9fafb;
         }
         .ev-table tbody tr:hover td {
-          background: #f8fafc;
-        }
-        .ev-table .truncate {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          background: #f3f4f6;
         }
       `}</style>
     </div>
