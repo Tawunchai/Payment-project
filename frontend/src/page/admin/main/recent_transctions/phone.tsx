@@ -69,7 +69,8 @@ const phone = () => { //@ts-ignore
             const evPayments = await ListEVChargingPayments();
             if (evPayments) {
                 const filteredEV = evPayments.filter(p => {
-                    const d = new Date(p.CreatedAt);
+                    if (!p?.CreatedAt) return false;
+                    const d = new Date(p.CreatedAt as string);
                     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
                 });
 
@@ -118,8 +119,8 @@ const phone = () => { //@ts-ignore
             percentage: '+38%',
             title: 'Transactions',
             desc: 'Payment transactions',
-            iconColor: '#3B82F6',     
-            iconBg: '#DBEAFE',        
+            iconColor: '#3B82F6',
+            iconBg: '#DBEAFE',
             pcColor: 'blue-500',
         },
     ];
@@ -143,7 +144,7 @@ const phone = () => { //@ts-ignore
 
     return (
         <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
-          <div className="flex justify-between items-center gap-2">
+            <div className="flex justify-between items-center gap-2">
                 <p className="text-xl font-semibold">Recent Transactions</p>
                 <DropDown currentMode={currentMode} />
             </div>

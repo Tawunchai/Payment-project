@@ -1,8 +1,11 @@
-export interface CarInterface {
+import { UsersInterface } from "./IUser";
+
+export interface CarsInterface {
   ID?: number;
-  Brand: string;
-  ModelCar: string;
-  LicensePlate: string;
-  City: string;
-  User?: any[]; 
+  Brand?: string;
+  ModelCar?: string;
+  SpecialNumber?: boolean;
+  LicensePlate?: string;
+  City?: string;
+  User?: UsersInterface[];
 }

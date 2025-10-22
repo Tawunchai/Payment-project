@@ -2,10 +2,11 @@ package car
 
 import (
 	"net/http"
+	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/entity"
+	"github.com/gin-gonic/gin"
 )
 
 // ✅ Struct สำหรับรับข้อมูลจาก Frontend
@@ -84,6 +85,88 @@ func CreateCar(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "car created successfully",
+		"data":    car,
+	})
+}
+
+// GET /cars/user/:id
+func GetCarByUserID(c *gin.Context) {
+	// ดึงพารามิเตอร์จาก URL เช่น /cars/user/1
+	userIDParam := c.Param("id")
+	userID, err := strconv.Atoi(userIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	db := config.DB()
+	var cars []entity.Car
+
+	// ✅ Query รถทั้งหมดที่เชื่อมกับ user นี้ (many2many: user_cars)
+	result := db.Preload("User").
+		Joins("JOIN user_cars ON user_cars.car_id = cars.id").
+		Where("user_cars.user_id = ?", userID).
+		Find(&cars)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	// ไม่มีรถของ user นี้
+	if len(cars) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"message": "No cars found for this user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, cars)
+}
+
+// PUT /cars/:id
+func UpdateCarByID(c *gin.Context) {
+	idParam := c.Param("id")
+	carID, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid car ID"})
+		return
+	}
+
+	var input struct {
+		Brand         string `json:"Brand"`
+		ModelCar      string `json:"ModelCar"`
+		LicensePlate  string `json:"LicensePlate"`
+		City          string `json:"City"`
+		SpecialNumber bool   `json:"SpecialNumber"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
+		return
+	}
+
+	db := config.DB()
+	var car entity.Car
+
+	// ตรวจสอบว่ารถนี้มีอยู่หรือไม่
+	if err := db.First(&car, carID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Car not found"})
+		return
+	}
+
+	// อัปเดตข้อมูล
+	car.Brand = input.Brand
+	car.ModelCar = input.ModelCar
+	car.LicensePlate = input.LicensePlate
+	car.City = input.City
+	car.SpecialNumber = input.SpecialNumber
+
+	if err := db.Save(&car).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Car updated successfully",
 		"data":    car,
 	})
 }

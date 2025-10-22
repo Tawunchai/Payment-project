@@ -33,13 +33,20 @@ const ModalCreate: React.FC<ModalProps> = ({
       messageApi.warning("กรุณาให้คะแนนการชาร์จ");
       return;
     }
-    const trimmedComment = values.Comment?.trim() || "";
-    if (trimmedComment.length === 0 || trimmedComment.length > 500) {
-      messageApi.warning("กรุณากรอกข้อความรีวิวให้ถูกต้อง (1–500 ตัวอักษร)");
+
+    const rawComment = (values as any).Comment as string | undefined;
+    const trimmedComment = (rawComment ?? "").trim();
+
+    // ✅ อนุญาตให้ว่างได้ แต่ถ้ากรอกต้องไม่เกิน 500 ตัวอักษร
+    if (trimmedComment.length > 500) {
+      messageApi.warning("ข้อความรีวิวต้องไม่เกิน 500 ตัวอักษร");
       return;
     }
 
-    const reviewData = { rating, comment: trimmedComment, user_id: UserID };
+    const reviewData: any = { rating, user_id: UserID };
+    if (trimmedComment.length > 0) {
+      reviewData.comment = trimmedComment; // ส่ง comment เฉพาะเมื่อมีข้อความจริง ๆ
+    }
 
     setLoading(true);
     try {
@@ -70,21 +77,21 @@ const ModalCreate: React.FC<ModalProps> = ({
     <>
       {contextHolder}
 
-      {/* Overlay: กลางหน้าจอ & เบลอบางลง */}
+      {/* Overlay */}
       <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]" // ← เบลอเบาลง
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
         onClick={onClose}
       />
 
-      {/* Modal: จัดกึ่งกลางแนวตั้ง/แนวนอน */}
+      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
         <div
           className="w-full max-w-md sm:max-w-lg mx-auto relative overflow-y-auto max-h-[92vh]
                      rounded-2xl border border-blue-100 bg-white shadow-lg animate-softFadeIn
-                     font-sans" // ← โทนตัวอักษรเรียบขึ้น
+                     font-sans"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header (ปรับฟอนต์/ไอคอนให้นิ่งขึ้น) */}
+          {/* Header */}
           <div className="sticky top-0 flex items-center justify-between gap-3 px-5 py-4
                           bg-gradient-to-r from-blue-600 to-blue-500 text-white">
             <div className="flex items-center gap-2">
@@ -105,7 +112,7 @@ const ModalCreate: React.FC<ModalProps> = ({
           </div>
 
           {/* Body */}
-          <div className="px-5 py-5 text-[15px] leading-relaxed"> {/* ← เปลี่ยนสไตล์ตัวอักษร */}
+          <div className="px-5 py-5 text-[15px] leading-relaxed">
             <Form form={form} layout="vertical" onFinish={onFinish} className="space-y-5">
               <Form.Item
                 label={
@@ -117,22 +124,33 @@ const ModalCreate: React.FC<ModalProps> = ({
                 <StarRating rating={rating ?? 0} onRatingChange={setRating} />
               </Form.Item>
 
+              {/* ✅ Comment ไม่บังคับ */}
               <Form.Item
                 name="Comment"
                 label={
                   <span className="flex items-center gap-2 font-medium text-blue-700 select-none">
-                    ความคิดเห็นของคุณ
+                    ความคิดเห็นของคุณ (ไม่บังคับ)
                   </span>
                 }
+                // ไม่ใส่ rule "required" อีกต่อไป
                 rules={[
-                  { required: true, message: "กรุณาเขียนรีวิว" },
-                  { max: 500, message: "ไม่เกิน 500 ตัวอักษร" },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
+                      const trimmed = String(value).trim();
+                      if (trimmed.length > 500) {
+                        return Promise.reject(new Error("ไม่เกิน 500 ตัวอักษร"));
+                      }
+                      // ถ้าเป็นช่องว่างล้วน ให้ถือว่า 'ว่าง' และผ่านได้
+                      return Promise.resolve();
+                    },
+                  },
                 ]}
               >
                 <Input.TextArea
                   rows={6}
                   maxLength={500}
-                  placeholder="เล่าประสบการณ์การชาร์จของคุณ เช่น ความเร็ว/ความสะดวก/ความสะอาด ฯลฯ"
+                  placeholder="(ไม่บังคับ) เล่าประสบการณ์การชาร์จ เช่น ความเร็ว/ความสะดวก/ความสะอาด ฯลฯ"
                   className="resize-none rounded-xl border border-blue-100 focus:border-blue-300 focus:shadow-sm transition"
                 />
               </Form.Item>

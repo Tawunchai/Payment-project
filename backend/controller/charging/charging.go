@@ -193,3 +193,21 @@ func DeleteEVByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "EVcharging deleted successfully"})
 }
+
+// GET /evcharging-payments
+func ListEVChargingPayments(c *gin.Context) {
+	var payments []entity.EVChargingPayment
+
+	db := config.DB()
+	result := db.
+		Preload("EVcharging").
+		Preload("Payment").
+		Find(&payments)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, payments)
+}

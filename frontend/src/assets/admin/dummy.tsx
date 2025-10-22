@@ -1,4 +1,4 @@
-import { AiOutlineCalendar, AiOutlineShoppingCart, AiOutlineAreaChart } from 'react-icons/ai';
+import { AiOutlineCalendar, AiOutlineShoppingCart } from 'react-icons/ai';
 import { FiShoppingBag, FiEdit, FiBarChart, FiCreditCard, FiStar, FiShoppingCart } from 'react-icons/fi';
 import { BsBoxSeam, BsCurrencyDollar, BsShield, BsChatLeft } from 'react-icons/bs';
 import { IoMdContacts } from 'react-icons/io';
@@ -21,8 +21,10 @@ import product5 from './product5.jpg';
 import product6 from './product6.jpg';
 import product7 from './product7.jpg';
 import { AiOutlineUser } from 'react-icons/ai';
-import {apiUrlPicture} from "../../services/index"
-
+import { apiUrlPicture } from "../../services/index"
+import { AiOutlineAreaChart } from "react-icons/ai";
+import { FaChargingStation } from "react-icons/fa";
+import { FaBatteryFull} from "react-icons/fa";
 export const gridOrderImage = (props: any) => (
   <div>
     <img
@@ -563,11 +565,19 @@ export const links = [
     ],
   },
   {
-    title: 'Solar Monitor',
+    title: 'Moduls Monitor',
     links: [
       {
-        name: 'Monitor',
+        name: 'Solar',
         icon: <AiOutlineAreaChart />,
+      },
+      {
+        name: 'Battery',
+        icon: <FaBatteryFull />, // 🔋 ใช้ไอคอนแบตเตอรี่
+      },
+      {
+        name: 'EV Cabinet',
+        icon: <FaChargingStation />, // ⚡ ใช้ไอคอนสถานีชาร์จ EV
       },
     ],
   },

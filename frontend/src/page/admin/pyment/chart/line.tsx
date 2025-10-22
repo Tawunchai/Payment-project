@@ -1,138 +1,285 @@
-import { useEffect, useState } from 'react';
-import { useStateContext } from '../../../../contexts/ContextProvider';
-import { DropDownListComponent } from '@syncfusion/ej2-react-dropdowns';
-import { dropdownData } from '../../../../assets/admin/dummy';
+import { useEffect, useState } from "react";
+import { DatePicker, Select } from "antd";
+import dayjs, { Dayjs } from "dayjs";
+import { useStateContext } from "../../../../contexts/ContextProvider";
 import {
-    ChartComponent, SeriesCollectionDirective, SeriesDirective,
-    Inject, LineSeries, DateTime, Legend, Tooltip
-} from '@syncfusion/ej2-react-charts';
-import type { EdgeLabelPlacement } from '@syncfusion/ej2-react-charts';
-import { ListPayments } from '../../../../services';
+  ChartComponent,
+  SeriesCollectionDirective,
+  SeriesDirective,
+  Inject,
+  LineSeries,
+  DateTime,
+  Legend,
+  Tooltip,
+} from "@syncfusion/ej2-react-charts";
+import type { EdgeLabelPlacement } from "@syncfusion/ej2-react-charts";
+import { ListEVChargingPayments } from "../../../../services";
+import { EVChargingPayListmentInterface } from "../../../../interface/IEV";
+import "dayjs/locale/th";
+
+const { RangePicker } = DatePicker;
 
 const LinePrimaryYAxis = {
-    labelFormat: '{value}฿',
-    rangePadding: 'None' as 'None',
-    minimum: 0,
-    maximum: 5000,
-    interval: 1000,
-    lineStyle: { width: 0 },
-    majorTickLines: { width: 1, color: '#CBD5E1' },  // สีเทาอ่อน (soft gray)
-    minorTickLines: { width: 0 },
-    labelStyle: { color: '#64748B', fontWeight: '600', fontFamily: 'Inter, sans-serif' }, // ฟอนต์นุ่มๆ
-    majorGridLines: { width: 1, dashArray: '5,5', color: '#E2E8F0' } // เส้นกริดเส้นประสีฟ้าสว่าง
+  labelFormat: "{value}฿",
+  rangePadding: "None" as "None",
+  lineStyle: { width: 0 },
+  majorTickLines: { width: 1, color: "#CBD5E1" },
+  minorTickLines: { width: 0 },
+  labelStyle: {
+    color: "#64748B",
+    fontWeight: "600",
+    fontFamily: "Inter, sans-serif",
+  },
+  majorGridLines: { width: 1, dashArray: "5,5", color: "#E2E8F0" },
 };
 
-const LinePrimaryXAxis = {
-    valueType: 'DateTime' as 'DateTime',
-    labelFormat: 'MMM yyyy', // ตัวอย่าง Jul 2025
-    intervalType: 'Months' as 'Months',
-    edgeLabelPlacement: 'Shift' as EdgeLabelPlacement,
-    majorGridLines: { width: 0 },
-    background: 'transparent',  // ให้ดูซอฟต์ขึ้น
-    labelStyle: { color: '#64748B', fontWeight: '600', fontFamily: 'Inter, sans-serif' },
-};
-
-const DropDown = ({ currentMode }: any) => (
-    <div className="w-28 border-1 border-color px-2 py-1 rounded-md">
-        <DropDownListComponent
-            id="time"
-            fields={{ text: 'Time', value: 'Id' }}
-            style={{
-                border: 'none',
-                color: currentMode === 'Dark' ? 'white' : undefined
-            }}
-            value="1"
-            dataSource={dropdownData}
-            popupHeight="220px"
-            popupWidth="120px"
-        />
-    </div>
-);
-
+// ================== MAIN COMPONENT ==================
 const MonthlyRevenueChart = () => {
-    //@ts-ignore
-    const { currentColor, currentMode } = useStateContext();
-    const [chartData, setChartData] = useState<{ x: Date; y: number }[]>([]);
+  //@ts-ignore
+  const { currentMode } = useStateContext();
+  const [chartDataSets, setChartDataSets] = useState<any[]>([]);
 
-    useEffect(() => {
-        const fetchChartData = async () => {
-            const payments = await ListPayments();
-            if (!payments) return;
+  // 🕒 โหมดช่วงเวลา: day / month / year
+  const [rangeType, setRangeType] = useState<"day" | "month" | "year">("day");
 
-            const monthMap: Record<string, number> = {};
+  // 🗓️ state ของช่วงเวลา (Dayjs)
+  const [startDate, setStartDate] = useState<Dayjs>(dayjs().subtract(7, "day"));
+  const [endDate, setEndDate] = useState<Dayjs>(dayjs());
 
-            for (const p of payments) {
-                const date = new Date(p.Date);
-                const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                monthMap[yearMonth] = (monthMap[yearMonth] || 0) + (p.Amount || 0);
-            }
+  // ================== ฟังก์ชันโหลดข้อมูล ==================
+  useEffect(() => {
+    const fetchChartData = async () => {
+      const data = await ListEVChargingPayments();
+      if (!data) return;
 
-            const dataArray = Object.entries(monthMap)
-                .map(([ym, total]) => {
-                    const [year, month] = ym.split('-').map(Number);
-                    return {
-                        x: new Date(year, month - 1, 1),
-                        y: Number(total),
-                    };
-                })
-                .sort((a, b) => a.x.getTime() - b.x.getTime());
+      const grouped: Record<string, number> = {};
 
-            setChartData(dataArray);
+      for (const p of data as EVChargingPayListmentInterface[]) {
+        const paymentDate = p.Payment?.Date;
+        if (!paymentDate) continue;
+        const date = dayjs(paymentDate);
+
+        // ตรวจสอบช่วงเวลา
+        if (date.isBefore(startDate) || date.isAfter(endDate)) continue;
+
+        // กำหนด key ตามโหมด
+        let key = "";
+        if (rangeType === "day") {
+          key = date.format("YYYY-MM-DD");
+        } else if (rangeType === "month") {
+          key = date.format("YYYY-MM");
+        } else {
+          key = date.format("YYYY");
+        }
+
+        const total = (p.Price || 0) * (p.Quantity || 0);
+        grouped[key] = (grouped[key] || 0) + total;
+      }
+
+      // แปลงข้อมูลเป็น format ของ Syncfusion
+      const chartData = Object.entries(grouped)
+        .map(([key, total]) => {
+          if (rangeType === "day") return { x: new Date(key), y: total };
+          if (rangeType === "month") {
+            const [y, m] = key.split("-").map(Number);
+            return { x: new Date(y, m - 1, 1), y: total };
+          }
+          const y = Number(key);
+          return { x: new Date(y, 0, 1), y: total };
+        })
+        .sort((a, b) => a.x.getTime() - b.x.getTime());
+
+      setChartDataSets([
+        {
+          name:
+            rangeType === "day"
+              ? "ยอดรวมรายวัน"
+              : rangeType === "month"
+              ? "ยอดรวมรายเดือน"
+              : "ยอดรวมรายปี",
+          dataSource: chartData,
+          color: "rgba(34, 197, 94, 0.6)",
+        },
+      ]);
+    };
+
+    fetchChartData();
+  }, [rangeType, startDate, endDate]);
+
+  // ================== แกน X แบบ dynamic ==================
+  const LinePrimaryXAxis =
+    rangeType === "day"
+      ? {
+          valueType: "DateTime" as "DateTime",
+          labelFormat: "dd MMM",
+          intervalType: "Days" as "Days",
+          edgeLabelPlacement: "Shift" as EdgeLabelPlacement,
+          majorGridLines: { width: 0 },
+          labelStyle: {
+            color: "#64748B",
+            fontWeight: "600",
+            fontFamily: "Inter, sans-serif",
+          },
+        }
+      : rangeType === "month"
+      ? {
+          valueType: "DateTime" as "DateTime",
+          labelFormat: "MMM yyyy",
+          intervalType: "Months" as "Months",
+          edgeLabelPlacement: "Shift" as EdgeLabelPlacement,
+          majorGridLines: { width: 0 },
+          labelStyle: {
+            color: "#64748B",
+            fontWeight: "600",
+            fontFamily: "Inter, sans-serif",
+          },
+        }
+      : {
+          valueType: "DateTime" as "DateTime",
+          labelFormat: "yyyy",
+          intervalType: "Years" as "Years",
+          edgeLabelPlacement: "Shift" as EdgeLabelPlacement,
+          majorGridLines: { width: 0 },
+          labelStyle: {
+            color: "#64748B",
+            fontWeight: "600",
+            fontFamily: "Inter, sans-serif",
+          },
         };
 
-        fetchChartData();
-    }, []);
+  // ================== UI ตัวเลือกเวลา ==================
+  const renderDateSelector = () => {
+    if (rangeType === "day") {
+      return (
+        <RangePicker
+          value={[startDate, endDate]}
+          onChange={(dates) => {
+            if (dates) {
+              setStartDate(dates[0]!);
+              setEndDate(dates[1]!);
+            }
+          }}
+          format="DD/MM/YYYY"
+          allowClear={false}
+        />
+      );
+    }
 
-    const lineCustomSeries = [
-        {
-            dataSource: chartData,
-            xName: 'x',
-            yName: 'y',
-            name: 'Monthly Revenue',
-            width: '3',
-            fill: 'rgba(34, 197, 94, 0.1)',
-            border: { width: 2, color: 'rgba(34, 197, 94, 0.6)' },
-            marker: {
+    if (rangeType === "month") {
+      return (
+        <RangePicker
+          picker="month"
+          value={[startDate, endDate]}
+          onChange={(dates) => {
+            if (dates) {
+              // ถ้าเลือกเดือนเดียว ให้ set ทั้งเดือนนั้น
+              const start = dates[0]!.startOf("month");
+              const end = dates[1]!.endOf("month");
+              setStartDate(start);
+              setEndDate(end);
+            }
+          }}
+          format="MMM YYYY"
+          allowClear={false}
+        />
+      );
+    }
+
+    if (rangeType === "year") {
+      return (
+        <RangePicker
+          picker="year"
+          value={[startDate, endDate]}
+          onChange={(dates) => {
+            if (dates) {
+              const start = dates[0]!.startOf("year");
+              const end = dates[1]!.endOf("year");
+              setStartDate(start);
+              setEndDate(end);
+            }
+          }}
+          format="YYYY"
+          allowClear={false}
+        />
+      );
+    }
+  };
+
+  // ================== Default เมื่อเปลี่ยนโหมด ==================
+  useEffect(() => {
+    const now = dayjs();
+    if (rangeType === "day") {
+      setStartDate(now.subtract(7, "day"));
+      setEndDate(now);
+    } else if (rangeType === "month") {
+      setStartDate(now.startOf("month"));
+      setEndDate(now.endOf("month"));
+    } else {
+      setStartDate(now.startOf("year"));
+      setEndDate(now.endOf("year"));
+    }
+  }, [rangeType]);
+
+  // ================== Render ==================
+  return (
+    <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl w-full md:w-full">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
+        <p className="text-xl font-semibold">
+          EV Charging Revenue Overview ({rangeType})
+        </p>
+
+        <div className="flex flex-wrap gap-2 items-center">
+          <Select
+            value={rangeType}
+            onChange={(val) => setRangeType(val)}
+            options={[
+              { value: "day", label: "รายวัน" },
+              { value: "month", label: "รายเดือน" },
+              { value: "year", label: "รายปี" },
+            ]}
+          />
+          {renderDateSelector()}
+        </div>
+      </div>
+
+      <ChartComponent
+        id="monthly-revenue-chart"
+        height="420px"
+        width="100%"
+        primaryXAxis={LinePrimaryXAxis}
+        primaryYAxis={LinePrimaryYAxis}
+        chartArea={{ border: { width: 0 } }}
+        tooltip={{ enable: true }}
+        background={currentMode === "Dark" ? "#33373E" : "#fff"}
+        legendSettings={{ visible: true, position: "Bottom" }}
+      >
+        <Inject services={[LineSeries, DateTime, Legend, Tooltip]} />
+        <SeriesCollectionDirective>
+          {chartDataSets.map((item, index) => (
+            <SeriesDirective
+              key={index}
+              dataSource={item.dataSource}
+              xName="x"
+              yName="y"
+              name={item.name}
+              width={3}
+              fill={`${item.color}20`}
+              border={{ width: 2, color: item.color }}
+              marker={{
                 visible: true,
                 width: 10,
                 height: 10,
-                fill: 'rgba(34, 197, 94, 0.6)',
-                border: { width: 1.5, color: 'rgba(21, 128, 61, 0.7)' }
-            },
-            type: 'Line',
-            dashArray: '0',
-            animation: { enable: true, duration: 1000, delay: 0 }
-        }
-    ];
-
-    return (
-        <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl w-full md:w-full">
-            <div className="flex justify-between items-center gap-2 mb-10">
-                <p className="text-xl font-semibold">Monthly Revenue Overview</p>
-                <DropDown currentMode={currentMode} />
-            </div>
-            <div className="w-full">
-                <ChartComponent
-                    id="monthly-revenue-chart"
-                    height="420px"
-                    width="100%"
-                    primaryXAxis={LinePrimaryXAxis}
-                    primaryYAxis={LinePrimaryYAxis}
-                    chartArea={{ border: { width: 0 } }}
-                    tooltip={{ enable: true }}
-                    background={currentMode === 'Dark' ? '#33373E' : '#fff'}
-                    legendSettings={{ background: 'white' }}
-                >
-                    <Inject services={[LineSeries, DateTime, Legend, Tooltip]} />
-                    <SeriesCollectionDirective>
-                        {lineCustomSeries.map((item: any, index: number) => (
-                            <SeriesDirective key={index} {...item} />
-                        ))}
-                    </SeriesCollectionDirective>
-                </ChartComponent>
-            </div>
-        </div>
-    );
+                fill: item.color,
+                border: { width: 1.5, color: item.color },
+              }}
+              type="Line"
+              animation={{ enable: true, duration: 1000, delay: 0 }}
+            />
+          ))}
+        </SeriesCollectionDirective>
+      </ChartComponent>
+    </div>
+  );
 };
 
 export default MonthlyRevenueChart;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import LineChart from "./chart/line";
+import LineChart from "./chart/EVRevenueChartIndex";
 import { Modal, Input, Button, message, Skeleton } from "antd";
 import { ListPayments, ListBank, UpdateBank } from "../../../services";
 import { PaymentsInterface } from "../../../interface/IPayment";

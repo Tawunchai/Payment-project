@@ -339,8 +339,10 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 		return nil
 	}
 
+	fmt.Println("Seeding Payments for 12 months (20 days each)...")
+
 	for month := 1; month <= 12; month++ {
-		for day := 1; day <= 10; day++ {
+		for day := 1; day <= 20; day++ { // ✅ แก้จาก 10 → 20 วัน
 			createdAt := time.Date(2025, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 			price1 := 50 + day*2
 			price2 := 100 + month*3
@@ -349,15 +351,17 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 			payment := entity.Payment{
 				Date:            createdAt,
 				Amount:          float64(amount),
-				ReferenceNumber: "12345",
+				ReferenceNumber: fmt.Sprintf("REF-%02d%02d", month, day),
 				Picture:         "uploads/payment/1751999510090771300.jpg",
 				UserID:          &userID,
 				MethodID:        &methodID,
 			}
+
 			if err := db.Create(&payment).Error; err != nil {
 				return fmt.Errorf("failed to create payment: %w", err)
 			}
 
+			// 🔍 ดึงข้อมูล EVcharging 1, 2
 			var ev1, ev2 entity.EVcharging
 			if err := db.First(&ev1, 1).Error; err != nil {
 				return fmt.Errorf("failed to find EVcharging 1: %w", err)
@@ -369,17 +373,34 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 			q1 := float64(price1) / ev1.Price
 			q2 := float64(price2) / ev2.Price
 
-			if err := db.FirstOrCreate(&entity.EVChargingPayment{
-				EVchargingID: 1, PaymentID: payment.ID, Price: float64(price1), Quantity: q1,
-			}, entity.EVChargingPayment{EVchargingID: 1, PaymentID: payment.ID}).Error; err != nil {
+			evcp1 := entity.EVChargingPayment{
+				EVchargingID: 1,
+				PaymentID:    payment.ID,
+				Price:        float64(price1),
+				Quantity:     quantity1,
+			}
+			if err := db.FirstOrCreate(
+				&evcp1,
+				entity.EVChargingPayment{EVchargingID: 1, PaymentID: payment.ID},
+			).Error; err != nil {
 				return fmt.Errorf("failed to create evchargingpayment 1: %w", err)
 			}
-			if err := db.FirstOrCreate(&entity.EVChargingPayment{
-				EVchargingID: 2, PaymentID: payment.ID, Price: float64(price2), Quantity: q2,
-			}, entity.EVChargingPayment{EVchargingID: 2, PaymentID: payment.ID}).Error; err != nil {
+
+			evcp2 := entity.EVChargingPayment{
+				EVchargingID: 2,
+				PaymentID:    payment.ID,
+				Price:        float64(price2),
+				Quantity:     quantity2,
+			}
+			if err := db.FirstOrCreate(
+				&evcp2,
+				entity.EVChargingPayment{EVchargingID: 2, PaymentID: payment.ID},
+			).Error; err != nil {
 				return fmt.Errorf("failed to create evchargingpayment 2: %w", err)
 			}
 		}
 	}
+
+	fmt.Println("✅ Successfully seeded payments for all 12 months (20 days each).")
 	return nil
 }
