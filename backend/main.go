@@ -68,6 +68,7 @@ func main() {
 		public.PATCH("/update-user/:id", user.UpdateUserByID)
 		public.DELETE("/delete-users/:id", user.DeleteUserByID)
 		public.GET("/users", user.ListUser)
+		public.GET("/user/:id", user.GetUserByID)
 		public.GET("/users/by-role/user", user.GetDataUserByRoleUser)
 		public.GET("/users/by-role/admin", user.GetDataUserByRoleAdminAndEmployee)
 		public.GET("/employees/user/:id", employee.GetEmployeeByUserID)

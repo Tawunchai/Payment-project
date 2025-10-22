@@ -654,3 +654,28 @@ func UpdateCoins(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Coin updated successfully", "user": user})
 }
+
+// GET /user/:id
+func GetUserByID(c *gin.Context) {
+	idParam := c.Param("id")
+	userID, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	db := config.DB()
+
+	var user entity.User
+	result := db.Preload("Gender").
+		Preload("UserRole").
+		Preload("Employee").
+		First(&user, userID)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}

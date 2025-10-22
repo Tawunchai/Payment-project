@@ -1,6 +1,7 @@
 import axios from "axios";
 import { LoginInterface } from "../interface/Login"
 import { EmployeeInterface } from "../interface/IEmployee";
+import { UsersInterface } from "../interface/IUser";
 
 const apiUrl = "https://payment-project-t4dj.onrender.com";
 //const apiUrl = "http://10.0.14.228:8000";
@@ -150,6 +151,25 @@ async function GetGender() {
     return [];
   }
 }
+
+export const GetUserByID = async (
+  id: number | string
+): Promise<UsersInterface | false> => {
+  try {
+    const response = await axios.get(`${apiUrl}/users/${id}`, {
+      headers: getHeaders(),
+    });
+
+    console.log("✅ Response from GetUserByID:", response.data);
+    return response.data as UsersInterface;
+  } catch (error: any) {
+    console.error(
+      "❌ Error fetching user by ID:",
+      error.response?.data || error.message
+    );
+    return false;
+  }
+};
 
 
 export {

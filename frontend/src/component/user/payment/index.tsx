@@ -25,10 +25,7 @@ const SmallNote: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 // EV bolt icon (minimal)
 const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
-    <path
-      d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z"
-      fill="currentColor"
-    />
+    <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
   </svg>
 );
 
@@ -118,62 +115,86 @@ const Index: React.FC = () => {
 
     const selectedMethod = paymentMethod === "qr" ? qrMethod : coinMethod;
 
+    // ชำระแบบ QR
     if (paymentMethod === "qr") {
+      if (!selectedMethod?.ID) {
+        message.error("ไม่พบ Method สำหรับ QR");
+        return;
+      }
       navigate("/user/payment-by-qrcode", {
         state: {
           totalAmount: totalAmount.toFixed(2),
           userID: user.ID!,
           chargers,
-          MethodID: selectedMethod?.ID,
+          MethodID: selectedMethod.ID,
         },
       });
-    } else {
-      if ((user.Coin || 0) < totalAmount) {
-        message.error("จำนวน Coin ของคุณไม่เพียงพอ กรุณาเติม Coin ก่อน");
+      return;
+    }
+
+    // ชำระแบบ Coin
+    if (!coinMethod?.ID) {
+      message.error("ไม่พบ Method สำหรับ Coin");
+      return;
+    }
+    if ((user.Coin || 0) < totalAmount) {
+      message.error("จำนวน Coin ของคุณไม่เพียงพอ กรุณาเติม Coin ก่อน");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+
+      const updatedCoin = (user.Coin || 0) - totalAmount;
+      const result = await UpdateCoin({ user_id: user.ID!, coin: updatedCoin });
+
+      if (!result) {
+        message.error("การหัก Coin ล้มเหลว");
+        setIsProcessing(false);
         return;
       }
 
-      setIsProcessing(true);
-      const updatedCoin = (user.Coin || 0) - totalAmount;
+      message.success("ชำระเงินด้วย Coin สำเร็จแล้ว");
 
-      const result = await UpdateCoin({ user_id: user.ID!, coin: updatedCoin });
-      if (result) {
-        message.success("ชำระเงินด้วย Coin สำเร็จแล้ว");
+      // บันทึก Payment
+      const paymentData = {
+        date: new Date().toISOString().split("T")[0], // YYYY-MM-DD
+        amount: Number(totalAmount),
+        user_id: user.ID!,
+        method_id: coinMethod.ID!,
+        reference_number: "",
+        picture: null,
+      };
+      const paymentResult = await CreatePayment(paymentData);
 
-        const paymentData = {
-          date: new Date().toISOString().split("T")[0], // ส่งแค่ YYYY-MM-DD
-          amount: Number(totalAmount),
-          user_id: user.ID!,
-          method_id: coinMethod!.ID!,
-          reference_number: "",
-          picture: null,
-        };
-        const paymentResult = await CreatePayment(paymentData);
-
-        if (paymentResult && paymentResult.ID) {
-          if (Array.isArray(chargers)) {
-            for (const charger of chargers) {
-              const evChargingPaymentData = {
-                evcharging_id: charger.id,
-                payment_id: paymentResult.ID,
-                price: charger.total,
-                quantity: charger.power,
-              };
-              await CreateEVChargingPayment(evChargingPaymentData);
-            }
-          }
-        } else {
-          message.error("สร้าง Payment ล้มเหลว");
-        }
-
-        setTimeout(() => {
-          setIsProcessing(false);
-          navigate("/user/charging");
-        }, 1200);
-      } else {
-        message.error("การหัก Coin ล้มเหลว");
+      if (!paymentResult || !paymentResult.ID) {
+        message.error("สร้าง Payment ล้มเหลว");
         setIsProcessing(false);
+        return;
       }
+
+      // ผูก EVChargingPayment (ตามรายการ chargers)
+      if (Array.isArray(chargers)) {
+        for (const charger of chargers) {
+          const evChargingPaymentData = {
+            evcharging_id: charger.id,
+            payment_id: paymentResult.ID,
+            price: charger.total,
+            quantity: charger.power,
+          };
+          await CreateEVChargingPayment(evChargingPaymentData);
+        }
+      }
+
+      // ✅ เปลี่ยนปลายทางตามที่คุณต้องการ
+      setTimeout(() => {
+        navigate("/user/after-payment");
+        setIsProcessing(false);
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      message.error("เกิดข้อผิดพลาดระหว่างชำระเงิน");
+      setIsProcessing(false);
     }
   };
 
