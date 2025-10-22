@@ -3,7 +3,7 @@ import { ReviewInterface } from "../interface/IReview";
 import { UsersInterface } from "../interface/IUser";
 import { NewsInterface } from "../interface/INews";
 import { GetstartedInterface } from "../interface/IGetstarted";
-import { EVchargingInterface } from "../interface/IEV";
+import { EVchargingInterface,EVChargingPayListmentInterface } from "../interface/IEV";
 import { EmployeeInterface, CreateEmployeeInput } from "../interface/IEmployee";
 import { CalendarInterface } from "../interface/ICalendar";
 import { GendersInterface } from "../interface/IGender";
@@ -11,11 +11,12 @@ import { UserroleInterface } from "../interface/IUserrole";
 import { TypeInterface } from "../interface/IType";
 import { StatusInterface } from "../interface/IStatus";
 import { ReportInterface } from "../interface/IReport";
-import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface, EVChargingPayListmentInterface } from "../interface/IPayment";
+import { PaymentsInterface, EVChargingPaymentInterface, PaymentCreateInterface, PaymentInterface } from "../interface/IPayment";
 import { MethodInterface } from "../interface/IMethod";
 import { InverterStatus } from "../interface/IInverterStatus"
 import { BankInterface } from "../interface/IBank"
 import { PaymentCoinInterface } from "../interface/IPaymentCoin";
+import { CarsInterface } from "../interface/ICar";
 
 //const apiUrl = "http://10.0.14.228:8000";
 //export const apiUrlPicture = "http://10.0.14.228:8000/";
@@ -1312,6 +1313,29 @@ export const ListPayments = async (): Promise<PaymentsInterface[] | null> => {
   }
 };
 
+export const GetReviewByUserID = async (
+  userID: number
+): Promise<ReviewInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/reviews/user/${userID}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching reviews by user ID:", error.response?.data || error.message);
+    return null;
+  }
+};
+
 export const ListPaymentsByUserID = async (
   user_id: number
 ): Promise<PaymentsInterface[] | null> => {
@@ -1553,3 +1577,70 @@ export const CreatePaymentCoin = async (data: any) => {
   }
 };
 
+export const GetCarByUserID = async (
+  userID: number
+): Promise<CarsInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/cars/user/${userID}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error(
+      "Error fetching cars by user ID:",
+      error.response?.data || error.message
+    );
+    return null;
+  }
+};
+
+export const UpdateCarByID = async (
+  id: number,
+  data: Partial<CarsInterface>
+): Promise<{ message: string; data: CarsInterface } | null> => {
+  try {
+    const response = await axios.put(`${apiUrl}/cars/${id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating car:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// ✅ Get report by ID
+export const GetReportByID = async (id: number): Promise<ReportInterface | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/report/${id}`, {
+      headers: getAuthHeader(),
+    });
+    if (response.status === 200) {
+      return response.data.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching report:", error.response?.data || error.message);
+    return null;
+  }
+};

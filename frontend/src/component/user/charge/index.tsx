@@ -2,16 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { FaBolt } from "react-icons/fa";
 import { message } from "antd";
 import ModalCreate from "../review/create";
+import { GetReviewByUserID } from "../../../services"; // ✅ import service
+import { useNavigate } from "react-router-dom";
 
 const ChargingEV = () => {
   const [charging, setCharging] = useState(false);
-  const [energy, setEnergy] = useState(0);   // 0-100
-  const [time, setTime] = useState(0);       // วินาที
+  const [energy, setEnergy] = useState(0);
+  const [time, setTime] = useState(0);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const userID = 1; // TODO: ใช้ user จริงของระบบ
+  const navigate = useNavigate();
+  const userID = Number(localStorage.getItem("userid"));
 
   useEffect(() => {
-    // ใช้ ReturnType เพื่อเลี่ยง NodeJS.Timeout
     let interval: ReturnType<typeof setInterval> | undefined;
     if (charging) {
       setEnergy(0);
@@ -29,10 +31,12 @@ const ChargingEV = () => {
           }
           return next;
         });
-        if (seconds >= 5 && interval) clearInterval(interval); // เดโม่
+        if (seconds >= 5 && interval) clearInterval(interval); // demo only
       }, 1000);
     }
-    return () => { if (interval) clearInterval(interval); };
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [charging]);
 
   const formatTime = (sec: number) => {
@@ -44,7 +48,7 @@ const ChargingEV = () => {
 
   const canComplete = energy >= 100;
 
-  // ====== แบต 5 ช่อง (ล่าง -> บน) พร้อมสีแดง-ส้ม-เหลือง-เขียวอ่อน-เขียว ======
+  // ===== Battery segment logic =====
   const segmentCount = 5;
   const segments = useMemo(() => {
     const filledCount = Math.round((energy / 100) * segmentCount);
@@ -52,11 +56,11 @@ const ChargingEV = () => {
   }, [energy]);
 
   const segmentColors = [
-    { from: "#f87171", to: "#ef4444", border: "#dc2626" }, // แดง
-    { from: "#fb923c", to: "#f97316", border: "#ea580c" }, // ส้ม
-    { from: "#fbbf24", to: "#f59e0b", border: "#d97706" }, // เหลือง
-    { from: "#a3e635", to: "#84cc16", border: "#65a30d" }, // เขียวอ่อน
-    { from: "#34d399", to: "#22c55e", border: "#16a34a" }, // เขียวเข้ม
+    { from: "#f87171", to: "#ef4444", border: "#dc2626" },
+    { from: "#fb923c", to: "#f97316", border: "#ea580c" },
+    { from: "#fbbf24", to: "#f59e0b", border: "#d97706" },
+    { from: "#a3e635", to: "#84cc16", border: "#65a30d" },
+    { from: "#34d399", to: "#22c55e", border: "#16a34a" },
   ];
 
   const estKW = useMemo(() => {
@@ -65,6 +69,21 @@ const ChargingEV = () => {
     const value = Math.max(3, Math.min(base + step * 2, 11));
     return value.toFixed(1);
   }, [energy]);
+
+  // ✅ ฟังก์ชันเช็กรีวิวก่อนเปิด Modal
+  const handleComplete = async () => {
+    try {
+      const reviews = await GetReviewByUserID(userID);
+      if (reviews && reviews.length > 0) {
+        navigate("/"); // 👉 ไปหน้าแรก
+      } else {
+        setShowReviewModal(true); // 👉 เปิด Modal ให้รีวิว
+      }
+    } catch (error) {
+      console.error("Error checking review:", error);
+      message.error("เกิดข้อผิดพลาดในการตรวจสอบรีวิว");
+    }
+  };
 
   return (
     <>
@@ -122,7 +141,7 @@ const ChargingEV = () => {
 
             {/* Battery + Info */}
             <div className="flex items-center justify-center gap-6">
-              {/* Battery 5 cell (ล่าง->บน) */}
+              {/* Battery 5 cell */}
               <div className="text-center">
                 <div className="mx-auto mb-1 h-2 w-10 rounded-sm bg-gray-300" />
                 <div className="relative h-48 w-20 rounded-2xl border-2 border-gray-300 p-2">
@@ -151,7 +170,7 @@ const ChargingEV = () => {
                 </div>
               </div>
 
-              {/* ค่าปัจจุบัน */}
+              {/* Info */}
               <div className="flex flex-col items-start gap-3">
                 <div className="rounded-xl bg-blue-50 px-3 py-2">
                   <div className="text-[11px] text-blue-900/70">เปอร์เซ็นต์</div>
@@ -168,7 +187,7 @@ const ChargingEV = () => {
               </div>
             </div>
 
-            {/* Capsules เพิ่มเติม */}
+            {/* Extra Info */}
             <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
                 <div className="text-[11px] text-blue-800/80">Solar Cell</div>
@@ -180,7 +199,7 @@ const ChargingEV = () => {
               </div>
             </div>
 
-            {/* Actions ในการ์ด (ย้ายมาจาก Sticky Action Bar) */}
+            {/* Actions */}
             <div className="mt-6 border-t border-gray-100 pt-4">
               <div className="grid grid-cols-4 gap-2">
                 <button
@@ -209,11 +228,13 @@ const ChargingEV = () => {
                 </button>
                 <button
                   disabled={!canComplete}
-                  onClick={() => setShowReviewModal(true)}
+                  onClick={handleComplete} // ✅ ตรวจสอบก่อนเปิด Modal
                   className={`rounded-xl px-3 py-2 text-xs font-semibold shadow-sm transition
-                    ${canComplete
-                      ? "bg-green-600 text-white hover:bg-green-700"
-                      : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+                    ${
+                      canComplete
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    }`}
                 >
                   เสร็จสิ้น
                 </button>

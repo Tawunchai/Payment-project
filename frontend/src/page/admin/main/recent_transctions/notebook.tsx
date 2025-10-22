@@ -69,7 +69,8 @@ const Index = () => { //@ts-ignore
             const evPayments = await ListEVChargingPayments();
             if (evPayments) {
                 const filteredEV = evPayments.filter(p => {
-                    const d = new Date(p.CreatedAt);
+                    if (!p?.CreatedAt) return false; 
+                    const d = new Date(p.CreatedAt as string);
                     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
                 });
 
@@ -118,8 +119,8 @@ const Index = () => { //@ts-ignore
             percentage: '+38%',
             title: 'Transactions',
             desc: 'Payment transactions',
-            iconColor: '#3B82F6',     
-            iconBg: '#DBEAFE',        
+            iconColor: '#3B82F6',
+            iconBg: '#DBEAFE',
             pcColor: 'blue-500',
         },
     ];

@@ -141,3 +141,32 @@ func DeleteReviewsByID(c *gin.Context) {
 		"reviewID": review.ID,
 	})
 }
+
+// GET /reviews/user/:id
+func GetReviewByUserID(c *gin.Context) {
+	// รับค่า user_id จากพารามิเตอร์ URL
+	userIDParam := c.Param("id")
+	userID, err := strconv.Atoi(userIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	db := config.DB()
+	var reviews []entity.Review
+
+	// ดึงรีวิวทั้งหมดที่เป็นของ UserID นั้น
+	results := db.Preload("User").Where("user_id = ?", userID).Find(&reviews)
+	if results.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": results.Error.Error()})
+		return
+	}
+
+	// ถ้าไม่มีรีวิวเลย
+	if len(reviews) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"message": "No reviews found for this user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, reviews)
+}

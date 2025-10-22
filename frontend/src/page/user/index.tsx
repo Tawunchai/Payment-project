@@ -4,7 +4,8 @@ import Header from "../../component/user/header/header";
 import New from "../../component/user/new/new";
 import NewMobile from "../../component/user/new/newmoblie";
 import Review from "../../component/user/review/review";
-import Footer from "../../component/user/footer/footer";
+import FooterMobile from "../../component/user/footer/footer"; 
+import FooterDesktop from "../../component/user/footer/com/index";
 import Car from "../../component/user/car/index";
 import { useEffect, useRef, useState } from "react";
 import "./user.css";
@@ -29,7 +30,6 @@ const Index = () => {
   return (
     <div
       className="user"
-      // กันไม่ให้คอนเทนต์โดนทับโดยแถบ footer (เฉพาะมือถือ)
       style={{
         paddingBottom: isMobile ? "calc(84px + env(safe-area-inset-bottom))" : 0,
       }}
@@ -54,10 +54,12 @@ const Index = () => {
       </div>
 
       <Review />
-      <br /><br /><br />
+      <br />
+      <br />
+      <br />
 
-      {/* ✅ แสดง Footer เฉพาะมือถือ */}
-      {isMobile && <Footer />}
+      {/* ✅ เงื่อนไขการแสดงผล Footer */}
+      {isMobile ? <FooterMobile /> : <FooterDesktop />}
     </div>
   );
 };

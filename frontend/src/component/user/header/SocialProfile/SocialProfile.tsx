@@ -3,8 +3,10 @@ import { Contact } from "./Contact";
 import { ProfileBanner } from "./ProfileBanner";
 import SupportCard from "./support"; 
 import "./socail.css";
+import Cars from "./cars";
 
 const SocialProfile = () => {
+  const userID = Number(localStorage.getItem("userid"));
   return (
     <div className="min-h-screen bg-white">
       <Header title="My EV Profile" />
@@ -19,6 +21,7 @@ const SocialProfile = () => {
           {/* ซ้าย: Contact */}
           <div className="md:col-span-5 md:col-start-1">
             <Contact />
+            <Cars userID={userID} />
           </div>
 
           {/* ขวา: Support / แจ้งปัญหา */}

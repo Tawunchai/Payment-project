@@ -7,13 +7,13 @@ import { useNavigate } from "react-router-dom";
 import { message } from "antd";
 import OutsideClickHandler from "react-outside-click-handler";
 import ReportModal from "./report/index";
-import { getUserByID, apiUrlPicture } from "../../../services";
+import { getUserByID, apiUrlPicture, GetReportByID } from "../../../services";
 import { UsersInterface } from "../../../interface/IUser";
+import { ReportInterface } from "../../../interface/IReport";
 
-/* === Leaflet (แสดงแผนที่ใน dropdown เดสก์ท็อป) === */
+/* === Leaflet map === */
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-// FIX ไอคอนของ Leaflet สำหรับ Vite/CRA
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
@@ -23,45 +23,29 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-/** ------------------------- ข้อมูลสถานีเดียว (SUT) ------------------------- */
-type Station = {
-  id: number;
-  name: string;
-  address: string;
-  lat: number;
-  lng: number;
-  open24h?: boolean;
-  status: "พร้อมใช้งาน" | "ไม่พร้อม" | "กำลังใช้งาน";
-};
-
-const SUT_STATION: Station = {
-  id: 1,
+const SUT_STATION = {
   name: "มหาวิทยาลัยเทคโนโลยีสุรนารี (SUT)",
   address: "111 ถ.มหาวิทยาลัย ต.สุรนารี อ.เมืองนครราชสีมา",
   lat: 14.8819,
-  lng: 102.0170,
-  open24h: true,
-  status: "พร้อมใช้งาน",
+  lng: 102.017,
 };
 
 type HeaderProps = {
   scrollToValue?: () => void;
-  scrollToNew: () => void;
+  scrollToNew?: () => void;
 };
-//@ts-ignore
-const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
+
+const Header: React.FC<HeaderProps> = ({}) => {
   const navigate = useNavigate();
   const [menuOpened, setMenuOpened] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [user, setUser] = useState<UsersInterface | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
-  // desktop map dropdown state
   const [mapOpen, setMapOpen] = useState(false);
   const mapWrapRef = useRef<HTMLDivElement | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
     const uid = Number(localStorage.getItem("userid") || 0);
@@ -71,261 +55,186 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
       .catch(() => {});
   }, []);
 
-  // ปิด dropdown เมื่อกดนอก/กด ESC
+  // close dropdown map
   useEffect(() => {
     if (!mapOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMapOpen(false);
     const onClick = (e: MouseEvent) => {
-      if (!mapWrapRef.current) return;
-      if (!mapWrapRef.current.contains(e.target as Node)) setMapOpen(false);
+      if (!mapWrapRef.current?.contains(e.target as Node)) setMapOpen(false);
     };
-    window.addEventListener("keydown", onKey);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMapOpen(false);
     window.addEventListener("mousedown", onClick);
+    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onClick);
+      window.removeEventListener("keydown", onKey);
     };
   }, [mapOpen]);
 
-  // สร้าง/อัปเดต Leaflet map ใน dropdown เมื่อเปิด
   useEffect(() => {
-    if (!mapOpen) return;
-    // ถ้ายังไม่มี instance ให้สร้างใหม่
-    if (!mapInstance.current && mapElRef.current) {
+    if (!mapOpen || !mapElRef.current) return;
+    if (!mapInstance.current) {
       const map = L.map(mapElRef.current, {
         center: [SUT_STATION.lat, SUT_STATION.lng],
         zoom: 16,
-        zoomControl: true,
       });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+      L.marker([SUT_STATION.lat, SUT_STATION.lng])
+        .addTo(map)
+        .bindPopup(`<b>${SUT_STATION.name}</b><br/>${SUT_STATION.address}`)
+        .openPopup();
       mapInstance.current = map;
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors",
-      }).addTo(map);
-
-      const mk = L.marker([SUT_STATION.lat, SUT_STATION.lng]).addTo(map);
-      mk.bindPopup(`<b>${SUT_STATION.name}</b><br/>${SUT_STATION.address}`, {
-        closeButton: true,
-      });
-      markerRef.current = mk;
-
-      // เปิด popup ครั้งแรกเพื่อโชว์ชื่อ
-      setTimeout(() => mk.openPopup(), 200);
     } else {
-      // ถ้ามีแล้ว แค่รีไซส์ + เซ็ตวิวอีกครั้ง
-      setTimeout(() => {
-        mapInstance.current?.invalidateSize();
-        mapInstance.current?.setView([SUT_STATION.lat, SUT_STATION.lng], 16, { animate: true });
-        markerRef.current?.openPopup();
-      }, 50);
+      mapInstance.current.invalidateSize();
     }
-
-    // ไม่ลบ map ตอนปิด dropdown เพื่อให้เปิดใหม่ไวขึ้น
   }, [mapOpen]);
+
+  /** ✅ ตรวจสอบว่า user รายงานไปภายใน 7 วันหรือยัง */
+  const handleOpenReport = async () => {
+    try {
+      const uid = Number(localStorage.getItem("userid") || 0);
+      if (!uid) {
+        messageApi.error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+        return;
+      }
+
+      const report: ReportInterface | null = await GetReportByID(uid);
+      if (!report) {
+        setModalOpen(true);
+        setMenuOpened(false);
+        return;
+      }
+
+      const now = new Date();
+      const lastReport = new Date(report.CreatedAt ?? "");
+      const diffDays = (now.getTime() - lastReport.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (diffDays <= 7) {
+        messageApi.warning("คุณได้รายงานไปแล้วภายในสัปดาห์นี้ กรุณาติดต่อฝ่ายจัดการ");
+      } else {
+        setModalOpen(true);
+        setMenuOpened(false);
+      }
+    } catch {
+      messageApi.error("ไม่สามารถตรวจสอบสถานะการรายงานได้");
+    }
+  };
 
   const handleLogout = () => {
     localStorage.clear();
-    messageApi.success("ออกจากระบบ");
-    setTimeout(() => navigate("/login"), 1200);
-  };
-
-  const openReportModal = () => {
-    setModalOpen(true);
-    setMenuOpened(false);
+    messageApi.success("ออกจากระบบแล้ว");
+    setTimeout(() => navigate("/login"), 1000);
   };
 
   const openGmapsNavigate = () => {
-    const { lat, lng, name } = SUT_STATION;
-    const urlByCoord = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
-    const urlByName = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-      name
-    )}&travelmode=driving&dir_action=navigate`;
-    window.open(urlByCoord, "_blank");
-    setTimeout(() => window.open(urlByName, "_blank"), 200);
+    const { lat, lng } = SUT_STATION;
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`,
+      "_blank"
+    );
   };
 
-  // ปุ่มเดสก์ท็อปให้ขนาดเท่ากัน
   const btnEqual =
     "inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-blue-600 hover:bg-blue-50";
 
   return (
     <>
       {contextHolder}
-
-      {/* HEADER */}
-      <header
-        className="sticky top-0 z-40 bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md">
         <div className="mx-auto flex max-w-screen-xl items-center justify-between px-4 py-3">
-          {/* Left: Brand */}
-          <button
-            className="flex items-center gap-2"
-            onClick={() => navigate("/user")}
-            aria-label="หน้าหลัก"
-          >
-            <span className="text-sm font-semibold tracking-wide">EV Station</span>
+          <button onClick={() => navigate("/user")} className="font-semibold">
+            EV Station
           </button>
 
-          {/* Right: Desktop menu */}
-          <nav className="relative hidden items-center gap-3 md:flex">
-            {/* Report */}
-            <button onClick={openReportModal} className={btnEqual} title="รายงานปัญหา">
-              <MdOutlineReport className="text-blue-600" />
-              <span>Report</span>
+          {/* Desktop */}
+          <nav className="hidden md:flex items-center gap-3">
+            <button onClick={handleOpenReport} className={btnEqual}>
+              <MdOutlineReport className="text-blue-600" /> Report
             </button>
-
-            {/* Map (Dropdown + Leaflet แสดงโลเคชัน SUT เดียว) */}
             <div className="relative" ref={mapWrapRef}>
-              <button
-                onClick={() => setMapOpen((s) => !s)}
-                className={btnEqual}
-                title="Map"
-                aria-expanded={mapOpen}
-                aria-haspopup="dialog"
-              >
-                <MdMap className="text-blue-600" />
-                <span>Map</span>
+              <button onClick={() => setMapOpen((s) => !s)} className={btnEqual}>
+                <MdMap className="text-blue-600" /> Map
               </button>
-
               {mapOpen && (
-                <div
-                  className="
-                    absolute right-0 mt-2 w-[560px] max-w-[92vw]
-                    rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden
-                  "
-                  role="dialog"
-                  aria-label="EV Map (SUT)"
-                >
-                  <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
-                    <div className="text-sm font-semibold text-gray-900">
-                      ตำแหน่งตัวอย่าง: {SUT_STATION.name}
-                    </div>
+                <div className="absolute right-0 mt-2 w-[560px] rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden">
+                  <div className="px-4 py-3 flex justify-between items-center border-b">
+                    <span className="font-semibold text-sm text-gray-900">{SUT_STATION.name}</span>
                     <button
                       onClick={() => setMapOpen(false)}
-                      className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                      className="text-xs px-2 py-1 rounded-lg hover:bg-gray-100"
                     >
                       ปิด
                     </button>
                   </div>
-
-                  {/* แผนที่ Leaflet */}
-                  <div className="relative">
-                    <div
-                      ref={mapElRef}
-                      style={{ width: "100%", height: 360 }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 text-xs text-gray-600">
-                    <span className="truncate">
-                      {SUT_STATION.address}
-                    </span>
+                  <div ref={mapElRef} style={{ width: "100%", height: 320 }} />
+                  <div className="bg-gray-50 text-xs flex justify-between items-center px-4 py-2 text-gray-700">
+                    <span>{SUT_STATION.address}</span>
                     <button
                       onClick={openGmapsNavigate}
-                      className="ml-3 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100/60"
+                      className="text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-md"
                     >
-                      นำทางด้วย Google Maps
+                      เปิดใน Google Maps
                     </button>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* ADD CAR */}
-            <button
-              onClick={() => navigate("/user/add-cars")}
-              className={btnEqual}
-              title="เพิ่มข้อมูลรถ"
-            >
-              <FaCarSide className="text-blue-600" />
-              <span>ADD CAR</span>
+            <button onClick={() => navigate("/user/add-cars")} className={btnEqual}>
+              <FaCarSide className="text-blue-600" /> ADD CAR
             </button>
-
-            {/* My Coins */}
             {user && (
-              <button
-                onClick={() => navigate("/user/my-coins")}
-                className={btnEqual}
-                title="ดู Coins"
-              >
+              <button onClick={() => navigate("/user/my-coins")} className={btnEqual}>
                 <GiTwoCoins className="text-blue-600" />
-                <span className="leading-none">
-                  My Coins: <b className="text-blue-700">{user.Coin}</b>
-                </span>
+                My Coins: <b className="text-blue-700">{user.Coin}</b>
               </button>
             )}
-
-            {/* Logout */}
             <button onClick={handleLogout} className={btnEqual}>
-              <span>Logout</span>
+              Logout
             </button>
-
-            {/* Profile avatar */}
-            <button
-              onClick={() => navigate("/user/profile")}
-              className="ml-1 inline-flex items-center justify-center"
-              aria-label="โปรไฟล์"
-              title="โปรไฟล์"
-            >
+            <button onClick={() => navigate("/user/profile")} className="ml-2">
               <img
                 src={user?.Profile ? `${apiUrlPicture}${user.Profile}` : undefined}
                 alt="profile"
                 className="h-9 w-9 rounded-full object-cover ring-2 ring-white/30"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src =
-                    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' fill='%23e5e7eb'/></svg>";
-                }}
               />
             </button>
           </nav>
 
-          {/* Mobile: hamburger */}
+          {/* Mobile hamburger */}
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-white/10 md:hidden"
+            className="md:hidden h-10 w-10 flex items-center justify-center rounded-xl hover:bg-white/10"
             onClick={() => setMenuOpened((s) => !s)}
-            aria-label="เมนู"
           >
             <BiMenuAltRight size={26} />
           </button>
         </div>
       </header>
 
-      {/* Mobile sheet menu */}
+      {/* Mobile sheet */}
       <OutsideClickHandler onOutsideClick={() => setMenuOpened(false)}>
         {menuOpened && (
           <>
             <div
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
+              className="fixed inset-0 bg-black/40 z-40"
               onClick={() => setMenuOpened(false)}
             />
-            <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl bg-white p-4 shadow-2xl animate-[sheetUp_160ms_ease-out]">
-              <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-gray-300" />
+            <div className="fixed inset-x-0 bottom-0 z-50 bg-white p-4 rounded-t-3xl shadow-2xl animate-[sheetUp_180ms_ease-out]">
+              <div className="h-1.5 w-12 bg-gray-300 rounded-full mx-auto mb-2" />
               <div className="flex flex-col gap-2">
-                <div className="px-1 pb-1 text-base font-semibold text-gray-900">EV Station</div>
+                <div className="px-1 pb-1 font-semibold text-gray-900">EV Station</div>
 
                 <button
-                  onClick={openReportModal}
+                  onClick={handleOpenReport}
                   className="w-full rounded-xl px-4 py-3 text-left text-gray-800 hover:bg-gray-50"
                 >
-                  Report
+                  รายงานปัญหา (Report)
                 </button>
 
-                {/* Map (mobile) → เปิด Google Maps พิกัด SUT */}
                 <button
-                  onClick={() => {
-                    const { lat, lng, name } = SUT_STATION;
-                    const urlByCoord = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
-                    const urlByName = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-                      name
-                    )}&travelmode=driving&dir_action=navigate`;
-                    window.open(urlByCoord, "_blank");
-                    setTimeout(() => window.open(urlByName, "_blank"), 200);
-                    setMenuOpened(false);
-                  }}
+                  onClick={openGmapsNavigate}
                   className="w-full rounded-xl px-4 py-3 text-left text-gray-800 hover:bg-gray-50"
                 >
-                  Map
+                  แผนที่ (Map)
                 </button>
 
                 {user && (
@@ -336,13 +245,11 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
                     }}
                     className="w-full rounded-xl bg-blue-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
                   >
-                    <span className="inline-flex items-center gap-2 justify-center">
-                      <GiTwoCoins />
-                      My Coins: <b className="font-bold">{user.Coin}</b>
-                    </span>
+                    <GiTwoCoins /> My Coins: <b>{user.Coin}</b>
                   </button>
                 )}
 
+                {/* ✅ โปรไฟล์ของฉันแบบเดิม */}
                 <div className="mt-1 flex items-center justify-between rounded-xl border border-gray-100 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <img
@@ -382,21 +289,18 @@ const Header: React.FC<HeaderProps> = ({ scrollToNew }) => {
                   Logout
                 </button>
               </div>
-
-              <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
             </div>
 
             <style>{`
               @keyframes sheetUp {
-                from { transform: translateY(100%); }
-                to   { transform: translateY(0%); }
+                from { transform: translateY(100%); opacity: 0.3; }
+                to { transform: translateY(0%); opacity: 1; }
               }
             `}</style>
           </>
         )}
       </OutsideClickHandler>
 
-      {/* Report Modal */}
       <ReportModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   );

@@ -2,11 +2,12 @@ import { BsCurrencyDollar } from 'react-icons/bs';
 import { Button } from '../../../../component/admin';
 import { useStateContext } from '../../../../contexts/ContextProvider';
 import { ListPayments, ListUsers, ListEVChargingPayments } from "../../../../services";
-import { PaymentsInterface, EVChargingPayListmentInterface } from "../../../../interface/IPayment";
 import { useEffect, useState } from 'react';
 import { FiBarChart } from 'react-icons/fi';
 import { BsBoxSeam } from 'react-icons/bs';
 import { MdOutlineSupervisorAccount } from 'react-icons/md';
+import { PaymentsInterface } from "../../../../interface/IPayment";
+import { EVChargingPayListmentInterface } from "../../../../interface/IEV";
 
 const phone = () => {
   //@ts-ignore

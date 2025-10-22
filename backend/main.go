@@ -112,6 +112,9 @@ func main() {
 
 		//Car
 		public.POST("/car-create", car.CreateCar)
+		public.GET("/cars/user/:id", car.GetCarByUserID)
+		public.PUT("/cars/:id", car.UpdateCarByID)
+
 
 		//review
 		public.GET("/reviews", review.ListReview)
@@ -119,6 +122,7 @@ func main() {
 		public.GET("/reviews/visible", review.ListReviewsStatusTrue)
 		public.PATCH("/reviews/:id/status", review.UpdateStatusReviewsByID)
 		public.DELETE("/reviews/:id", review.DeleteReviewsByID)
+		public.GET("/reviews/user/:id", review.GetReviewByUserID)
 
 		//new
 		public.GET("/news", new.ListNew)
@@ -137,6 +141,8 @@ func main() {
 		public.POST("/create-report", report.CreateReport)
 		public.PUT("/update-reports/:id", report.UpdateReport)
 		public.DELETE("/delete-report/:id", report.DeleteReportByID)
+		public.GET("/report/:id", report.GetReportByID)
+
 
 		//calendar
 		public.GET("/calendars", calendar.ListCalendar)

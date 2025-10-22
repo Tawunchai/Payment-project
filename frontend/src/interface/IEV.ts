@@ -25,3 +25,28 @@ export interface CreateEVInput {
   StatusID: number;
   TypeID: number;
 }
+
+
+
+export interface PaymentInterface {
+  ID?: number;
+  Date: string;
+  Amount: number;
+  ReferenceNumber?: string;
+  Picture?: string;
+  UserID?: number;
+  MethodID?: number;
+  CreatedAt?: string;
+  UpdatedAt?: string;
+}
+export interface EVChargingPayListmentInterface {
+  ID?: number;
+  EVchargingID: number;
+  PaymentID: number;
+  Price: number;
+  Quantity: number;
+  CreatedAt?: string;
+  UpdatedAt?: string;
+  EVcharging?: EVchargingInterface;
+  Payment?: PaymentInterface; // ✅ เพิ่มตรงนี้
+}
