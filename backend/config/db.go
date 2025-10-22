@@ -344,6 +344,7 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 	for month := 1; month <= 12; month++ {
 		for day := 1; day <= 20; day++ { // ✅ แก้จาก 10 → 20 วัน
 			createdAt := time.Date(2025, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+
 			price1 := 50 + day*2
 			price2 := 100 + month*3
 			amount := price1 + price2
@@ -370,8 +371,8 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				return fmt.Errorf("failed to find EVcharging 2: %w", err)
 			}
 
-			q1 := float64(price1) / ev1.Price
-			q2 := float64(price2) / ev2.Price
+			quantity1 := float64(price1) / ev1.Price
+			quantity2 := float64(price2) / ev2.Price
 
 			evcp1 := entity.EVChargingPayment{
 				EVchargingID: 1,
