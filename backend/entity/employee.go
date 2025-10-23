@@ -22,4 +22,8 @@ type Employee struct {
 	GettingStarted []GettingStarted `gorm:"foreignKey:EmployeeID"`
 
 	Calendar []Calendar `gorm:"foreignKey:EmployeeID"`
+
+	EVCabinet []EVCabinet `gorm:"foreignKey:EmployeeID"`
+
+	Service []Service `gorm:"foreignKey:EmployeeID"`
 }

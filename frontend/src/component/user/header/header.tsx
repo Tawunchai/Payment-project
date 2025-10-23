@@ -35,7 +35,7 @@ type HeaderProps = {
   scrollToNew?: () => void;
 };
 
-const Header: React.FC<HeaderProps> = ({}) => {
+const Header: React.FC<HeaderProps> = ({ }) => {
   const navigate = useNavigate();
   const [menuOpened, setMenuOpened] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({}) => {
     if (!uid) return;
     getUserByID(uid)
       .then((res) => res && setUser(res))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // close dropdown map
@@ -243,9 +243,12 @@ const Header: React.FC<HeaderProps> = ({}) => {
                       navigate("/user/my-coins");
                       setMenuOpened(false);
                     }}
-                    className="w-full rounded-xl bg-blue-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
                   >
-                    <GiTwoCoins /> My Coins: <b>{user.Coin}</b>
+                    <GiTwoCoins className="text-lg" />
+                    <span>
+                      My Coins: <b>{user.Coin}</b>
+                    </span>
                   </button>
                 )}
 

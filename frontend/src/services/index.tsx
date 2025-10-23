@@ -17,13 +17,14 @@ import { InverterStatus } from "../interface/IInverterStatus"
 import { BankInterface } from "../interface/IBank"
 import { PaymentCoinInterface } from "../interface/IPaymentCoin";
 import { CarsInterface } from "../interface/ICar";
+import { ServiceInterface } from "../interface/IService";
 
-const apiUrl = "http://10.0.14.228:8000";
-export const apiUrlPicture = "http://10.0.14.228:8000/";
+//const apiUrl = "http://10.0.14.228:8000";
+//export const apiUrlPicture = "http://10.0.14.228:8000/";
 //export const apiUrlPicture = "http://localhost:8000/";
 //const apiUrl = "http://localhost:8000";
-//export const apiUrlPicture = "https://payment-project-t4dj.onrender.com/";
-//const apiUrl = "https://payment-project-t4dj.onrender.com";
+export const apiUrlPicture = "https://payment-project-t4dj.onrender.com/";
+const apiUrl = "https://payment-project-t4dj.onrender.com";
 
 const getAuthHeader = () => {
   const token = localStorage.getItem("token");
@@ -1642,5 +1643,92 @@ export const GetReportByID = async (id: number): Promise<ReportInterface | null>
   } catch (error: any) {
     console.error("Error fetching report:", error.response?.data || error.message);
     return null;
+  }
+};
+
+export const ListServices = async (): Promise<ServiceInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/services`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data; // array ของ ServiceInterface
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching services:", error);
+    return null;
+  }
+};
+
+
+export const UpdateServiceByID = async (
+  id: number,
+  data: Partial<ServiceInterface>
+): Promise<{ message: string; data: ServiceInterface } | null> => {
+  try {
+    const response = await axios.put(`${apiUrl}/services/${id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating service:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const ListCars = async (): Promise<CarsInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/cars`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching cars:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const DeleteCar = async (id: number): Promise<boolean> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/cars/${id}`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      console.log("Car deleted:", response.data);
+      return true;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return false;
+    }
+  } catch (error: any) {
+    console.error("Error deleting car:", error.response?.data || error.message);
+    return false;
   }
 };

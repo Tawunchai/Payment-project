@@ -37,6 +37,7 @@ const New = Loadable(lazy(() => import("../page/admin/New/New")));
 const Create_New = Loadable(lazy(() => import("../page/admin/New/create")));
 const Edit_New = Loadable(lazy(() => import("../page/admin/New/edit")));
 const Line = Loadable(lazy(() => import("../page/SocialProfile/SocialProfile")));
+const Car = Loadable(lazy(() => import("../page/admin/car/index")));
 {/* Monitor  */ }
 const Solar = Loadable(lazy(() => import("../page/admin/mornitor/solar")));
 const Battery = Loadable(lazy(() => import("../page/admin/mornitor/battery")));
@@ -107,6 +108,7 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "Battery", element: <Battery /> }, //edit
       { path: "EV Cabinet", element: <EVCabinet /> }, //edit
       { path: "Line", element: <Line /> }, //edit profile
+      { path: "Car", element: <Car /> }, //edit 
       {/* charts  */},
       { path: "Area", element: <Area /> },
       { path: "Bar", element: <Bar /> },

@@ -19,6 +19,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/report"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/role"
+	"github.com/Tawunchai/work-project/controller/service"
 	"github.com/Tawunchai/work-project/controller/slip"
 	"github.com/Tawunchai/work-project/controller/status"
 	types "github.com/Tawunchai/work-project/controller/type"
@@ -111,10 +112,15 @@ func main() {
 		public.GET("/methods", method.ListMethods)
 
 		//Car
+		public.GET("/cars", car.ListCar)
 		public.POST("/car-create", car.CreateCar)
 		public.GET("/cars/user/:id", car.GetCarByUserID)
 		public.PUT("/cars/:id", car.UpdateCarByID)
+		public.DELETE("/cars/:id", car.DeleteCarByID)
 
+		//service
+		public.GET("/services", service.ListService)
+		public.PUT("/services/:id", service.UpdateServiceByID)
 
 		//review
 		public.GET("/reviews", review.ListReview)
@@ -143,7 +149,6 @@ func main() {
 		public.DELETE("/delete-report/:id", report.DeleteReportByID)
 		public.GET("/report/:id", report.GetReportByID)
 
-
 		//calendar
 		public.GET("/calendars", calendar.ListCalendar)
 		public.POST("/create-calendar", calendar.PostCalendar)
@@ -160,8 +165,8 @@ func main() {
 		c.String(http.StatusOK, "API RUNNING... PORT: %s", PORT)
 	})
 
-	//r.Run("localhost:" + PORT)
-	r.Run("0.0.0.0:" + PORT)
+	r.Run("localhost:" + PORT)
+	//r.Run("0.0.0.0:" + PORT)
 }
 
 func CORSMiddleware() gin.HandlerFunc {

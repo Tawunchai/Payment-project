@@ -22,9 +22,10 @@ import product6 from './product6.jpg';
 import product7 from './product7.jpg';
 import { AiOutlineUser } from 'react-icons/ai';
 import { apiUrlPicture } from "../../services/index"
-import { AiOutlineAreaChart } from "react-icons/ai";
+import { FaCarSide } from "react-icons/fa";
 import { FaChargingStation } from "react-icons/fa";
-import { FaBatteryFull} from "react-icons/fa";
+import { FaBatteryFull } from "react-icons/fa";
+import { FaSolarPanel } from "react-icons/fa";
 export const gridOrderImage = (props: any) => (
   <div>
     <img
@@ -545,6 +546,10 @@ export const links = [
         name: 'Customers',
         icon: <RiContactsLine />,
       },
+      {
+        name: 'Car',
+        icon: <FaCarSide />, // ✅ เมนูใหม่
+      },
     ],
   },
   {
@@ -569,7 +574,7 @@ export const links = [
     links: [
       {
         name: 'Solar',
-        icon: <AiOutlineAreaChart />,
+        icon: <FaSolarPanel />,
       },
       {
         name: 'Battery',
