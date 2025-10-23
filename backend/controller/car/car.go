@@ -19,6 +19,24 @@ type CreateCarInput struct {
 	UserID        uint   `json:"user_id"         binding:"required"` // ✅ เพิ่ม field นี้ (แทน UserIDs array)
 }
 
+// GET /cars
+func ListCar(c *gin.Context) {
+	var cars []entity.Car
+	db := config.DB()
+
+	results := db.
+		Preload("User"). // ✅ ต้องตรงกับชื่อ field ใน entity.Car
+		Find(&cars)
+
+	if results.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, cars)
+}
+
+
 func CreateCar(c *gin.Context) {
 	var input CreateCarInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -169,4 +187,37 @@ func UpdateCarByID(c *gin.Context) {
 		"message": "Car updated successfully",
 		"data":    car,
 	})
+}
+
+// DELETE /cars/:id
+func DeleteCarByID(c *gin.Context) {
+	idParam := c.Param("id")
+	carID, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid car ID"})
+		return
+	}
+
+	db := config.DB()
+
+	// ตรวจสอบว่ารถมีอยู่จริงหรือไม่
+	var car entity.Car
+	if err := db.Preload("User").First(&car, carID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Car not found"})
+		return
+	}
+
+	// ลบความสัมพันธ์ในตารางกลาง user_cars ก่อน (ป้องกัน orphan records)
+	if err := db.Model(&car).Association("User").Clear(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear user-car relationship"})
+		return
+	}
+
+	// ลบข้อมูลรถ
+	if err := db.Delete(&car).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete car"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Car deleted successfully"})
 }

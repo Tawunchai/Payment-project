@@ -20,5 +20,8 @@ type EVcharging struct {
 	TypeID uint
 	Type   *Type `gorm:"foreignKey:TypeID"`
 
+	EVCabinetID uint     
+	EVCabinet   *EVCabinet `gorm:"foreignKey:EVCabinetID"`
+
 	EVChargingPayments []EVChargingPayment `gorm:"foreignKey:EVchargingID"`
 }

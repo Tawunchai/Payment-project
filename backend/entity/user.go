@@ -30,5 +30,7 @@ type User struct {
 
 	Payment []Payment `gorm:"foreignKey:UserID"`
 
+	Booking []Booking `gorm:"foreignKey:UserID"`
+
 	Car    []Car `gorm:"many2many:user_cars;"`
 }

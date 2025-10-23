@@ -20,9 +20,9 @@ var db *gorm.DB
 // --------------------- Custom Logger ---------------------
 type CustomLogger struct{}
 
-func (l *CustomLogger) LogMode(level logger.LogLevel) logger.Interface { return l }
-func (l *CustomLogger) Info(ctx context.Context, msg string, args ...interface{})  {}
-func (l *CustomLogger) Warn(ctx context.Context, msg string, args ...interface{})  {}
+func (l *CustomLogger) LogMode(level logger.LogLevel) logger.Interface            { return l }
+func (l *CustomLogger) Info(ctx context.Context, msg string, args ...interface{}) {}
+func (l *CustomLogger) Warn(ctx context.Context, msg string, args ...interface{}) {}
 func (l *CustomLogger) Error(ctx context.Context, msg string, args ...interface{}) {
 	if !strings.Contains(msg, "record not found") {
 		log.Printf(msg, args...)
@@ -82,6 +82,8 @@ func SetupDatabase() {
 		&entity.User{},
 		&entity.Car{},
 		&entity.PaymentCoin{},
+		&entity.EVCabinet{},
+		&entity.Booking{},
 		&entity.UserRoles{},
 		&entity.Genders{},
 		&entity.Employee{},
@@ -98,6 +100,7 @@ func SetupDatabase() {
 		&entity.Method{},
 		&entity.EVChargingPayment{},
 		&entity.Bank{},
+		&entity.Service{},
 	); err != nil {
 		log.Fatalf("automigrate failed: %v", err)
 	}
@@ -246,17 +249,29 @@ func SeedIfUsersEmpty(db *gorm.DB) {
 	}
 
 	// ใช้ Create รวดเดียว (ตาราง users ยังว่าง)
-	if err := db.Create(&user1).Error; err != nil { log.Fatal(err) }
-	if err := db.Create(&user2).Error; err != nil { log.Fatal(err) }
-	if err := db.Create(&user3).Error; err != nil { log.Fatal(err) }
-	if err := db.Create(&admin1).Error; err != nil { log.Fatal(err) }
-	if err := db.Create(&admin2).Error; err != nil { log.Fatal(err) }
-	if err := db.Create(&employeeUser).Error; err != nil { log.Fatal(err) }
+	if err := db.Create(&user1).Error; err != nil {
+		log.Fatal(err)
+	}
+	if err := db.Create(&user2).Error; err != nil {
+		log.Fatal(err)
+	}
+	if err := db.Create(&user3).Error; err != nil {
+		log.Fatal(err)
+	}
+	if err := db.Create(&admin1).Error; err != nil {
+		log.Fatal(err)
+	}
+	if err := db.Create(&admin2).Error; err != nil {
+		log.Fatal(err)
+	}
+	if err := db.Create(&employeeUser).Error; err != nil {
+		log.Fatal(err)
+	}
 
 	// Cars (ตัวอย่าง many-to-many: ตรวจโครงสร้าง struct ของคุณให้สอดคล้อง)
-	car1 := entity.Car{Brand: "Tesla", ModelCar: "Model 3", LicensePlate: "EV-001",SpecialNumber: true, City: "Bangkok", User: []entity.User{user1}}
-	car2 := entity.Car{Brand: "BYD", ModelCar: "Atto 3", LicensePlate: "EV-002",SpecialNumber: false, City: "Chiang Mai", User: []entity.User{user2}}
-	car3 := entity.Car{Brand: "MG", ModelCar: "ZS EV", LicensePlate: "EV-003",SpecialNumber: false, City: "Khon Kaen", User: []entity.User{user2}}
+	car1 := entity.Car{Brand: "Tesla", ModelCar: "Model 3", LicensePlate: "EV-001", SpecialNumber: true, City: "Bangkok", User: []entity.User{user1}}
+	car2 := entity.Car{Brand: "BYD", ModelCar: "Atto 3", LicensePlate: "EV-002", SpecialNumber: false, City: "Chiang Mai", User: []entity.User{user2}}
+	car3 := entity.Car{Brand: "MG", ModelCar: "ZS EV", LicensePlate: "EV-003", SpecialNumber: false, City: "Khon Kaen", User: []entity.User{user2}}
 	db.FirstOrCreate(&car1, entity.Car{LicensePlate: car1.LicensePlate})
 	db.FirstOrCreate(&car2, entity.Car{LicensePlate: car2.LicensePlate})
 	db.FirstOrCreate(&car3, entity.Car{LicensePlate: car3.LicensePlate})
@@ -304,19 +319,19 @@ func seedContent(db *gorm.DB) {
 
 	// GettingStarted
 	getting1 := entity.GettingStarted{
-		Picture: "uploads/getting_started/gettingone.png",
+		Picture:     "uploads/getting_started/gettingone.png",
 		Title:       "Best interest rates on the market",
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
 		EmployeeID:  empIDPtr,
 	}
 	getting2 := entity.GettingStarted{
-		Picture: "uploads/getting_started/gettingtwo.png",
+		Picture:     "uploads/getting_started/gettingtwo.png",
 		Title:       "Prevent unstable prices",
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
 		EmployeeID:  empIDPtr,
 	}
 	getting3 := entity.GettingStarted{
-		Picture: "uploads/getting_started/gettingthree.png",
+		Picture:     "uploads/getting_started/gettingthree.png",
 		Title:       "Best price on the market",
 		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
 		EmployeeID:  empIDPtr,
@@ -368,6 +383,38 @@ func seedContent(db *gorm.DB) {
 	db.FirstOrCreate(review2, &entity.Review{UserID: &uid2})
 	db.FirstOrCreate(review3, &entity.Review{UserID: &uid3})
 
+	service := &entity.Service{
+		Email:      "support@evstation.example",
+		Phone:      "+66 2 123 4567",
+		Location:   "ชั้น 12 อาคาร EV Station Tower, ถนนสุขุมวิท, กรุงเทพฯ 10110",
+		MapURL:     "https://maps.google.com/?q=EV+Station+Tower",
+		EmployeeID: &emp.ID, 
+	}
+
+	db.FirstOrCreate(service, entity.Service{Email: "support@evstation.example"})
+
+	cabinet1 := &entity.EVCabinet{
+		Name:        "Cabinet A1",
+		Description: "ตู้ชาร์จสำหรับโซนจอดรถด้านหน้า มีหัวชาร์จ 2 หัว รองรับ Solar และ Grid",
+		Location:    "Zone A - อาคารจอดรถชั้น 1",
+		Status:      "Active",
+		EmployeeID:  &emp.ID,
+	}
+
+	db.FirstOrCreate(cabinet1, entity.EVCabinet{Name: "Cabinet A1"})
+
+	cabinetID := uint(1)
+	booking := &entity.Booking{
+		Date:        time.Now(), 
+		UserID:      &uid1,
+		EVCabinetID: &cabinetID,
+	}
+
+	db.FirstOrCreate(booking, entity.Booking{
+		UserID:      &uid1,
+		EVCabinetID: &cabinetID,
+	})
+
 	// Status & Type
 	status1 := entity.Status{Status: "Available"}
 	status2 := entity.Status{Status: "Unavailable"}
@@ -387,6 +434,7 @@ func seedContent(db *gorm.DB) {
 		Description: "Charger A1 is Good",
 		Price:       10,
 		Picture:     "uploads/evcharging/product1.jpg",
+		EVCabinetID: 1,
 		EmployeeID:  empIDPtr,
 		StatusID:    status1.ID,
 		TypeID:      type1.ID,
@@ -396,6 +444,7 @@ func seedContent(db *gorm.DB) {
 		Description: "Charger B2 is Bad",
 		Price:       20,
 		Picture:     "uploads/evcharging/product2.jpg",
+		EVCabinetID: 1,
 		EmployeeID:  empIDPtr,
 		StatusID:    status2.ID,
 		TypeID:      type2.ID,
