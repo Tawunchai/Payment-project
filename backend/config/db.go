@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,13 +17,10 @@ import (
 )
 
 var db *gorm.DB
-var dbJustCreated bool // ✅ true เมื่อไฟล์ DB ยังไม่เคยมี แล้วจะ seed ครั้งแรกเท่านั้น
-
-// ----------------------------- Custom Logger -----------------------------
+func DB() *gorm.DB { return db }
 
 // --------------------- Custom Logger ---------------------
 type CustomLogger struct{}
-
 func (l *CustomLogger) LogMode(level logger.LogLevel) logger.Interface            { return l }
 func (l *CustomLogger) Info(ctx context.Context, msg string, args ...interface{}) {}
 func (l *CustomLogger) Warn(ctx context.Context, msg string, args ...interface{}) {}
@@ -33,35 +31,38 @@ func (l *CustomLogger) Error(ctx context.Context, msg string, args ...interface{
 }
 func (l *CustomLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {}
 
-// --------------------- Helpers ---------------------
-func DB() *gorm.DB { return db }
-
-// เลือก DSN อัตโนมัติ: ถ้ามีดิสก์ถาวรให้ใช้ /var/data, ไม่งั้นใช้ไฟล์โลคัล
-func dsn() string {
-	// คุณสามารถ set ENV DATA_DIR=/var/data ใน Render ก็ได้
+// --------------------- DSN helper ---------------------
+// คืนทั้ง DSN และ "ไฟล์จริง" สำหรับเช็คว่ามีไฟล์อยู่ไหม
+func resolveDSN() (dsn string, filePath string) {
+	// ถ้ากำหนด DATA_DIR ให้เก็บ DB ในที่นั้น
 	dataDir := os.Getenv("DATA_DIR")
 	if dataDir == "" {
+		// Render persistent disk ปกติ mount ที่ /var/data
 		if st, err := os.Stat("/var/data"); err == nil && st.IsDir() {
 			dataDir = "/var/data"
 		}
 	}
 	if dataDir != "" {
-		return fmt.Sprintf("file:%s/work.db?cache=shared&_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)", dataDir)
+		filePath = filepath.Join(dataDir, "work.db")
+		// ใช้ WAL + busy_timeout + shared cache
+		dsn = fmt.Sprintf("file:%s?cache=shared&_pragma=busy_timeout(10000)&_pragma=journal_mode(WAL)", filePath)
+		return
 	}
-	// fallback: ephemeral fs → ข้อมูลหายเมื่อ redeploy
-	return "file:work.db?cache=shared&_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)"
+	// fallback: ephemeral filesystem (หายเมื่อรีดีพลอย)
+	filePath = "work.db"
+	dsn = "file:work.db?cache=shared&_pragma=busy_timeout(10000)&_pragma=journal_mode(WAL)"
+	return
 }
 
 // --------------------- Connect DB ---------------------
 func ConnectionDB() {
-	// ✅ เช็คว่าไฟล์ work.db มีอยู่แล้วหรือยัง
-	if _, err := os.Stat("work.db"); os.IsNotExist(err) {
-		dbJustCreated = true
-	} else {
-		dbJustCreated = false
+	dsn, filePath := resolveDSN()
+
+	// สร้างโฟลเดอร์ปลายทางถ้ายังไม่มี
+	if dir := filepath.Dir(filePath); dir != "." && dir != "/" {
+		_ = os.MkdirAll(dir, 0o755)
 	}
 
-	dsn := "file:work.db?_journal_mode=WAL&_busy_timeout=10000&cache=shared"
 	database, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: &CustomLogger{},
 	})
@@ -69,16 +70,21 @@ func ConnectionDB() {
 		panic("failed to connect database: " + err.Error())
 	}
 	db = database
+	log.Println("✅ Connected SQLite:", filePath)
 
-	// very important for SQLite
-	sqlDB, _ := db.DB()
-	sqlDB.SetMaxOpenConns(1) // ✅ single writer
-	sqlDB.SetMaxIdleConns(1)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	// ตั้งค่า connection pool สำหรับ SQLite
+	sqlDB, err := db.DB()
+	if err == nil && sqlDB != nil {
+		sqlDB.SetMaxOpenConns(1) // สำคัญ: single writer
+		sqlDB.SetMaxIdleConns(1)
+		sqlDB.SetConnMaxLifetime(time.Hour)
+		_ = enableSQLitePragmas(sqlDB) // เปิด foreign_keys/wal/busy_timeout ซ้ำอีกครั้ง
+	}
 
-	// reinforce (optional)
+	// ย้ำ PRAGMA เผื่อบางกรณี
 	db.Exec("PRAGMA journal_mode=WAL;")
-	db.Exec("PRAGMA busy_timeout = 10000;") // 10s
+	db.Exec("PRAGMA busy_timeout = 10000;")
+	db.Exec("PRAGMA foreign_keys = ON;")
 }
 
 func enableSQLitePragmas(sqlDB *sql.DB) error {
@@ -87,13 +93,13 @@ func enableSQLitePragmas(sqlDB *sql.DB) error {
 	}
 	_, _ = sqlDB.Exec(`PRAGMA foreign_keys = ON;`)
 	_, _ = sqlDB.Exec(`PRAGMA journal_mode = WAL;`)
-	_, _ = sqlDB.Exec(`PRAGMA busy_timeout = 5000;`)
+	_, _ = sqlDB.Exec(`PRAGMA busy_timeout = 10000;`)
 	return nil
 }
 
 // --------------------- Migrate & Seed ---------------------
 func SetupDatabase() {
-	// ✅ AutoMigrate ทุกครั้ง (อัปสเคม่า) — แต่ยังไม่ seed ถ้าไม่ใช่ DB ใหม่
+	// AutoMigrate ทุก entity
 	if err := db.AutoMigrate(
 		&entity.SendEmail{},
 		&entity.OTP{},
@@ -123,31 +129,23 @@ func SetupDatabase() {
 		log.Fatalf("automigrate failed: %v", err)
 	}
 
-	// ✅ Seed เฉพาะกรณี "ไฟล์ DB เพิ่งถูกสร้างใหม่"
-	if !dbJustCreated {
-		fmt.Println("ℹ️ Database file already exists -> skip initial seeding.")
-		return
-	}
-
-	fmt.Println("🚀 Fresh database detected -> running initial seed...")
-
-	// Master data (idempotent)
+	// master/idempotent
 	seedMasters(db)
 
-	// Seed Users/Employees/Cars… only if users table is empty
+	// ถ้ายังไม่มี user → ค่อย seed user/employee/car (เงื่อนไขจาก count)
 	SeedIfUsersEmpty(db)
 
-	// ต่อด้วย seed ข้อมูลที่เหลือ (ดึง Employee คนแรกมาอ้างอิง)
+	// เนื้อหาอื่น ๆ (จะใช้ FirstOrCreate ให้ idempotent)
 	seedContent(db)
 
-	// ตัวอย่าง: seed payments หากยังไม่มี
+	// ตัวอย่าง seed payments (idempotent ด้วยการเช็ค count)
 	userID := uint(1)
 	methodID := uint(1)
 	if err := SeedPayments(db, userID, methodID); err != nil {
 		log.Fatalf("Seed payments failed: %v", err)
 	}
 
-	fmt.Println("✅ Initial seed completed.")
+	log.Println("✅ SetupDatabase done.")
 }
 
 // ----------------------------- Master seeds -----------------------------
