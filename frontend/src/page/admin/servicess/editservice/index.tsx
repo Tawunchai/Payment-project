@@ -1,50 +1,56 @@
-// src/pages/admin/Service/ModalEditSendEmail.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Input, message } from "antd";
-import { FaEnvelope, FaKey, FaBolt, FaTimes } from "react-icons/fa";
-import { UpdateSendEmailByID } from "../../../../services/";
-import type { SendEmailInterface } from "../../../../interface/ISendEmail";
+import { FaEnvelope, FaPhoneAlt, FaMapMarkerAlt, FaLink, FaTimes, FaBolt } from "react-icons/fa";
+import type { ServiceInterface } from "../../../../interface/IService";
+import { UpdateServiceByID } from "../../../../services"; // ← ต้องมี service ฟังก์ชันนี้
 
-interface EditSendEmailModalProps {
+interface EditServiceModalProps {
   open: boolean;
   onClose: () => void;
-  record?: SendEmailInterface | null;
-  onUpdated: (updated: SendEmailInterface) => void;
+  record: ServiceInterface;
+  onUpdated: (updated: ServiceInterface) => void;
 }
 
-const ModalEditSendEmail: React.FC<EditSendEmailModalProps> = ({
+const ModalEditService: React.FC<EditServiceModalProps> = ({
   open,
   onClose,
   record,
   onUpdated,
 }) => {
   const [email, setEmail] = useState("");
-  const [passApp, setPassApp] = useState("");
+  const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("");
+  const [mapURL, setMapURL] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     if (record) {
       setEmail(record.Email || "");
-      setPassApp(record.PassApp || "");
+      setPhone(record.Phone || "");
+      setLocation(record.Location || "");
+      setMapURL(record.MapURL || "");
     }
   }, [record]);
 
-  const canSubmit = useMemo(
-    () => email.trim() !== "" && passApp.trim() !== "",
-    [email, passApp]
-  );
+  const canSubmit = useMemo(() => {
+    return email.trim() !== "" && phone.trim() !== "";
+  }, [email, phone]);
 
   const handleSubmit = async () => {
     if (!record?.ID || submitting || !canSubmit) return;
     setSubmitting(true);
     try {
-      const payload = { Email: email.trim(), PassApp: passApp.trim() };
-      console.log(payload)
-      const res = await UpdateSendEmailByID(record.ID, payload);
+      const payload = {
+        Email: email.trim(),
+        Phone: phone.trim(),
+        Location: location.trim(),
+        MapURL: mapURL.trim(),
+      };
+      const res = await UpdateServiceByID(record.ID, payload);
       if (res?.data) {
-        messageApi.success("อัปเดตข้อมูลอีเมลผู้ส่งสำเร็จ!");
-        onUpdated(res.data);
+        messageApi.success("อัปเดต Service Contact สำเร็จ!");
+        onUpdated(res.data as ServiceInterface);
         onClose();
       } else {
         messageApi.error("ไม่สามารถอัปเดตข้อมูลได้");
@@ -76,7 +82,7 @@ const ModalEditSendEmail: React.FC<EditSendEmailModalProps> = ({
       />
 
       {/* Dialog */}
-      <div className="relative w-full max-w-[520px] mx-4 mt-24 md:mt-0 mb-8 md:mb-0">
+      <div className="relative w-full max-w-[560px] mx-4 mt-24 md:mt-0 mb-8 md:mb-0">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100 flex flex-col max-h-[85vh]">
           {/* Header */}
           <div className="px-5 pt-3 pb-4 md:pt-4 md:pb-4 bg-blue-600 text-white">
@@ -84,7 +90,9 @@ const ModalEditSendEmail: React.FC<EditSendEmailModalProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FaBolt className="opacity-90" />
-                <h2 className="text-base md:text-lg font-semibold">แก้ไขอีเมลผู้ส่ง OTP</h2>
+                <h2 className="text-base md:text-lg font-semibold">
+                  แก้ไข Service Contact
+                </h2>
               </div>
               <button
                 onClick={onClose}
@@ -102,30 +110,54 @@ const ModalEditSendEmail: React.FC<EditSendEmailModalProps> = ({
               {/* EMAIL */}
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaEnvelope className="text-blue-500" /> อีเมลผู้ส่ง (Gmail)
+                  <FaEnvelope className="text-blue-500" /> อีเมลติดต่อ
                 </span>
                 <Input
                   className="mt-1 rounded-xl border border-slate-300 p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="เช่น yourname@gmail.com"
+                  placeholder="เช่น support@evstation.example"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </label>
 
-              {/* APP PASSWORD */}
+              {/* PHONE */}
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaKey className="text-blue-500" /> รหัสผ่านแอป (App password)
+                  <FaPhoneAlt className="text-blue-500" /> เบอร์โทร
                 </span>
-                <Input.Password
+                <Input
                   className="mt-1 rounded-xl border border-slate-300 p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder="xxxx xxxx xxxx xxxx"
-                  value={passApp}
-                  onChange={(e) => setPassApp(e.target.value)}
+                  placeholder="+66 2 123 4567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
-                <span className="text-[11px] text-slate-500">
-                  ใช้รหัสผ่านแอปของ Gmail (เปิด 2-Step Verification และสร้าง App password)
+              </label>
+
+              {/* LOCATION */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaMapMarkerAlt className="text-blue-500" /> ที่อยู่/สถานที่
                 </span>
+                <Input.TextArea
+                  className="mt-1 rounded-xl border border-slate-300 p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="เช่น ชั้น 12 อาคาร..., ถนนสุขุมวิท..., กรุงเทพฯ"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  rows={3}
+                />
+              </label>
+
+              {/* MAP URL */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaLink className="text-blue-500" /> ลิงก์แผนที่ (Google Maps URL)
+                </span>
+                <Input
+                  className="mt-1 rounded-xl border border-slate-300 p-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="https://maps.google.com/?q=..."
+                  value={mapURL}
+                  onChange={(e) => setMapURL(e.target.value)}
+                />
               </label>
             </div>
           </div>
@@ -151,12 +183,10 @@ const ModalEditSendEmail: React.FC<EditSendEmailModalProps> = ({
             </button>
           </div>
 
-          {/* Safe Area (iOS) */}
           <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
 
-      {/* Scoped CSS */}
       <style>{`
         .ev-scope input, .ev-scope textarea {
           border-radius: 0.75rem !important;
@@ -166,4 +196,4 @@ const ModalEditSendEmail: React.FC<EditSendEmailModalProps> = ({
   );
 };
 
-export default ModalEditSendEmail;
+export default ModalEditService;

@@ -9,7 +9,7 @@ import Year from "./year/notebook"
 //
 const Ecommerce = () => {
   return (
-    <div className="flex-1 ml-0 mt-24">
+    <div className="flex-1 ml-0 mt-24 md:mt-0">
       <Introduction />
 
       <div className="flex gap-1 flex-wrap justify-center">

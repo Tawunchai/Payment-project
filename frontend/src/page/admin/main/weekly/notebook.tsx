@@ -22,11 +22,9 @@ const Index = () => {
   const [mostEV, setMostEV] = useState<any>(null);
   const [totalReviews, setTotalReviews] = useState<number>(0);
 
-  // 🔹 เก็บรายการรีวิวทั้งหมดสำหรับแสดงใน Modal
   const [reviewList, setReviewList] = useState<any[]>([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState<boolean>(false);
 
-  // 🔹 loading ต่อรายการสำหรับปุ่ม
   const [toggleLoading, setToggleLoading] = useState<Record<string | number, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string | number, boolean>>({});
 
@@ -36,7 +34,6 @@ const Index = () => {
       const evPayments = await ListEVChargingPayments();
       const reviews = await ListReviews();
 
-      // ✅ 1. Top Payer
       const userTotals: Record<string, number> = {};
       payments?.forEach((p: any) => {
         const name = `${p?.User?.FirstName ?? ''} ${p?.User?.LastName ?? ''}`.trim() || 'Unknown';
@@ -46,7 +43,6 @@ const Index = () => {
       const topUser = Object.entries(userTotals).sort((a, b) => b[1] - a[1])[0];
       setTopPayer({ name: topUser?.[0], amount: topUser?.[1] ?? 0 });
 
-      // ✅ 2. Top Revenue EV Charger
       const evTotals: Record<string, number> = {};
       const evIncome: Record<string, number> = {};
       evPayments?.forEach((ev: any) => {
@@ -62,7 +58,6 @@ const Index = () => {
         income: evIncome[topEV] ?? 0,
       });
 
-      // ✅ 3. Total Reviews + รายการรีวิว
       setTotalReviews(reviews?.length ?? 0);
       setReviewList(reviews ?? []);
     };
@@ -70,35 +65,30 @@ const Index = () => {
     fetchData();
   }, []);
 
-  // 👉 Toggle สถานะการมองเห็น (true ↔ false)
   const handleToggleVisibility = async (record: any) => {
     const id = record?.ID ?? record?.id;
-    if (id === undefined) return;
-
+    if (!id) return;
     const nextStatus = !record?.Status;
+
     try {
       setToggleLoading((s) => ({ ...s, [id]: true }));
       const res = await UpdateReviewStatusByID(id, nextStatus);
       if (!res) throw new Error('Update failed');
 
-      // อัปเดต state ทันที
       setReviewList((list) =>
         list.map((r) => ((r.ID ?? r.id) === id ? { ...r, Status: nextStatus } : r))
       );
-
       message.success(nextStatus ? 'เปิดการมองเห็นรีวิวแล้ว' : 'ปิดการมองเห็นรีวิวแล้ว');
-    } catch (err) {
-      console.error(err);
+    } catch {
       message.error('ไม่สามารถอัปเดตสถานะได้');
     } finally {
       setToggleLoading((s) => ({ ...s, [id]: false }));
     }
   };
 
-  // 👉 ลบรีวิว
   const handleDeleteReview = async (record: any) => {
     const id = record?.ID ?? record?.id;
-    if (id === undefined) return;
+    if (!id) return;
 
     try {
       setDeleteLoading((s) => ({ ...s, [id]: true }));
@@ -108,15 +98,13 @@ const Index = () => {
       setReviewList((list) => list.filter((r) => (r.ID ?? r.id) !== id));
       setTotalReviews((n) => Math.max(0, n - 1));
       message.success('ลบรีวิวสำเร็จ');
-    } catch (err) {
-      console.error(err);
+    } catch {
       message.error('ไม่สามารถลบรีวิวได้');
     } finally {
       setDeleteLoading((s) => ({ ...s, [id]: false }));
     }
   };
 
-  // ตารางสำหรับ Modal Reviews
   const reviewColumns = useMemo(
     () => [
       {
@@ -130,9 +118,7 @@ const Index = () => {
         title: 'User',
         key: 'user',
         render: (_: any, record: any) => {
-          const first = record?.User?.FirstName ?? '';
-          const last = record?.User?.LastName ?? '';
-          const name = `${first} ${last}`.trim();
+          const name = `${record?.User?.FirstName ?? ''} ${record?.User?.LastName ?? ''}`.trim();
           const email = record?.User?.Email ?? '';
           return name || email || 'Unknown';
         },
@@ -142,7 +128,7 @@ const Index = () => {
         dataIndex: 'Rating',
         key: 'rating',
         width: 100,
-        render: (val: any) => (val ?? '-') as any,
+        render: (val: any) => val ?? '-',
       },
       {
         title: 'Comment',
@@ -156,28 +142,19 @@ const Index = () => {
         dataIndex: 'CreatedAt',
         key: 'date',
         width: 200,
-        render: (val: any) => {
-          try {
-            return val ? new Date(val).toLocaleString() : '-';
-          } catch {
-            return '-';
-          }
-        },
+        render: (val: any) =>
+          val ? new Date(val).toLocaleString() : '-',
       },
-      // ✅ คอลัมน์จัดการ
       {
         title: 'จัดการ',
         key: 'actions',
-        fixed: 'right' as const,
         width: 260,
         render: (_: any, record: any) => {
           const id = record?.ID ?? record?.id;
           const isVisible = !!record?.Status;
-
-          // สีอ่อนตามสถานะ
           const btnStyle = isVisible
-            ? { backgroundColor: '#d1fae5', color: '#065f46', borderColor: '#a7f3d0' } // เขียวอ่อน
-            : { backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }; // แดงอ่อน
+            ? { backgroundColor: '#dbeafe', color: '#1e3a8a', borderColor: '#bfdbfe' } // blue tone
+            : { backgroundColor: '#e2e8f0', color: '#334155', borderColor: '#cbd5e1' };
 
           return (
             <div className="flex items-center gap-2">
@@ -188,7 +165,7 @@ const Index = () => {
                   loading={!!toggleLoading[id]}
                   style={btnStyle}
                 >
-                  {isVisible ? 'เปิดการมองเห็น' : 'ปิดการมองเห็น'}
+                  {isVisible ? 'เปิด' : 'ปิด'}
                 </Button>
               </Tooltip>
 
@@ -219,26 +196,24 @@ const Index = () => {
       amount: `฿${topPayer?.amount?.toLocaleString() ?? '-'}`,
       title: 'Top Payer',
       desc: topPayer?.name ?? '-',
-      iconBg: '#FB9678',
-      pcColor: 'green-600',
-      clickable: false,
+      iconBg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+      textColor: 'text-blue-700',
     },
     {
       icon: <FiStar />,
       amount: `฿${mostEV?.income?.toLocaleString() ?? '-'}`,
       title: 'Top EV Charger',
       desc: `${mostEV?.name ?? '-'} (${mostEV?.count ?? 0} transections)`,
-      iconBg: 'rgb(254, 201, 15)',
-      pcColor: 'green-600',
-      clickable: false,
+      iconBg: 'linear-gradient(135deg, #38bdf8, #0ea5e9)',
+      textColor: 'text-blue-700',
     },
     {
       icon: <BsChatLeft />,
       amount: `${totalReviews} Reviews`,
       title: 'Total Reviews',
       desc: 'Across all users',
-      iconBg: '#00C292',
-      pcColor: 'blue-600',
+      iconBg: 'linear-gradient(135deg, #60a5fa, #2563eb)',
+      textColor: 'text-blue-700',
       clickable: true,
     },
   ];
@@ -251,34 +226,34 @@ const Index = () => {
 
   return (
     <>
-      <div className="md:w-200 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-2xl p-6 m-3">
+      <div className="md:w-200 bg-white border border-blue-100 rounded-2xl p-6 m-3 shadow-sm">
         <div className="flex justify-between">
-          <p className="text-xl font-semibold">Weekly Stats</p>
-          <button type="button" className="text-xl font-semibold text-gray-500">
+          <p className="text-xl font-semibold text-blue-800">Weekly Stats</p>
+          <button
+            type="button"
+            className="text-xl font-semibold text-blue-500 hover:text-blue-700"
+          >
             <IoIosMore />
           </button>
         </div>
 
-        <div className="mt-10">
+        <div className="mt-8">
           {stats.map((item, index) => (
-            <div key={index} className="flex justify-between mt-4 w-full">
-              <div className="flex gap-4">
-                <button
-                  type="button"
+            <div key={index} className="flex justify-between items-center mt-4 w-full">
+              <div className="flex gap-4 items-center">
+                <div
+                  className="text-2xl text-white rounded-full p-3 shadow-md"
                   style={{ background: item.iconBg }}
-                  className="text-2xl hover:drop-shadow-xl text-white rounded-full p-3"
                 >
                   {item.icon}
-                </button>
+                </div>
                 <div>
-                  <p className="text-md font-semibold">{item.title}</p>
-                  <p className="text-sm text-gray-400">{item.desc}</p>
+                  <p className="text-md font-semibold text-gray-800">{item.title}</p>
+                  <p className="text-sm text-gray-500">{item.desc}</p>
                 </div>
               </div>
-
-              {/* ✅ คลิกได้เฉพาะ Reviews */}
               <p
-                className={`${item.clickable ? 'cursor-pointer underline underline-offset-4' : ''} text-${item.pcColor}`}
+                className={`cursor-pointer ${item.textColor} font-semibold`}
                 onClick={() => handleClickAmount(item)}
                 title={item.clickable ? 'View all reviews' : undefined}
               >
@@ -287,7 +262,7 @@ const Index = () => {
             </div>
           ))}
 
-          <div className="mt-4">
+          <div className="mt-5">
             <SparkLine
               currentColor={currentColor}
               id="area-sparkLine"
@@ -295,13 +270,12 @@ const Index = () => {
               type="Area"
               data={SparklineAreaData}
               width="320"
-              color="rgb(242, 252, 253)"
+              color="rgb(219, 234, 254)"
             />
           </div>
         </div>
       </div>
 
-      {/* ✅ Modal แสดงรายการ Reviews ทั้งหมด */}
       <Modal
         title={`All Reviews (${totalReviews})`}
         open={isReviewModalOpen}
@@ -315,7 +289,7 @@ const Index = () => {
           dataSource={reviewList}
           columns={reviewColumns as any}
           pagination={{ pageSize: 10, showSizeChanger: true }}
-          scroll={{ x: 800 }} // เอาออกถ้าไม่อยากให้มีแถบเลื่อนแนวนอน
+          scroll={{ x: 800 }}
         />
       </Modal>
     </>
