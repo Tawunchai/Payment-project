@@ -109,7 +109,7 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "Solar", element: <Solar /> }, //edit
       { path: "Battery", element: <Battery /> }, //edit
       { path: "EV Cabinet", element: <EVCabinet /> }, //edit
-      { path: "Line", element: <Line /> }, //edit profile
+      { path: "profile", element: <Line /> }, //edit profile
       { path: "Car", element: <Car /> }, //edit 
       {/* charts  */},
       { path: "Area", element: <Area /> },
