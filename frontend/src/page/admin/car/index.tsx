@@ -7,9 +7,6 @@ import {
   Space,
   Modal,
   message,
-  Spin,
-  Empty,
-  Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -19,30 +16,16 @@ import {
   ExclamationCircleOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
-import {
-  ListCars,
-  DeleteCar,
-  ListServices,
-  apiUrlPicture,
-} from "../../../services";
+import { ListCars, DeleteCar, apiUrlPicture } from "../../../services";
 import type { CarsInterface } from "../../../interface/ICar";
-import type { ServiceInterface } from "../../../interface/IService";
 import {
   FaCarSide,
   FaTruckPickup,
   FaTaxi,
   FaBusAlt,
-  FaEnvelope,
-  FaPhoneAlt,
-  FaMapMarkerAlt,
-  FaCalendarAlt,
 } from "react-icons/fa";
-import { RiExternalLinkLine } from "react-icons/ri";
 import { utils, writeFile } from "xlsx";
 import ModalEditCar from "./edit";
-import ModalEditService from "./editservice"; 
-
-const { Text, Link } = Typography;
 
 // -------------------- Row Type --------------------
 type RowType = {
@@ -61,12 +44,9 @@ type RowType = {
 
 const CarList: React.FC = () => {
   const [cars, setCars] = useState<RowType[]>([]);
-  const [services, setServices] = useState<ServiceInterface[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingService, setLoadingService] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [editCar, setEditCar] = useState<any | null>(null);
-  const [editService, setEditService] = useState<ServiceInterface | null>(null); // ✅ state สำหรับ ModalEditService
 
   // 🚗 ไอคอนสุ่มเฉพาะรถยนต์
   const carIcons = [FaCarSide, FaTruckPickup, FaTaxi, FaBusAlt];
@@ -84,9 +64,7 @@ const CarList: React.FC = () => {
         const rows: RowType[] = res.map((c: CarsInterface, i: number) => {
           const ownerNames =
             c.User && c.User.length > 0
-              ? c.User.map((u) => `${u.FirstName || ""} ${u.LastName || ""}`).join(
-                  ", "
-                )
+              ? c.User.map((u) => `${u.FirstName || ""} ${u.LastName || ""}`).join(", ")
               : "-";
           return {
             key: i + 1,
@@ -109,20 +87,8 @@ const CarList: React.FC = () => {
     }
   };
 
-  // -------- Fetch services --------
-  const fetchServices = async () => {
-    setLoadingService(true);
-    try {
-      const res = await ListServices();
-      if (res) setServices(res);
-    } finally {
-      setLoadingService(false);
-    }
-  };
-
   useEffect(() => {
     fetchCars();
-    fetchServices();
   }, []);
 
   // -------- Delete Car Handler --------
@@ -193,9 +159,7 @@ const CarList: React.FC = () => {
       key: "index",
       width: 60,
       align: "center",
-      render: (_, record) => (
-        <span className="font-semibold">{record.Index}</span>
-      ),
+      render: (_, record) => <span className="font-semibold">{record.Index}</span>,
     },
     {
       title: "Brand / Icon",
@@ -235,9 +199,7 @@ const CarList: React.FC = () => {
       render: (_, record) => {
         const user = record.Raw.User?.[0];
         if (!user)
-          return (
-            <span className="text-gray-400 italic">ไม่พบข้อมูลผู้ใช้</span>
-          );
+          return <span className="text-gray-400 italic">ไม่พบข้อมูลผู้ใช้</span>;
 
         const avatarUrl = user.Profile
           ? `${apiUrlPicture}${user.Profile}`
@@ -307,9 +269,7 @@ const CarList: React.FC = () => {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <h1 className="text-sm sm:text-base font-semibold tracking-wide">
-            Cars
-          </h1>
+          <h1 className="text-sm sm:text-base font-semibold tracking-wide">Cars</h1>
           <Button
             icon={<DownloadOutlined />}
             onClick={handleExportCSV}
@@ -352,94 +312,6 @@ const CarList: React.FC = () => {
           />
         </div>
 
-        {/* ✅ Service Contact Section */}
-        <div className="w-full bg-white py-12 border-t border-blue-100 mt-10">
-          <div className="text-center mb-10">
-            <h1 className="text-2xl font-bold text-blue-700">
-              Service Contact Center
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              ข้อมูลติดต่อบริการทั้งหมดในระบบ EV Platform
-            </p>
-          </div>
-
-          {loadingService ? (
-            <div className="flex justify-center items-center h-64">
-              <Spin size="large" />
-            </div>
-          ) : services.length === 0 ? (
-            <Empty description="ไม่พบข้อมูลบริการ" className="mt-20" />
-          ) : (
-            <div className="flex flex-col gap-8">
-              {services.map((s) => (
-                <div
-                  key={s.ID}
-                  className="w-full shadow-lg rounded-2xl bg-white border border-gray-100 hover:shadow-xl transition-all duration-300 p-6"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-3">
-                    <span className="font-semibold text-blue-700 text-lg">
-                      Service #{s.ID}
-                    </span>
-                    <Button
-                      icon={<EditOutlined />}
-                      className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                      onClick={() => setEditService(s)}
-                    >
-                      Edit Service Contact
-                    </Button>
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-gray-700 text-sm">
-                    {/* Email */}
-                    <div className="flex items-center gap-2">
-                      <FaEnvelope className="text-blue-600" />
-                      <Text copyable>{s.Email || "-"}</Text>
-                    </div>
-
-                    {/* Phone */}
-                    <div className="flex items-center gap-2">
-                      <FaPhoneAlt className="text-blue-600" />
-                      <Text>{s.Phone || "-"}</Text>
-                    </div>
-
-                    {/* Location */}
-                    <div className="flex items-start gap-2 sm:col-span-2">
-                      <FaMapMarkerAlt className="text-blue-600 mt-1" />
-                      <div className="flex flex-col">
-                        <Text>{s.Location || "-"}</Text>
-                        {s.MapURL && (
-                          <Link
-                            href={s.MapURL}
-                            target="_blank"
-                            className="text-blue-500 flex items-center gap-1 hover:underline"
-                          >
-                            เปิดแผนที่ <RiExternalLinkLine />
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Date */}
-                    <div className="flex items-center gap-2 text-gray-500 text-xs pt-3 col-span-full border-t border-gray-100 mt-2 pt-3">
-                      <FaCalendarAlt />
-                      <span>
-                        {new Date(s.CreatedAt || "").toLocaleDateString(
-                          "th-TH",
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          }
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         <p className="text-[12px] text-gray-500 text-center mt-10">
           EV Blue • มินิมอล • รองรับมือถือ
         </p>
@@ -452,19 +324,6 @@ const CarList: React.FC = () => {
           car={editCar}
           onClose={() => setEditCar(null)}
           onUpdated={fetchCars}
-        />
-      )}
-
-      {/* ✅ Modal Edit Service Contact */}
-      {editService && (
-        <ModalEditService
-          open={!!editService}
-          service={editService}
-          onClose={() => setEditService(null)}
-          onUpdated={() => {
-            fetchServices();
-            message.success("อัปเดตข้อมูลบริการสำเร็จ");
-          }}
         />
       )}
 

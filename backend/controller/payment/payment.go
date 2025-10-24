@@ -258,6 +258,36 @@ func ListPaymentCoins(c *gin.Context) {
 	c.JSON(http.StatusOK, paymentCoins)
 }
 
+// GET /payment-coins/:user_id
+func ListPaymentCoinsByUserID(c *gin.Context) {
+	userIDParam := c.Param("user_id")
+	userID, err := strconv.ParseUint(userIDParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var paymentCoins []entity.PaymentCoin
+	db := config.DB()
+	result := db.
+		Preload("User").
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Find(&paymentCoins)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	if len(paymentCoins) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "No payment records found", "data": []entity.PaymentCoin{}})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": paymentCoins})
+}
+
 func CreatePaymentCoin(c *gin.Context) {
     var filePath string
 

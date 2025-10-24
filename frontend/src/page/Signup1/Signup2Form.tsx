@@ -5,6 +5,8 @@ import { PlusOutlined } from "@ant-design/icons";
 import { FaBolt } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { ListGenders, CreateUser } from "../../services";
+import { SendOTP } from "../../services/httpLogin"; 
+import OTPModal from "./otp/index"; 
 import { currentYear } from "./data";
 import Background from "../../assets/woman-charging-electro-car-by-her-house.jpg";
 
@@ -14,8 +16,11 @@ const Signup2Form: React.FC = () => {
   const [genderOptions, setGenderOptions] = useState<{ ID: number; Name: string }[]>([]);
   const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<any>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
+  // โหลดข้อมูลเพศ
   useEffect(() => {
     const fetchGenders = async () => {
       const res = await ListGenders();
@@ -42,11 +47,31 @@ const Signup2Form: React.FC = () => {
     imgWindow?.document.write(`<img src="${src}" style="max-width:100%;" />`);
   };
 
+  // ========================= ส่ง OTP ก่อนสมัคร =========================
   const onFinish = async (values: any) => {
     if (fileList.length === 0) {
       messageApi.error("กรุณาอัปโหลดรูปภาพก่อนสมัคร");
       return;
     }
+
+    try {
+      setLoading(true);
+      await SendOTP(values.email);
+      setPendingValues(values);
+      setOtpModalOpen(true);
+      messageApi.info("รหัส OTP ถูกส่งไปยังอีเมลของคุณแล้ว");
+    } catch (err) {
+      messageApi.error("ส่ง OTP ไม่สำเร็จ โปรดลองอีกครั้ง");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ========================= สมัครจริงหลังยืนยัน OTP =========================
+  const handleOTPVerified = async () => {
+    const values = pendingValues;
+    if (!values) return;
+
     setLoading(true);
     const formData = new FormData();
     formData.append("username", values.username);
@@ -63,25 +88,23 @@ const Signup2Form: React.FC = () => {
       const res = await CreateUser(formData);
       if (res) {
         messageApi.success("สมัครสมาชิกสำเร็จ!");
-        setTimeout(() => {
-          setLoading(false);
-          navigate("/auth/login-2");
-        }, 900);
+        navigate("/auth/login-2");
       } else {
         messageApi.error("สมัครไม่สำเร็จ");
-        setLoading(false);
       }
     } catch {
       messageApi.error("เกิดข้อผิดพลาดในการสมัคร");
+    } finally {
       setLoading(false);
+      setOtpModalOpen(false);
     }
   };
 
+  // ======================================================================
   return (
     <>
       {contextHolder}
 
-      {/* ยกการ์ดขึ้นเล็กน้อย */}
       <div className="relative min-h-dvh flex items-start justify-center px-4 py-6 md:py-5 overflow-hidden">
         {/* BG */}
         <div className="absolute inset-0 -z-10">
@@ -129,18 +152,19 @@ const Signup2Form: React.FC = () => {
                   >
                     EV Station
                   </h1>
-                  <p className="text-[12px] text-blue-700/70 font-medium">Drive • Charge • Future</p>
+                  <p className="text-[12px] text-blue-700/70 font-medium">
+                    Drive • Charge • Future
+                  </p>
                 </div>
               </div>
 
-              {/* Animated line (ชิดขึ้น) */}
               <div className="mb-4">
                 <div className="h-[2px] w-full rounded-full bg-gray-100 overflow-hidden">
                   <div className="h-full w-1/3 bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 animate-barSlide rounded-full" />
                 </div>
               </div>
 
-              {/* ===== Layout ===== */}
+              {/* FORM */}
               <Form
                 layout="vertical"
                 form={form}
@@ -150,7 +174,7 @@ const Signup2Form: React.FC = () => {
                 className="form-compact"
               >
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  {/* LEFT: Upload + Gender */}
+                  {/* LEFT */}
                   <div className="md:col-span-4">
                     <Form.Item
                       label={<span className="text-sm text-gray-700">Profile Picture</span>}
@@ -195,12 +219,11 @@ const Signup2Form: React.FC = () => {
                       </ImgCrop>
                     </Form.Item>
 
-                    {/* ดันให้ Gender อยู่ระนาบเดียวกับ First/Last Name */}
                     <Form.Item
                       name="gender"
                       label={<span className="text-sm text-gray-700">Gender</span>}
                       rules={[{ required: true, message: "กรุณาเลือกเพศ" }]}
-                      className="mb-5 md:mt-[39px]"  // ปรับเลขนี้ถ้าต้องการจูนเพิ่มนิดหน่อย
+                      className="mb-5 md:mt-[39px]"
                     >
                       <Select placeholder="Select Gender" size="middle" className="!rounded-xl">
                         {genderOptions.map((g) => (
@@ -216,7 +239,7 @@ const Signup2Form: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* RIGHT: Fields */}
+                  {/* RIGHT */}
                   <div className="md:col-span-8">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                       <Form.Item
@@ -261,7 +284,6 @@ const Signup2Form: React.FC = () => {
                         <Input placeholder="0XXXXXXXXX" size="middle" className="rounded-xl" />
                       </Form.Item>
 
-                      {/* แถวนี้จะอยู่ระนาบเดียวกับ Gender */}
                       <Form.Item
                         name="firstname"
                         label={<span className="text-sm text-gray-700">First Name</span>}
@@ -302,7 +324,9 @@ const Signup2Form: React.FC = () => {
                       </Link>
                     </div>
 
-                    <p className="mt-4 text-center text-[11px] text-gray-500">© EV Station {currentYear}</p>
+                    <p className="mt-4 text-center text-[11px] text-gray-500">
+                      © EV Station {currentYear}
+                    </p>
                   </div>
                 </div>
               </Form>
@@ -311,7 +335,15 @@ const Signup2Form: React.FC = () => {
         </div>
       </div>
 
-      {/* Animations + compact + upload sizing */}
+      {/* ✅ เรียก Modal OTP */}
+      <OTPModal
+        open={otpModalOpen}
+        email={pendingValues?.email || ""}
+        onSuccess={handleOTPVerified}
+        onCancel={() => setOtpModalOpen(false)}
+      />
+
+      {/* Animations */}
       <style>{`
         @keyframes evTextShine {
           0% { background-position: 0% 50%; }
@@ -324,27 +356,12 @@ const Signup2Form: React.FC = () => {
           100% { transform: translateX(110%); }
         }
         .animate-barSlide { animation: barSlide 2.4s ease-in-out infinite; }
-
         .form-compact .ant-form-item { margin-bottom: 12px; }
         .form-compact .ant-form-item-label > label { font-size: 12px; }
-
-        /* อัปโหลด: ขนาดคงที่เพื่อจัดระนาบให้แม่น */
         .signup-upload-balanced .ant-upload-select-picture-card {
           width: 220px !important;
           height: 220px !important;
           border-radius: 14px;
-        }
-        @media (min-width: 1280px) {
-          .signup-upload-balanced .ant-upload-select-picture-card {
-            width: 240px !important;
-            height: 240px !important;
-          }
-        }
-        @media (max-width: 767px) {
-          .signup-upload-balanced .ant-upload-select-picture-card {
-            width: 180px !important;
-            height: 180px !important;
-          }
         }
       `}</style>
     </>

@@ -171,6 +171,20 @@ export const GetUserByID = async (
   }
 };
 
+export const SendOTP = async (email: string) => {
+  const formData = new FormData();
+  formData.append("email", email);
+  const res = await axios.post(`${apiUrl}/send-otp`, formData);
+  return res.data;
+};
+
+export const VerifyOTP = async (email: string, otp: string) => {
+  const formData = new FormData();
+  formData.append("email", email);
+  formData.append("otp", otp);
+  const res = await axios.post(`${apiUrl}/verify-otp`, formData);
+  return res.data;
+};
 
 export {
   AddLogin,

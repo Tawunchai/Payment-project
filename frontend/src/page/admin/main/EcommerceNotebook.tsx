@@ -6,7 +6,7 @@ import Banding from "./branding/notebook"
 import Introduction from "./header/notebook"
 import Month from "./month/notebook"
 import Year from "./year/notebook"
-
+//
 const Ecommerce = () => {
   return (
     <div className="flex-1 ml-0 mt-24">
