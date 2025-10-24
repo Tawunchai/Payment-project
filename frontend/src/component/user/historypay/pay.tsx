@@ -1,7 +1,13 @@
 import { JSX, useEffect, useMemo, useState } from "react";
-import { FaCoins, FaPaypal, FaWallet } from "react-icons/fa";
+import { FaCoins, FaPaypal, FaWallet, FaMoneyBillWave } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { getUserByID, apiUrlPicture, ListPaymentsByUserID } from "../../../services";
+import {
+  getUserByID,
+  apiUrlPicture,
+  ListPaymentsByUserID,
+  ListPaymentCoinsByUserID,
+} from "../../../services";
+import type { PaymentCoinInterface } from "../../../interface/IPaymentCoin";
 
 interface TransactionItem {
   icon: JSX.Element;
@@ -35,17 +41,25 @@ const HistoryPay = () => {
     n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const fmtDate = (d: string | Date) =>
-    new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
+    new Date(d).toLocaleDateString("th-TH", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
 
   const fmtTime = (d: string | Date) =>
-    new Date(d).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+    new Date(d).toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
 
   const pickStyleByMethod = (methodId?: number, methodName?: string) => {
     const name = (methodName || "").toLowerCase();
     if (methodId === 2 || name.includes("coin") || name.includes("coins")) {
       return {
         icon: <FaCoins className="text-base text-white" />,
-        bg: "bg-blue-400",
+        bg: "bg-yellow-400",
         title: methodName || "Coins",
         desc: "ชำระด้วย Coins",
       };
@@ -58,6 +72,7 @@ const HistoryPay = () => {
     };
   };
 
+  // ดึงข้อมูลผู้ใช้
   useEffect(() => {
     const fetchUser = async () => {
       const _uid = Number(localStorage.getItem("userid")) || userid || 0;
@@ -74,16 +89,21 @@ const HistoryPay = () => {
     fetchUser();
   }, []);
 
+  // ดึงประวัติการชำระ + เติม Coin
   useEffect(() => {
     const fetchHistory = async () => {
       if (!userid) return;
       setLoading(true);
       try {
-        const list = await ListPaymentsByUserID(userid);
-        const payments = (list ?? []).map((it: any) => {
+        const [paymentList, coinList] = await Promise.all([
+          ListPaymentsByUserID(userid),
+          ListPaymentCoinsByUserID(userid),
+        ]);
+
+        const payments = (paymentList ?? []).map((it: any) => {
           const amount = Number(it.Amount) || 0;
           const methodName: string =
-            it?.Method?.Medthod || it?.Method?.Method || it?.Method?.Name || "";
+            it?.Method?.Method || it?.Method?.Name || "QR Payment";
           const methodId: number | undefined = it?.MethodID;
           const style = pickStyleByMethod(methodId, methodName);
           const dateRaw: string = it?.CreatedAt || it?.Date || "";
@@ -94,7 +114,25 @@ const HistoryPay = () => {
             title: style.title,
             desc: style.desc,
             amountNum: amount,
-            amountText: `$${fmt(amount)}`,
+            amountText: `฿${fmt(amount)}`,
+            color: "text-red-500",
+            date: dateRaw,
+            displayDate: dateRaw ? fmtDate(dateRaw) : "",
+            displayTime: dateRaw ? fmtTime(dateRaw) : "",
+          } as TransactionItem;
+        });
+
+        // เติม Coin (จาก PaymentCoin)
+        const coins = (coinList ?? []).map((it: PaymentCoinInterface) => {
+          const amount = Number(it.Amount) || 0;
+          const dateRaw: string = it?.CreatedAt || it?.Date || "";
+          return {
+            icon: <FaMoneyBillWave className="text-white text-base" />,
+            bg: "bg-green-500",
+            title: "เติม Coins",
+            desc: `Ref: ${it.ReferenceNumber}`,
+            amountNum: amount,
+            amountText: `+${fmt(amount)} Coins`,
             color: "text-green-600",
             date: dateRaw,
             displayDate: dateRaw ? fmtDate(dateRaw) : "",
@@ -102,18 +140,14 @@ const HistoryPay = () => {
           } as TransactionItem;
         });
 
-        payments.sort((a, b) => {
+        const all = [...payments, ...coins].sort((a, b) => {
           const da = a.date ? new Date(a.date).getTime() : 0;
           const db = b.date ? new Date(b.date).getTime() : 0;
           return db - da;
         });
 
-        setTransactions(payments);
-
-        const sum = (list ?? []).reduce(
-          (acc: number, cur: any) => acc + (Number(cur.Amount) || 0),
-          0
-        );
+        setTransactions(all);
+        const sum = all.reduce((acc, cur) => acc + cur.amountNum, 0);
         setTotalAmount(sum);
       } finally {
         setLoading(false);
@@ -123,10 +157,7 @@ const HistoryPay = () => {
   }, [userid]);
 
   const coinBalance = useMemo(() => user?.Coin ?? 0, [user]);
-
-  // ความสูงสูงสุดของ “6 แถว” (ปรับได้ตามดีไซน์)
-  // ประมาณแถวละ ~64px -> 6 แถว ≈ 384px + ระยะเผื่อ
-  const MAX_LIST_HEIGHT = 400; // px
+  const MAX_LIST_HEIGHT = 400;
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col">
@@ -157,7 +188,7 @@ const HistoryPay = () => {
       {/* BODY */}
       <div className="mx-auto w-full max-w-screen-sm md:max-w-6xl px-4 py-4 md:py-8">
         <div className="grid grid-cols-1 md:grid-cols-12 md:gap-6">
-          {/* LEFT: SUMMARY */}
+          {/* LEFT SUMMARY */}
           <section className="md:col-span-4">
             <div className="md:sticky md:top-[88px] md:space-y-4">
               <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -188,33 +219,18 @@ const HistoryPay = () => {
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-xl bg-blue-50 p-3">
                     <div className="text-[11px] text-blue-900">ยอดคงเหลือ (Coins)</div>
-                    <div className="mt-1 text-lg font-bold text-blue-700">${fmt(coinBalance)}</div>
+                    <div className="mt-1 text-lg font-bold text-blue-700">{fmt(coinBalance)} Coins</div>
                   </div>
                   <div className="rounded-xl bg-blue-50 p-3">
                     <div className="text-[11px] text-blue-900">รวมธุรกรรมทั้งหมด</div>
-                    <div className="mt-1 text-lg font-bold text-blue-700">${fmt(totalAmount)}</div>
+                    <div className="mt-1 text-lg font-bold text-blue-700">฿{fmt(totalAmount)}</div>
                   </div>
                 </div>
-              </div>
-
-              <div className="hidden md:flex gap-2">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="flex-1 h-10 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50"
-                >
-                  กลับ
-                </button>
-                <button
-                  onClick={() => navigate("/user/add-coins")}
-                  className="flex-1 h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800"
-                >
-                  เติม Coins
-                </button>
               </div>
             </div>
           </section>
 
-          {/* RIGHT: HISTORY */}
+          {/* RIGHT HISTORY */}
           <main className="md:col-span-8 mt-4 md:mt-0">
             <div className="mb-2 text-sm md:text-base font-bold text-gray-900">ประวัติการชำระเงิน</div>
 
@@ -226,22 +242,17 @@ const HistoryPay = () => {
                   ))}
                 </div>
               ) : transactions.length === 0 ? (
-                <div className="p-6 text-center text-sm text-gray-400">No history.</div>
+                <div className="p-6 text-center text-sm text-gray-400">ไม่มีประวัติการชำระเงิน</div>
               ) : (
                 <>
-                  {/* Desktop header (fixed) */}
                   <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-100">
-                    <div className="col-span-6">วิธี / รายละเอียด</div>
+                    <div className="col-span-6">ประเภท / รายละเอียด</div>
                     <div className="col-span-2">วันที่</div>
                     <div className="col-span-2">เวลา</div>
                     <div className="col-span-2 text-right">จำนวน</div>
                   </div>
 
-                  {/* Desktop list with scroll after 6 rows */}
-                  <div
-                    className="hidden md:block overflow-y-auto"
-                    style={{ maxHeight: `${MAX_LIST_HEIGHT}px` }}
-                  >
+                  <div className="hidden md:block overflow-y-auto" style={{ maxHeight: `${MAX_LIST_HEIGHT}px` }}>
                     <ul className="divide-y divide-gray-100">
                       {transactions.map((item, idx) => (
                         <li key={idx} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-gray-50">
@@ -264,7 +275,7 @@ const HistoryPay = () => {
                     </ul>
                   </div>
 
-                  {/* Mobile list: show 6 then scroll */}
+                  {/* Mobile */}
                   <div className="md:hidden" style={{ maxHeight: `${MAX_LIST_HEIGHT}px`, overflowY: "auto" }}>
                     <ul className="divide-y divide-gray-100">
                       {transactions.map((item, idx) => (
@@ -294,27 +305,9 @@ const HistoryPay = () => {
                 </>
               )}
             </div>
-
-            {/* CTA ล่าง (โมบาย) */}
-            <div className="mt-4 flex gap-2 md:hidden">
-              <button
-                onClick={() => navigate(-1)}
-                className="flex-1 h-10 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium active:bg-gray-50"
-              >
-                กลับ
-              </button>
-              <button
-                onClick={() => navigate("/user/add-coins")}
-                className="flex-1 h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800"
-              >
-                เติม Coins
-              </button>
-            </div>
           </main>
         </div>
       </div>
-
-      <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
     </div>
   );
 };

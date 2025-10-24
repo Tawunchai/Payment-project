@@ -4,9 +4,18 @@ import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { userProfileData } from '../../assets/admin/dummy';
 import { useStateContext } from '../../contexts/ContextProvider';
-import { useEffect, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import { getEmployeeByID, apiUrlPicture } from '../../services';
 import { EmployeeInterface } from '../../interface/IEmployee';
+
+type UserProfileItem = {
+  icon: JSX.Element;
+  title: string;
+  desc: string;
+  iconColor: string;
+  iconBg: string;
+  link: string;               // ✅ ใช้ link จาก data
+};
 
 const UserProfile = () => {
   const { currentColor } = useStateContext();
@@ -55,7 +64,7 @@ const UserProfile = () => {
             bgHoverColor="rgba(255,255,255,0.15)"
             size="2xl"
             borderRadius="50%"
-            // ถ้าต้องการปิด ให้ใส่ onClick={() => setShow(false)} จากพาเรนต์
+            // onClick={...} // ถ้าต้องการปิดจาก parent
           />
         </div>
       </div>
@@ -89,10 +98,10 @@ const UserProfile = () => {
       {/* Actions list */}
       <div className="px-2 pb-1 bg-white">
         <div className="rounded-xl overflow-hidden border border-gray-100 bg-white">
-          {userProfileData.map((item, idx) => (
+          {userProfileData.map((item: UserProfileItem, idx: number) => (
             <button
               key={idx}
-              onClick={() => navigate('/admin/Line')}
+              onClick={() => navigate(item.link)}   // ✅ ไปตามลิงก์ที่กำหนดใน data
               className="
                 w-full flex items-center gap-3 px-3 py-3
                 hover:bg-blue-50 transition-colors

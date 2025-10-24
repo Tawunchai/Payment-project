@@ -26,6 +26,9 @@ import { FaCarSide } from "react-icons/fa";
 import { FaChargingStation } from "react-icons/fa";
 import { FaBatteryFull } from "react-icons/fa";
 import { FaSolarPanel } from "react-icons/fa";
+import { JSX } from 'react';
+import { RiCustomerService2Line } from 'react-icons/ri';
+
 export const gridOrderImage = (props: any) => (
   <div>
     <img
@@ -877,14 +880,33 @@ export const themeColors = [
 ];
 
 
+// สามารถเพิ่ม type เพื่อความชัดเจน
+export type UserProfileItem = {
+  icon: JSX.Element;
+  title: string;
+  desc: string;
+  iconColor: string;
+  iconBg: string;
+  link: string;
+};
 
-export const userProfileData = [
+// ✅ อัปเดตให้มี field link และเพิ่มเมนู Service
+export const userProfileData: UserProfileItem[] = [
   {
     icon: <AiOutlineUser />,
     title: 'My Profile',
     desc: 'Account Settings',
     iconColor: '#03C9D7',
     iconBg: '#E5FAFB',
+    link: '/admin/profile',          // ปรับ path ตามระบบจริงของคุณ
+  },
+  {
+    icon: <RiCustomerService2Line />,
+    title: 'Service',
+    desc: 'แก้ไขข้อมูลฝ่ายบริการ',
+    iconColor: '#2563EB',
+    iconBg: '#EAF2FF',
+    link: '/admin/Service',          // ✅ ไปหน้า Service ตามที่ต้องการ
   },
 ];
 

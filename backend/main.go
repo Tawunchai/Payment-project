@@ -15,10 +15,12 @@ import (
 	"github.com/Tawunchai/work-project/controller/login"
 	"github.com/Tawunchai/work-project/controller/method"
 	"github.com/Tawunchai/work-project/controller/new"
+	"github.com/Tawunchai/work-project/controller/otp"
 	"github.com/Tawunchai/work-project/controller/payment"
 	"github.com/Tawunchai/work-project/controller/report"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/role"
+	"github.com/Tawunchai/work-project/controller/sendemail"
 	"github.com/Tawunchai/work-project/controller/service"
 	"github.com/Tawunchai/work-project/controller/slip"
 	"github.com/Tawunchai/work-project/controller/status"
@@ -89,6 +91,11 @@ func main() {
 		public.GET("/evcharging-payments", payment.ListEVChargingPayment)
 		public.GET("/payment-coins", payment.ListPaymentCoins)
 		public.POST("/create-payment-coins", payment.CreatePaymentCoin)
+		public.GET("/payment-coins/:user_id", payment.ListPaymentCoinsByUserID)
+
+		//Send Email
+		public.GET("/send-emails", sendemail.ListSendEmail)
+		public.PATCH("/send-email/:id", sendemail.UpdateSendEmailByID)
 
 		//role
 		public.GET("/userroles", role.ListUserRoles)
@@ -159,6 +166,10 @@ func main() {
 		public.POST("/reviews/like", like.LikeReview)
 		public.DELETE("/reviews/unlike", like.UnlikeReview)
 		public.GET("/reviews/:userID/:reviewID/like", like.CheckUserLikeStatus)
+
+		//OTP
+		public.POST("/send-otp", otp.SendOTP)
+		public.POST("/verify-otp", otp.VerifyOTP)
 	}
 
 	r.GET("/", func(c *gin.Context) {

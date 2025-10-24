@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -14,6 +15,9 @@ import (
 )
 
 var db *gorm.DB
+var dbJustCreated bool // ✅ true เมื่อไฟล์ DB ยังไม่เคยมี แล้วจะ seed ครั้งแรกเท่านั้น
+
+// ----------------------------- Custom Logger -----------------------------
 
 type CustomLogger struct{}
 
@@ -34,7 +38,15 @@ func (l *CustomLogger) Trace(ctx context.Context, begin time.Time, fc func() (st
 func DB() *gorm.DB { return db }
 
 func ConnectionDB() {
-	database, err := gorm.Open(sqlite.Open("work.db?cache=shared"), &gorm.Config{
+	// ✅ เช็คว่าไฟล์ work.db มีอยู่แล้วหรือยัง
+	if _, err := os.Stat("work.db"); os.IsNotExist(err) {
+		dbJustCreated = true
+	} else {
+		dbJustCreated = false
+	}
+
+	dsn := "file:work.db?_journal_mode=WAL&_busy_timeout=10000&cache=shared"
+	database, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: &CustomLogger{},
 	})
 	if err != nil {
@@ -42,11 +54,23 @@ func ConnectionDB() {
 	}
 	fmt.Println("connected database")
 	db = database
+
+	// very important for SQLite
+	sqlDB, _ := db.DB()
+	sqlDB.SetMaxOpenConns(1) // ✅ single writer
+	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	// reinforce (optional)
+	db.Exec("PRAGMA journal_mode=WAL;")
+	db.Exec("PRAGMA busy_timeout = 10000;") // 10s
 }
 
 func SetupDatabase() {
-	// AutoMigrate
+	// ✅ AutoMigrate ทุกครั้ง (อัปสเคม่า) — แต่ยังไม่ seed ถ้าไม่ใช่ DB ใหม่
 	if err := db.AutoMigrate(
+		&entity.SendEmail{},
+		&entity.OTP{},
 		&entity.User{},
 		&entity.Car{},
 		&entity.PaymentCoin{},
@@ -73,6 +97,14 @@ func SetupDatabase() {
 		log.Fatalf("automigrate failed: %v", err)
 	}
 
+	// ✅ Seed เฉพาะกรณี "ไฟล์ DB เพิ่งถูกสร้างใหม่"
+	if !dbJustCreated {
+		fmt.Println("ℹ️ Database file already exists -> skip initial seeding.")
+		return
+	}
+
+	fmt.Println("🚀 Fresh database detected -> running initial seed...")
+
 	// Master data (idempotent)
 	seedMasters(db)
 
@@ -88,6 +120,8 @@ func SetupDatabase() {
 	if err := SeedPayments(db, userID, methodID); err != nil {
 		log.Fatalf("Seed payments failed: %v", err)
 	}
+
+	fmt.Println("✅ Initial seed completed.")
 }
 
 // ----------------------------- Master seeds -----------------------------
@@ -356,10 +390,17 @@ func seedContent(db *gorm.DB) {
 		Phone:      "+66 2 123 4567",
 		Location:   "ชั้น 12 อาคาร EV Station Tower, ถนนสุขุมวิท, กรุงเทพฯ 10110",
 		MapURL:     "https://maps.google.com/?q=EV+Station+Tower",
-		EmployeeID: &emp.ID, 
+		EmployeeID: &emp.ID,
 	}
 
 	db.FirstOrCreate(service, entity.Service{Email: "support@evstation.example"})
+
+	send := &entity.SendEmail{
+		Email:   "b6534240@g.sut.ac.th",
+		PassApp: "wkeg dbhx tllh mtif",
+	}
+
+	db.FirstOrCreate(send, entity.SendEmail{Email: send.Email})
 
 	cabinet1 := &entity.EVCabinet{
 		Name:        "Cabinet A1",
@@ -373,7 +414,7 @@ func seedContent(db *gorm.DB) {
 
 	cabinetID := uint(1)
 	booking := &entity.Booking{
-		Date:        time.Now(), 
+		Date:        time.Now(),
 		UserID:      &uid1,
 		EVCabinetID: &cabinetID,
 	}
@@ -434,7 +475,7 @@ func seedContent(db *gorm.DB) {
 		Location:    "EV Station Zone B",
 		Description: "Routine maintenance for EV chargers",
 		StartDate:   time.Date(2025, 7, 3, 13, 0, 0, 0, time.Local),
-		EndDate:     time.Date(2025, 7, 3, 15, 0, 0, 0, time.Local),
+		EndDate:     time.Date(2025, 7, 3, 15, 0, 0, 0,time.Local),
 		EmployeeID:  empIDPtr,
 	}
 	db.FirstOrCreate(&calendar1, entity.Calendar{Title: "Staff Meeting"})

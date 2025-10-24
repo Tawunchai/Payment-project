@@ -18,6 +18,7 @@ import { BankInterface } from "../interface/IBank"
 import { PaymentCoinInterface } from "../interface/IPaymentCoin";
 import { CarsInterface } from "../interface/ICar";
 import { ServiceInterface } from "../interface/IService";
+import { SendEmailInterface } from "../interface/ISendEmail";
 
 //const apiUrl = "http://10.0.14.228:8000";
 //export const apiUrlPicture = "http://10.0.14.228:8000/";
@@ -1360,6 +1361,35 @@ export const ListPaymentsByUserID = async (
   }
 };
 
+export const ListPaymentCoinsByUserID = async (
+  user_id: number
+): Promise<PaymentCoinInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/payment-coins/${user_id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    // ตรวจสอบสถานะและ return ข้อมูล
+    if (response.status === 200) {
+      // หาก backend ส่งข้อมูลในรูปแบบ { data: [...] }
+      if (response.data?.data) {
+        return response.data.data;
+      }
+      // กรณี response เป็น array โดยตรง
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching payment coins by user ID:", error);
+    return null;
+  }
+};
+
 export const CreateReview = async (
   reviewData: {
     rating: number;
@@ -1730,5 +1760,50 @@ export const DeleteCar = async (id: number): Promise<boolean> => {
   } catch (error: any) {
     console.error("Error deleting car:", error.response?.data || error.message);
     return false;
+  }
+};
+
+export const ListSendEmails = async (): Promise<SendEmailInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/send-emails`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching send email list:", error);
+    return null;
+  }
+};
+
+export const UpdateSendEmailByID = async (
+  id: number,
+  data: Partial<SendEmailInterface>
+): Promise<{ message: string; data: SendEmailInterface } | null> => {
+  try {
+    const response = await axios.patch(`${apiUrl}/send-email/${id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating send email:", error.response?.data || error.message);
+    return null;
   }
 };
