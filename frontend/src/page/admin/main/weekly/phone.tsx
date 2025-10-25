@@ -1,13 +1,13 @@
-import { IoIosMore } from 'react-icons/io';
-import { FiShoppingCart, FiStar } from 'react-icons/fi';
-import { BsChatLeft } from 'react-icons/bs';
-import { SparkLine } from '../../../../component/admin';
-import { SparklineAreaData } from '../../../../assets/admin/dummy';
-import { useStateContext } from '../../../../contexts/ContextProvider';
-import { ListPayments, ListEVChargingPayments, ListReviews } from '../../../../services';
-import { useEffect, useState } from 'react';
+import { IoIosMore } from "react-icons/io";
+import { FiShoppingCart, FiStar } from "react-icons/fi";
+import { BsChatLeft } from "react-icons/bs";
+import { SparkLine } from "../../../../component/admin";
+import { SparklineAreaData } from "../../../../assets/admin/dummy";
+import { useStateContext } from "../../../../contexts/ContextProvider";
+import { ListPayments, ListEVChargingPayments, ListReviews } from "../../../../services";
+import { useEffect, useState } from "react";
 
-const phone = () => {
+const PhoneWeeklyStats = () => {
   const { currentColor } = useStateContext();
 
   const [topPayer, setTopPayer] = useState<any>(null);
@@ -23,32 +23,25 @@ const phone = () => {
       // ✅ 1. Top Payer
       const userTotals: Record<string, number> = {};
       payments?.forEach((p: any) => {
-        const name = `${p.User?.FirstName ?? ''} ${p.User?.LastName ?? ''}`.trim() || 'Unknown';
-        userTotals[name] = (userTotals[name] || 0) + p.Amount;
+        const name = `${p.User?.FirstName ?? ""} ${p.User?.LastName ?? ""}`.trim() || "Unknown";
+        userTotals[name] = (userTotals[name] || 0) + (p.Amount ?? 0);
       });
       const topUser = Object.entries(userTotals).sort((a, b) => b[1] - a[1])[0];
       setTopPayer({ name: topUser?.[0], amount: topUser?.[1] ?? 0 });
 
-      // ✅ 2. Top Revenue EV Charger
+      // ✅ 2. Top EV Charger Revenue
       const evTotals: Record<string, number> = {};
       const evIncome: Record<string, number> = {};
-
       evPayments?.forEach((ev: any) => {
-        const name = ev.EVcharging?.Name ?? 'Unknown EV';
-
-        // รวมจำนวนครั้งที่ใช้งาน
+        const name = ev.EVcharging?.Name ?? "Unknown EV";
         evTotals[name] = (evTotals[name] || 0) + 1;
-
-        // รวมรายได้จาก ev.Price * ev.Quantity
-        const income = ev.Price;
-        evIncome[name] = (evIncome[name] || 0) + income;
+        evIncome[name] = (evIncome[name] || 0) + (ev.Price ?? 0);
       });
-
       const topEV = Object.entries(evIncome).sort((a, b) => b[1] - a[1])[0]?.[0];
       setMostEV({
         name: topEV,
-        count: evTotals[topEV],
-        income: evIncome[topEV],
+        count: evTotals[topEV] ?? 0,
+        income: evIncome[topEV] ?? 0,
       });
 
       // ✅ 3. Total Reviews
@@ -61,73 +54,81 @@ const phone = () => {
   const stats = [
     {
       icon: <FiShoppingCart />,
-      amount: `฿${topPayer?.amount?.toLocaleString() ?? '-'}`,
-      title: 'Top Payer',
-      desc: topPayer?.name ?? '-',
-      iconBg: '#FB9678',
-      pcColor: 'green-600',
+      amount: `฿${topPayer?.amount?.toLocaleString() ?? "-"}`,
+      title: "Top Payer",
+      desc: topPayer?.name ?? "-",
+      iconBg: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+      textColor: "text-blue-700",
     },
     {
       icon: <FiStar />,
-      amount: `฿${mostEV?.income?.toLocaleString() ?? '-'}`,
-      title: 'Top EV Charger',
-      desc: `${mostEV?.name ?? '-'} (${mostEV?.count ?? 0} transections)`,
-      iconBg: 'rgb(254, 201, 15)',
-      pcColor: 'green-600',
+      amount: `฿${mostEV?.income?.toLocaleString() ?? "-"}`,
+      title: "Top EV Charger",
+      desc: `${mostEV?.name ?? "-"} (${mostEV?.count ?? 0} uses)`,
+      iconBg: "linear-gradient(135deg, #60a5fa, #2563eb)",
+      textColor: "text-blue-700",
     },
     {
       icon: <BsChatLeft />,
       amount: `${totalReviews} Reviews`,
-      title: 'Total Reviews',
-      desc: 'Across all users',
-      iconBg: '#00C292',
-      pcColor: 'blue-600',
+      title: "Total Reviews",
+      desc: "Across all users",
+      iconBg: "linear-gradient(135deg, #93c5fd, #1d4ed8)",
+      textColor: "text-blue-700",
     },
   ];
 
   return (
-    <div className="md:w-400 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-2xl p-6 m-3">
-      <div className="flex justify-between">
-        <p className="text-xl font-semibold">Weekly Stats</p>
-        <button type="button" className="text-xl font-semibold text-gray-500">
+    <div className="max-w-[360px] w-full mx-auto bg-white rounded-2xl shadow-md border border-blue-100 p-4 mt-2 mb-4 px-3">
+      {/* ===== Header ===== */}
+      <div className="flex justify-between items-center px-1">
+        <p className="text-base font-semibold text-blue-800">Weekly Stats</p>
+        <button
+          type="button"
+          className="text-lg font-semibold text-blue-500 hover:text-blue-700 transition-all"
+        >
           <IoIosMore />
         </button>
       </div>
 
-      <div className="mt-10">
+      {/* ===== Stats ===== */}
+      <div className="mt-4 flex flex-col gap-3">
         {stats.map((item, index) => (
-          <div key={index} className="flex justify-between mt-4 w-full">
-            <div className="flex gap-4">
-              <button
-                type="button"
+          <div
+            key={index}
+            className="flex justify-between items-center bg-gradient-to-r from-blue-50 to-white rounded-xl px-3 py-2 shadow-sm hover:shadow-md transition-all"
+          >
+            <div className="flex gap-3 items-center">
+              <div
+                className="text-white text-xl p-2.5 rounded-full shadow-md"
                 style={{ background: item.iconBg }}
-                className="text-2xl hover:drop-shadow-xl text-white rounded-full p-3"
               >
                 {item.icon}
-              </button>
+              </div>
               <div>
-                <p className="text-md font-semibold">{item.title}</p>
-                <p className="text-sm text-gray-400">{item.desc}</p>
+                <p className="text-sm font-semibold text-gray-800">{item.title}</p>
+                <p className="text-xs text-gray-500">{item.desc}</p>
               </div>
             </div>
-            <p className={`text-${item.pcColor}`}>{item.amount}</p>
+            <p className={`text-right text-sm font-bold ${item.textColor}`}>{item.amount}</p>
           </div>
         ))}
+      </div>
 
-        <div className="mt-4">
-          <SparkLine
-            currentColor={currentColor}
-            id="area-sparkLine"
-            height="160px"
-            type="Area"
-            data={SparklineAreaData}
-            width="320"
-            color="rgb(242, 252, 253)"
-          />
-        </div>
+      {/* ===== Sparkline Chart ===== */}
+      <div className="mt-4 mb-1 flex justify-center">
+        <SparkLine
+          currentColor={currentColor}
+          id="area-sparkLine"
+          height="110px"
+          type="Area"
+          data={SparklineAreaData}
+          width="260"
+          color="rgb(219, 234, 254)"
+        />
       </div>
     </div>
   );
 };
 
-export default phone;
+export default PhoneWeeklyStats;

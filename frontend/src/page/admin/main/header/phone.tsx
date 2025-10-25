@@ -1,196 +1,156 @@
-import { BsCurrencyDollar } from 'react-icons/bs';
-import { Button } from '../../../../component/admin';
-import { useStateContext } from '../../../../contexts/ContextProvider';
-import { ListPayments, ListUsers, ListEVChargingPayments } from "../../../../services";
-import { useEffect, useState } from 'react';
-import { FiBarChart } from 'react-icons/fi';
-import { BsBoxSeam } from 'react-icons/bs';
-import { MdOutlineSupervisorAccount } from 'react-icons/md';
-import { PaymentsInterface } from "../../../../interface/IPayment";
-import { EVChargingPayListmentInterface } from "../../../../interface/IEV";
+import { useEffect, useState } from "react";
+import { FaUsers, FaChargingStation } from "react-icons/fa";
+import { MdOutlineSupervisorAccount } from "react-icons/md";
+import { Button } from "../../../../component/admin";
+import { useStateContext } from "../../../../contexts/ContextProvider";
+import {
+  ListPayments,
+  ListUsers,
+  ListEVChargingPayments,
+} from "../../../../services";
+import type { PaymentsInterface } from "../../../../interface/IPayment";
+import type { EVChargingPayListmentInterface } from "../../../../interface/IEV";
 
-const phone = () => {
+// 👉 รูปพื้นหลังเฉพาะ Card แรก
+import cardBg from "../../../../assets/solar-profile.png";
+
+const PhoneDashboard = () => {
   //@ts-ignore
-  const { currentColor, currentMode } = useStateContext();
-  //@ts-ignore
+  const { currentColor } = useStateContext(); //@ts-ignore
   const [payments, setPayments] = useState<PaymentsInterface[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [userCount, setUserCount] = useState<number>(0);
   const [employeeCount, setEmployeeCount] = useState<number>(0);
+  const [evPayments, setEvPayments] = useState<EVChargingPayListmentInterface[]>([]);
 
-  //@ts-ignore
-  const [evPayments, setEvPayments] = useState<EVChargingPayListmentInterface[]>([]);//@ts-ignore
-  const [salesTotal, setSalesTotal] = useState<number>(0);//@ts-ignore
-  const [refundsCount, setRefundsCount] = useState<number>(0);
+  const brandBlue = "#2563eb";
 
   useEffect(() => {
-    const fetchPayments = async () => {
-      const res = await ListPayments();
-      if (res) {
-        setPayments(res);
-        const total = res.reduce((acc, curr) => acc + (curr.Amount || 0), 0);
-        setTotalAmount(total);
+    const load = async () => {
+      const payRes = await ListPayments();
+      if (payRes) {
+        setPayments(payRes);
+        setTotalAmount(payRes.reduce((sum, p) => sum + (p.Amount || 0), 0));
       }
-    };
 
-    const fetchUsers = async () => {
-      const res = await ListUsers();
-      if (res) {
-        const usersOnly = res.filter((user) => user.UserRole?.RoleName === "User");
-        const employees = res.filter(
-          (user) => user.UserRole?.RoleName === "Admin" || user.UserRole?.RoleName === "Employee"
+      const usersRes = await ListUsers();
+      if (usersRes) {
+        setUserCount(usersRes.filter((u) => u.UserRole?.RoleName === "User").length);
+        setEmployeeCount(
+          usersRes.filter(
+            (u) =>
+              u.UserRole?.RoleName === "Admin" ||
+              u.UserRole?.RoleName === "Employee"
+          ).length
         );
-
-        setUserCount(usersOnly.length);
-        setEmployeeCount(employees.length);
       }
+
+      const evRes = await ListEVChargingPayments();
+      if (evRes) setEvPayments(evRes);
     };
-
-    const fetchEVPayments = async () => {
-      const res = await ListEVChargingPayments();
-      if (res) {
-        setEvPayments(res);
-        const sales = res.reduce((acc, curr) => acc + curr.Price, 0);
-        setSalesTotal(sales);
-        setRefundsCount(res.length);
-
-        // Log EVchargingID ที่ไม่ซ้ำ (ถ้าต้องการ)
-        const uniqueChargerIDs = Array.from(new Set(res.map((item) => item.EVcharging?.ID)));
-        console.log("EVchargingIDs ที่ไม่ซ้ำกัน:", uniqueChargerIDs);
-      }
-    };
-
-    fetchPayments();
-    fetchUsers();
-    fetchEVPayments();
+    load();
   }, []);
 
-  // สร้าง summary ของ EV charging: รวมยอดเงินแยกตามสถานี
+  // รวมยอด EV ตามสถานี
   const evSummary = Object.values(
-    evPayments.reduce((acc, payment) => {
-      const id = payment.EVcharging?.ID;
-      const name = payment.EVcharging?.Name ?? `EV Charger ${id}`;
+    evPayments.reduce((acc, cur) => {
+      const id = cur.EVcharging?.ID;
       if (!id) return acc;
-
-      if (!acc[id]) {
-        acc[id] = {
-          id,
-          name,
-          total: 0,
-        };
-      }
-
-      acc[id].total += payment.Price;
+      const name = cur.EVcharging?.Name ?? `Charger ${id}`;
+      acc[id] = acc[id] || { id, name, total: 0 };
+      acc[id].total += cur.Price;
       return acc;
     }, {} as Record<number, { id: number; name: string; total: number }>)
   );
 
-  // สร้าง earningData รวมข้อมูลทั่วไป + รายการ EV charging
   const earningData = [
     {
-      icon: <MdOutlineSupervisorAccount />,
-      amount: userCount.toLocaleString(),
-      title: 'Customers',
-      iconColor: '#03C9D7',
-      iconBg: '#E5FAFB',
-      pcColor: 'red-600',
+      title: "Customers",
+      icon: <FaUsers />,
+      value: userCount,
     },
     {
-      icon: <BsBoxSeam />,
-      amount: employeeCount.toLocaleString(),
-      title: 'Employees',
-      iconColor: 'rgb(255, 244, 229)',
-      iconBg: 'rgb(254, 201, 15)',
-      pcColor: 'green-600',
+      title: "Employees",
+      icon: <MdOutlineSupervisorAccount />,
+      value: employeeCount,
     },
-    ...evSummary.map((item) => ({
-      icon: <FiBarChart />,
-      amount: item.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      title: item.name,
-      iconColor: 'rgb(228, 106, 118)',
-      iconBg: 'rgb(255, 244, 229)',
-      pcColor: 'green-600',
+    ...evSummary.map((ev) => ({
+      title: ev.name,
+      icon: <FaChargingStation />,
+      value: `฿ ${ev.total.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
     })),
   ];
 
   const handleDownloadCSV = async () => {
     const res = await ListPayments();
-    if (!res) {
-      console.error("Failed to fetch payments");
-      return;
-    }
-
-    const headers = ["ID", "User", "Method", "Amount", "CreatedAt"];
-    const rows = res.map((payment) => [
-      payment.ID,
-      payment.User?.FirstName ?? "",
-      payment.Method?.Medthod ?? "",
-      payment.Amount ?? 0,
-      new Date(payment.Date).toLocaleString(),
+    if (!res) return;
+    const headers = ["ID", "User", "Method", "Amount (BATH)", "Date"];
+    const rows = res.map((r) => [
+      r.ID,
+      r.User?.FirstName ?? "",
+      r.Method?.Medthod ?? "",
+      r.Amount ?? 0,
+      new Date(r.Date).toLocaleString(),
     ]);
-
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.join(",")),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const csv = [headers.join(","), ...rows.map((x) => x.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "payments.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "payments.csv";
+    a.click();
   };
 
   return (
-    <div className="flex flex-wrap lg:flex-nowrap justify-center ">
-      <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg h-44 rounded-xl w-full lg:w-80 p-8 pt-9 m-3 bg-hero-pattern bg-no-repeat bg-cover bg-center">
-        <div className="flex justify-between items-center">
+    <div className="w-full px-4 pt-4 pb-1 flex flex-col gap-3">
+      {/* ===== Card แรก (พื้นหลังเป็นรูป) ===== */}
+      <div
+        className="relative rounded-2xl p-5 shadow-sm overflow-hidden h-40"
+        style={{
+          backgroundImage: `url(${cardBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-blue-600/25" />
+        <div className="relative z-10 flex flex-col justify-between h-full">
           <div>
-            <p className="font-bold text-gray-400">Payment Money</p>
-            <p className="text-2xl">${totalAmount.toLocaleString()}</p>
+            <p className="text-white/90 text-sm">Total Payment</p>
+            <h1 className="text-3xl font-semibold text-white mt-1">
+              ฿ {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}{" "}
+              <span className="text-xs text-blue-100">BATH</span>
+            </h1>
           </div>
-          <button
-            type="button"
-            style={{ backgroundColor: currentColor }}
-            className="text-2xl opacity-0.9 text-white hover:drop-shadow-xl rounded-full  p-4"
-          >
-            <BsCurrencyDollar />
-          </button>
-        </div>
-        <div className="mt-6">
-          <Button
-            color="white"
-            bgColor={currentColor}
-            text="Download"
-            borderRadius="10px"
-            onClick={handleDownloadCSV}
-          />
+          <div className="flex justify-end">
+            <Button
+              text="Download CSV"
+              color="white"
+              bgColor={currentColor || brandBlue}
+              borderRadius="12px"
+              onClick={handleDownloadCSV}
+            />
+          </div>
         </div>
       </div>
-      <div className="flex m-3 flex-wrap justify-center gap-1 items-center">
-        <div className="grid grid-cols-2 gap-1">
-          {earningData.map((item) => (
-            <div key={item.title} className="bg-white h-44 dark:text-gray-200 dark:bg-secondary-dark-bg md:w-56  p-4 pt-9 rounded-2xl ">
-              <button
-                type="button"
-                style={{ color: item.iconColor, backgroundColor: item.iconBg }}
-                className="text-2xl opacity-0.9 rounded-full  p-4 hover:drop-shadow-xl"
-              >
-                {item.icon}
-              </button>
-              <p className="mt-3">
-                <span className="text-lg font-semibold">{item.amount}</span>
-              </p>
-              <p className="text-sm text-gray-400  mt-1">{item.title}</p>
-            </div>
-          ))}
-        </div>
+
+      {/* ===== Card อื่น ๆ (พื้นหลังขาว) ===== */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {earningData.map((item, idx) => (
+          <div
+            key={idx}
+            className="rounded-2xl p-4 shadow-sm text-center h-32 bg-white border border-blue-100"
+          >
+            <div className="text-3xl text-blue-700 mb-2">{item.icon}</div>
+            <p className="text-lg font-semibold text-gray-800">{item.value}</p>
+            <p className="text-[12px] text-blue-600 mt-1">{item.title}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
-export default phone;
+export default PhoneDashboard;

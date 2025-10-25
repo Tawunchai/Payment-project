@@ -101,6 +101,8 @@ func enableSQLitePragmas(sqlDB *sql.DB) error {
 func SetupDatabase() {
 	// AutoMigrate ทุก entity
 	if err := db.AutoMigrate(
+		&entity.Brand{},
+		&entity.Modal{},
 		&entity.SendEmail{},
 		&entity.OTP{},
 		&entity.User{},
@@ -431,21 +433,59 @@ func seedContent(db *gorm.DB) {
 		Description: "ตู้ชาร์จสำหรับโซนจอดรถด้านหน้า มีหัวชาร์จ 2 หัว รองรับ Solar และ Grid",
 		Location:    "Zone A - อาคารจอดรถชั้น 1",
 		Status:      "Active",
+		Latitude:    14.8802,
+		Longitude:   102.018,
+		Image:       "uploads/cabinet/ev_cabinet_a1.jpg",
 		EmployeeID:  &emp.ID,
 	}
 
-	db.FirstOrCreate(cabinet1, entity.EVCabinet{Name: "Cabinet A1"})
+	// ✅ ใช้ Where() เพื่อป้องกันซ้ำตาม Name
+	db.Where(entity.EVCabinet{Name: "Cabinet A1"}).FirstOrCreate(cabinet1)
 
 	cabinetID := uint(1)
-	booking := &entity.Booking{
-		Date:        time.Now(),
+	now := time.Now()
+	loc := now.Location()
+	year, month, day := now.Date()
+
+	booking1 := &entity.Booking{
+		StartDate:   time.Date(year, month, day, 8, 0, 0, 0, loc),
+		EndDate:     time.Date(year, month, day, 10, 0, 0, 0, loc),
 		UserID:      &uid1,
 		EVCabinetID: &cabinetID,
 	}
-
-	db.FirstOrCreate(booking, entity.Booking{
+	db.FirstOrCreate(booking1, entity.Booking{
 		UserID:      &uid1,
 		EVCabinetID: &cabinetID,
+		StartDate:   booking1.StartDate,
+		EndDate:     booking1.EndDate,
+	})
+
+	// User 2 (13:00 - 15:00)
+	booking2 := &entity.Booking{
+		StartDate:   time.Date(year, month, day, 13, 0, 0, 0, loc),
+		EndDate:     time.Date(year, month, day, 15, 0, 0, 0, loc),
+		UserID:      &uid2,
+		EVCabinetID: &cabinetID,
+	}
+	db.FirstOrCreate(booking2, entity.Booking{
+		UserID:      &uid2,
+		EVCabinetID: &cabinetID,
+		StartDate:   booking2.StartDate,
+		EndDate:     booking2.EndDate,
+	})
+
+	// User 3 (19:00 - 20:00)
+	booking3 := &entity.Booking{
+		StartDate:   time.Date(year, month, day, 19, 0, 0, 0, loc),
+		EndDate:     time.Date(year, month, day, 20, 0, 0, 0, loc),
+		UserID:      &uid3,
+		EVCabinetID: &cabinetID,
+	}
+	db.FirstOrCreate(booking3, entity.Booking{
+		UserID:      &uid3,
+		EVCabinetID: &cabinetID,
+		StartDate:   booking3.StartDate,
+		EndDate:     booking3.EndDate,
 	})
 
 	// Status & Type
@@ -499,7 +539,7 @@ func seedContent(db *gorm.DB) {
 		Location:    "EV Station Zone B",
 		Description: "Routine maintenance for EV chargers",
 		StartDate:   time.Date(2025, 7, 3, 13, 0, 0, 0, time.Local),
-		EndDate:     time.Date(2025, 7, 3, 15, 0, 0, 0,time.Local),
+		EndDate:     time.Date(2025, 7, 3, 15, 0, 0, 0, time.Local),
 		EmployeeID:  empIDPtr,
 	}
 	db.FirstOrCreate(&calendar1, entity.Calendar{Title: "Staff Meeting"})

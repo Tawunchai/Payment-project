@@ -7,15 +7,19 @@ import (
 type EVCabinet struct {
 	gorm.Model
 
-	Name        string  
-	Description string                  
-	Location    string                     
-	Status      string                        
+	Name        string 
+	Description string  
+	Location    string  
+	Status      string  
 
-	EVcharging []EVcharging `gorm:"foreignKey:EVCabinetID"`       
-	
-	Booking []Booking `gorm:"foreignKey:EVCabinetID"`  
+	Latitude    float64 
+	Longitude   float64
+	Image       string  
 
-	EmployeeID *uint
-	Employee   Employee `gorm:"foreignKey:EmployeeID"`
+
+	EVcharging  []EVcharging `gorm:"foreignKey:EVCabinetID"`  
+	Booking     []Booking    `gorm:"foreignKey:EVCabinetID"`  
+
+	EmployeeID  *uint       
+	Employee    Employee     `gorm:"foreignKey:EmployeeID"`
 }

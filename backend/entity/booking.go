@@ -8,7 +8,8 @@ import (
 type Booking struct {
 	gorm.Model
 
-	Date time.Time 
+	StartDate time.Time 
+	EndDate time.Time
 
 	UserID *uint  
 	User   User   `gorm:"foreignKey:UserID"`
@@ -16,3 +17,4 @@ type Booking struct {
 	EVCabinetID *uint     
 	EVCabinet   EVCabinet `gorm:"foreignKey:EVCabinetID"`
 }
+

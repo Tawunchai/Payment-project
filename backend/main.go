@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/Tawunchai/work-project/config"
+	"github.com/Tawunchai/work-project/controller/booking"
+	"github.com/Tawunchai/work-project/controller/cabinet"
 	"github.com/Tawunchai/work-project/controller/calendar"
 	"github.com/Tawunchai/work-project/controller/car"
 	"github.com/Tawunchai/work-project/controller/charging"
@@ -171,6 +173,21 @@ func main() {
 		//OTP
 		public.POST("/send-otp", otp.SendOTP)
 		public.POST("/verify-otp", otp.VerifyOTP)
+
+		//Booking
+		public.POST("create-bookings", booking.CreateBooking)
+		public.GET("bookings", booking.ListBooking)
+		public.GET("/booking/:user_id", booking.ListBookingByUserID)
+		public.DELETE("delete-booking/:id", booking.DeleteBookingByID)
+		public.PUT("update-booking/:id", booking.UpdateBookingByID)
+		public.GET("/bookings/evcabinet/:id/date", booking.ListBookingByEVCabinetIDandStartDate)
+
+		//EV Cabinet
+		public.GET("/ev-cabinets", cabinet.ListCabinetEV)
+		public.POST("/create-evcabinet", cabinet.CreateEVCabinet) // เพิ่มข้อมูลใหม่
+		public.PUT("/evcabinet/:id", cabinet.UpdateEVCabinetByID) // อัปเดตข้อมูลตาม ID
+		public.DELETE("/evcabinet/:id", cabinet.DeleteEVCabinetByID)
+
 	}
 
 	r.GET("/", func(c *gin.Context) {

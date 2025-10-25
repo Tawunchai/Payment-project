@@ -19,6 +19,7 @@ import { PaymentCoinInterface } from "../interface/IPaymentCoin";
 import { CarsInterface } from "../interface/ICar";
 import { ServiceInterface } from "../interface/IService";
 import { SendEmailInterface } from "../interface/ISendEmail";
+import { BookingInterface,EVCabinetInterface } from "../interface/IBooking";
 
 //const apiUrl = "http://10.0.14.228:8000";
 //export const apiUrlPicture = "http://10.0.14.228:8000/";
@@ -1805,5 +1806,216 @@ export const UpdateSendEmailByID = async (
   } catch (error: any) {
     console.error("Error updating send email:", error.response?.data || error.message);
     return null;
+  }
+};
+
+interface CreateBookingPayload {
+  start_date: Date;
+  end_date: Date;
+  user_id: number;
+  ev_cabinet_id: number;
+}
+
+// ✅ สร้างการจองใหม่ Use
+export const CreateBooking = async (data: CreateBookingPayload): Promise<any | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-bookings`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating booking:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// ✅ ดึงรายการการจองทั้งหมด 
+export const ListBooking = async (): Promise<BookingInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/bookings`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching bookings:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// ✅ ดึงการจองตาม User ID Use
+export const ListBookingByUserID = async (userId: number): Promise<BookingInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/booking/${userId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching bookings by user ID:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// ✅ ลบการจองตาม ID
+export const DeleteBookingByID = async (id: number): Promise<boolean> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-booking/${id}`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+    if (response.status === 200) {
+      return true;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return false;
+    }
+  } catch (error: any) {
+    console.error("Error deleting booking:", error.response?.data || error.message);
+    return false;
+  }
+};
+
+// ✅ อัปเดตข้อมูลการจองตาม ID
+export const UpdateBookingByID = async (
+  id: number,
+  data: BookingInterface
+): Promise<any | null> => {
+  try {
+    const response = await axios.put(`${apiUrl}/update-booking/${id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating booking:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const ListCabinetsEV = async (): Promise<EVCabinetInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/ev-cabinets`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching EV cabinets:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+// services/bookingService.ts Use
+export const ListBookingByEVCabinetIDandStartDate = async (
+  evCabinetID: number,
+  date: string
+) => {
+  try {
+    const response = await axios.get(
+      `${apiUrl}/bookings/evcabinet/${evCabinetID}/date?date=${date}`,
+      {
+        headers: {
+          ...getAuthHeader(),
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      return response.data;
+    }
+    return null;
+  } catch (error: any) {
+    console.error(
+      "Error fetching bookings by EVCabinetID and date:",
+      error.response?.data || error.message
+    );
+    return null;
+  }
+};
+
+export const CreateEVCabinet = async (formData: FormData): Promise<{ message: string; data: any } | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-evcabinet`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeader(),
+      },
+    });
+    if (response.status === 201) return response.data;
+    return null;
+  } catch (error: any) {
+    console.error("Error creating EVCabinet:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const UpdateEVCabinetByID = async (
+  id: number,
+  formData: FormData
+): Promise<{ message: string; data: any } | null> => {
+  try {
+    const response = await axios.put(`${apiUrl}/evcabinet/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeader(),
+      },
+    });
+    if (response.status === 200) return response.data;
+    return null;
+  } catch (error: any) {
+    console.error("Error updating EVCabinet:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const DeleteEVCabinetByID = async (id: number): Promise<boolean> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/evcabinet/${id}`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+    return response.status === 200;
+  } catch (error: any) {
+    console.error("Error deleting EVCabinet:", error.response?.data || error.message);
+    return false;
   }
 };

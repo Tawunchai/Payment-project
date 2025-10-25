@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react';
-import { IoIosMore } from 'react-icons/io';
-import { useStateContext } from '../../../../contexts/ContextProvider';
-import { BsBatteryCharging } from 'react-icons/bs';
-import { ListPayments, ListEVChargingPayments, ListUsers, apiUrlPicture } from '../../../../services';
+import { useEffect, useState } from "react";
+import { IoIosMore } from "react-icons/io";
+import { useStateContext } from "../../../../contexts/ContextProvider";
+import { BsBatteryCharging } from "react-icons/bs";
+import {
+  ListPayments,
+  ListEVChargingPayments,
+  ListUsers,
+  apiUrlPicture,
+} from "../../../../services";
 
-const phone = () => {
+const PhoneEVOverview = () => {
   const { currentColor } = useStateContext();
 
   const [power, setPower] = useState(0);
   const [expense, setExpense] = useState(0);
-  const [today, setToday] = useState('');
+  const [today, setToday] = useState("");
   const [chargerPowerMap, setChargerPowerMap] = useState<{ [name: string]: number }>({});
   const [todayPaymentCount, setTodayPaymentCount] = useState(0);
   const [leaders, setLeaders] = useState<string[]>([]);
@@ -20,53 +25,52 @@ const phone = () => {
       const paymentResponse = await ListPayments();
       const userResponse = await ListUsers();
 
-      const todayDate = new Date().toISOString().split('T')[0];
+      const todayDate = new Date().toISOString().split("T")[0];
 
-      // Filter EV Charging ของวันนี้
-      const todayEV = evResponse!.filter((item: any) => {
-        const paymentDate = item?.Payment?.Date?.split('T')[0];
+      // ✅ Filter EV Charging ของวันนี้
+      const todayEV = evResponse?.filter((item: any) => {
+        const paymentDate = item?.Payment?.Date?.split("T")[0];
         return paymentDate === todayDate;
       });
 
-      // รวม Quantity
+      // ✅ รวมพลังงานและสถานี
       let totalQuantity = 0;
-      const map: { [name: string]: number } = {};
-
-      todayEV.forEach((item: any) => {
-        const chargerName = item?.EVcharging?.Name || 'Unknown';
+      const map: Record<string, number> = {};
+      todayEV?.forEach((item: any) => {
+        const chargerName = item?.EVcharging?.Name || "Unknown";
         const qty = item?.Quantity || 0;
         totalQuantity += qty;
-
-        if (map[chargerName]) {
-          map[chargerName] += qty;
-        } else {
-          map[chargerName] = qty;
-        }
+        map[chargerName] = (map[chargerName] || 0) + qty;
       });
-
       setPower(totalQuantity);
       setChargerPowerMap(map);
 
-      // Filter Payment ของวันนี้
-      const todayPayments = paymentResponse!.filter((item: any) =>
+      // ✅ Filter การชำระเงินวันนี้
+      const todayPayments = paymentResponse?.filter((item: any) =>
         item.Date?.startsWith(todayDate)
       );
-      setTodayPaymentCount(todayPayments.length);
+      setTodayPaymentCount(todayPayments?.length || 0);
 
-      // รวมจำนวนเงิน
-      const totalAmount = todayPayments.reduce((sum: number, item: any) => sum + item.Amount, 0);
+      // ✅ รวมจำนวนเงิน
+      const totalAmount =
+        todayPayments?.reduce((sum: number, item: any) => sum + (item.Amount || 0), 0) || 0;
       setExpense(totalAmount);
 
-      // ตั้งค่าวันที่
+      // ✅ วันที่
       const date = new Date();
-      const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: '2-digit' };
-      setToday(date.toLocaleDateString('en-US', options));
+      const options: Intl.DateTimeFormatOptions = {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      };
+      setToday(date.toLocaleDateString("en-US", options));
 
-      // Filter Leaders (เฉพาะ Admin)
-      const adminUsers = userResponse!.filter((user: any) => user.UserRole?.RoleName === 'Admin');
-      const adminImages = adminUsers.map((user: any) => user.Profile).filter(Boolean);
+      // ✅ Admin Users
+      const admins = userResponse?.filter(
+        (user: any) => user.UserRole?.RoleName === "Admin"
+      );
+      const adminImages = admins?.map((u: any) => u.Profile).filter(Boolean) || [];
       setLeaders(adminImages);
-      console.log(adminImages)
     };
 
     fetchData();
@@ -74,85 +78,93 @@ const phone = () => {
 
   const medicalproBranding = {
     data: [
-      {
-        title: 'Today Date',
-        desc: today,
-      },
-      {
-        title: 'Power',
-        desc: `${power.toFixed(2)} kWh`,
-      },
-      {
-        title: 'Expense',
-        desc: `$${expense.toLocaleString()}`,
-      },
+      { title: "Today Date", desc: today },
+      { title: "Power", desc: `${power.toFixed(2)} kWh` },
+      { title: "Expense", desc: `฿${expense.toLocaleString()}` },
     ],
   };
 
   return (
-    <div className="w-400 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-2xl p-6 m-3">
-      <div className="flex justify-between">
-        <p className="text-xl font-semibold">MedicalPro Branding</p>
-        <button type="button" className="text-xl font-semibold text-gray-400">
+    <div className="w-[92%] mx-auto bg-white rounded-2xl shadow-md border border-blue-100 p-4 mt-3 mb-4">
+      {/* ===== Header ===== */}
+      <div className="flex justify-between items-center">
+        <p className="text-base font-semibold text-blue-800">EV Station Status</p>
+        <button
+          type="button"
+          className="text-lg font-semibold text-blue-500 hover:text-blue-700 transition-all"
+        >
           <IoIosMore />
         </button>
       </div>
 
-      <p className="text-xs cursor-pointer hover:drop-shadow-xl font-semibold rounded-lg w-24 bg-orange-400 py-0.5 px-2 text-gray-200 mt-10">
+      {/* ===== Date Tag ===== */}
+      <p className="text-xs font-semibold rounded-full w-fit px-3 py-1 mt-4 text-white bg-blue-600 shadow-sm">
         {today}
       </p>
 
-      <div className="flex gap-4 border-b-1 border-color mt-6">
+      {/* ===== Summary ===== */}
+      <div className="flex justify-between border-b border-blue-100 mt-4 pb-2">
         {medicalproBranding.data.map((item) => (
-          <div key={item.title} className="border-r-1 border-color pr-4 pb-2">
-            <p className="text-xs text-gray-400">{item.title}</p>
-            <p className="text-sm">{item.desc}</p>
+          <div key={item.title} className="flex flex-col items-start pr-2">
+            <p className="text-[11px] text-gray-500">{item.title}</p>
+            <p className="text-sm font-semibold text-blue-800">{item.desc}</p>
           </div>
         ))}
       </div>
 
-      <div className="border-b-1 border-color pb-4 mt-2">
-        <p className="text-md font-semibold mb-2">Power Type</p>
-        <div className="flex flex-col gap-2">
+      {/* ===== Power Type ===== */}
+      <div className="border-b border-blue-100 pb-3 mt-3">
+        <p className="text-sm font-semibold text-blue-900 mb-1 flex items-center gap-2">
+          <BsBatteryCharging className="text-blue-600" /> Power Type
+        </p>
+        <div className="flex flex-wrap gap-1.5">
           {Object.entries(chargerPowerMap).map(([name, qty]) => (
             <p
               key={name}
-              className="cursor-pointer hover:drop-shadow-xl text-white py-0.5 px-3 rounded-lg text-xs bg-orange-400 w-fit"
+              className="text-white py-[2px] px-2.5 rounded-full text-[11px] bg-blue-600 hover:bg-blue-700 transition-all shadow-sm"
             >
               {name}: {qty.toFixed(2)} kWh
             </p>
           ))}
+          {Object.keys(chargerPowerMap).length === 0 && (
+            <p className="text-[11px] text-gray-400">No data available</p>
+          )}
         </div>
       </div>
 
-      <div className="mt-2">
-        <p className="text-md font-semibold mb-2">Leaders</p>
-        <div className="flex gap-4">
+      {/* ===== Leaders ===== */}
+      <div className="mt-3">
+        <p className="text-sm font-semibold text-blue-900 mb-1">Leaders</p>
+        <div className="flex gap-2">
           {leaders.slice(0, 5).map((img, index) => (
             <img
               key={index}
-              className="rounded-full w-8 h-8 object-cover"
+              className="rounded-full w-7 h-7 object-cover ring-1 ring-blue-200 shadow-sm"
               src={`${apiUrlPicture}${img}`}
               alt={`Leader ${index}`}
             />
           ))}
+          {leaders.length === 0 && (
+            <p className="text-[11px] text-gray-400">No leaders found</p>
+          )}
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-5 border-t-1 border-color">
-        <div className="mt-3">
-          <button
-            type="button"
-            className="text-white text-3xl p-4 rounded-full hover:shadow-lg transition-all duration-300"
-            style={{ backgroundColor: currentColor }}
-          >
-            <BsBatteryCharging />
-          </button>
-        </div>
-        <p className="text-gray-400 text-sm">{todayPaymentCount} Recent Transactions</p>
+      {/* ===== Footer ===== */}
+      <div className="flex justify-between items-center mt-4 border-t border-blue-100 pt-3">
+        <button
+          type="button"
+          className="text-white text-2xl p-3 rounded-full shadow-md hover:shadow-lg transition-all"
+          style={{ backgroundColor: currentColor || "#2563eb" }}
+        >
+          <BsBatteryCharging />
+        </button>
+        <p className="text-blue-700 text-xs font-medium">
+          {todayPaymentCount} Recent Transactions
+        </p>
       </div>
     </div>
   );
 };
 
-export default phone;
+export default PhoneEVOverview;

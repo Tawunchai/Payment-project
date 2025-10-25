@@ -25,7 +25,7 @@ func ListCar(c *gin.Context) {
 	db := config.DB()
 
 	results := db.
-		Preload("User"). // ✅ ต้องตรงกับชื่อ field ใน entity.Car
+		Preload("User").
 		Find(&cars)
 
 	if results.Error != nil {
