@@ -4,12 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { RiNewspaperLine } from "react-icons/ri";
 import { ListNews, apiUrlPicture } from "../../../../services";
 import { NewsInterface } from "../../../../interface/INews";
-
+import Footer from "../../../../component/user/footer/footer";
 const NewsListMobile: React.FC = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState<NewsInterface[]>([]);
   const [loading, setLoading] = useState(true);
-
+//
   useEffect(() => {
     (async () => {
       try {
@@ -100,6 +100,7 @@ const NewsListMobile: React.FC = () => {
           </ul>
         )}
       </main>
+      <Footer />
     </div>
   );
 };

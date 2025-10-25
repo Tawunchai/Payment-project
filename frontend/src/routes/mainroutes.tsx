@@ -9,6 +9,8 @@ const ResetPassword = Loadable(lazy(() => import("../page/ResetPassword/ResetPas
 
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
+const BookingEV = Loadable(lazy(() => import("../component/user/booking/index")));
+const BookingDate = Loadable(lazy(() => import("../component/user/booking/book/index")));
 const Profile = Loadable(lazy(() => import("../component/user/header/SocialProfile/SocialProfile")));
 const EVInputUser = Loadable(lazy(() => import("../component/user/evs")));
 const PaymentUser = Loadable(lazy(() => import("../component/user/payment")));
@@ -75,6 +77,8 @@ const UserRoutes = (): RouteObject[] => [
       { path: "all-news", element: <AllNews/> }, //edit real
       { path: "one-news", element: <News/> }, //edit real
       { path: "after-payment", element: <AfterPayment/> }, //edit real
+      { path: "booking-ev", element: <BookingEV/> }, //edit real
+      { path: "booking-date", element: <BookingDate/> }, //edit real
     ],
   },
 ];

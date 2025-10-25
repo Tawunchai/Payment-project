@@ -10,7 +10,7 @@ type HeaderProps = {
   scrollToValue: () => void;
 };
 
-const Hero = ({ scrollToValue }: HeaderProps) => {
+const Hero = ({}: HeaderProps) => {
   const [evList, setEVList] = useState<EVchargingInterface[]>([]);
   const [userList, setUserList] = useState<UsersInterface[]>([]);
   const navigate = useNavigate();
@@ -67,13 +67,13 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
               </button>
               <button
                 className="inline-flex items-center justify-center rounded-xl px-5 py-3 font-semibold bg-white text-blue-700 ring-1 ring-inset ring-blue-200 hover:bg-blue-50 active:scale-[0.99] transition"
-                onClick={scrollToValue}
+                onClick={() => navigate("/user/booking-ev")}
               >
-                ขั้นตอนการใช้งานตู้ชาร์จ
+                จองเข้าชาร์จไฟฟ้า
               </button>
             </div>
 
-            {/* Stats (cards on white) */}
+            {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5 mt-2">
               {Object.entries(namePriceSums).map(([name, total]) => (
                 <div
@@ -93,7 +93,7 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
                 </div>
               ))}
 
-              {/* Members: เต็มความกว้างบนมือถือ + จัดกลางบนมือถือ */}
+              {/* Members */}
               <div className="order-last sm:order-none col-span-2 sm:col-span-1 rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_8px_24px_rgba(2,6,23,0.06)] text-center sm:text-left">
                 <div className="text-2xl font-extrabold tracking-tight text-blue-700">
                   <CountUp start={0} end={userList.length} duration={2} />
@@ -104,7 +104,7 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
             </div>
           </div>
 
-          {/* RIGHT — image (hidden on mobile) */}
+          {/* RIGHT — image */}
           <div className="hidden md:flex justify-end">
             <figure className="relative w-[34rem] max-w-full h-[28rem] rounded-[2rem] overflow-hidden border border-gray-100 shadow-[0_20px_60px_rgba(2,6,23,0.08)] bg-white">
               <img
@@ -119,7 +119,7 @@ const Hero = ({ scrollToValue }: HeaderProps) => {
         </div>
       </div>
 
-      {/* soft divider to next section */}
+      {/* Divider */}
       <div className="h-6 md:h-8 w-full bg-gradient-to-b from-white to-blue-50/30" />
     </section>
   );
