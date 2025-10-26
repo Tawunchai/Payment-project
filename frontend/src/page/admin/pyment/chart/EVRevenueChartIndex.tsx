@@ -27,8 +27,8 @@ const initRangeFor = (type: "day" | "month" | "year") => {
 const EVRevenueChartIndex: React.FC = () => {
   // @ts-ignore
   const { currentMode } = useStateContext();
-  const [timeRangeType, setTimeRangeType] = useState<"day" | "month" | "year">("day");
-  const [selectedRange, setSelectedRange] = useState<any>(() => initRangeFor("day"));
+  const [timeRangeType, setTimeRangeType] = useState<"day" | "month" | "year">("month");
+  const [selectedRange, setSelectedRange] = useState<any>(() => initRangeFor("month"));
 
   const handleTimeChange = (t: "day" | "month" | "year") => {
     setTimeRangeType(t);

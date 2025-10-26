@@ -1,19 +1,10 @@
-import React, { JSX, useEffect, useMemo, useState } from "react";
-import {
-  Table,
-  Button,
-  Input,
-  Tag,
-  Space,
-  Modal,
-  message,
-} from "antd";
+import React, { JSX, useEffect, useMemo, useRef, useState } from "react";
+import { Table, Button, Input, Tag, Space, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
-  ExclamationCircleOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
 import { ListCars, DeleteCar, apiUrlPicture } from "../../../services";
@@ -24,8 +15,36 @@ import {
   FaTaxi,
   FaBusAlt,
 } from "react-icons/fa";
+import { Trash2 } from "react-feather";
 import { utils, writeFile } from "xlsx";
 import ModalEditCar from "./edit";
+
+const EvModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ open, onClose, children }) => {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative w-full max-w-[420px] mx-4">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
+          {children}
+          <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // -------------------- Row Type --------------------
 type RowType = {
@@ -48,7 +67,11 @@ const CarList: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [editCar, setEditCar] = useState<any | null>(null);
 
-  // 🚗 ไอคอนสุ่มเฉพาะรถยนต์
+  // Confirm Delete Modal
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const selectedCarRef = useRef<RowType | null>(null);
+
   const carIcons = [FaCarSide, FaTruckPickup, FaTaxi, FaBusAlt];
   const randomIcon = () => {
     const Icon = carIcons[Math.floor(Math.random() * carIcons.length)];
@@ -91,25 +114,32 @@ const CarList: React.FC = () => {
     fetchCars();
   }, []);
 
-  // -------- Delete Car Handler --------
-  const handleDelete = (id: number, name: string) => {
-    Modal.confirm({
-      title: "ยืนยันการลบรถ",
-      icon: <ExclamationCircleOutlined />,
-      content: `คุณต้องการลบรถ "${name}" ออกจากระบบหรือไม่?`,
-      okText: "ลบ",
-      cancelText: "ยกเลิก",
-      okButtonProps: { danger: true },
-      async onOk() {
-        const ok = await DeleteCar(id);
-        if (ok) {
-          message.success("ลบข้อมูลรถสำเร็จ");
-          fetchCars();
-        } else {
-          message.error("เกิดข้อผิดพลาดในการลบ");
-        }
-      },
-    });
+  // -------- Delete Car --------
+  const openDeleteModal = (record: RowType) => {
+    selectedCarRef.current = record;
+    setOpenConfirmModal(true);
+  };
+
+  const cancelDelete = () => {
+    setOpenConfirmModal(false);
+    selectedCarRef.current = null;
+    setConfirmLoading(false);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedCarRef.current) return;
+    setConfirmLoading(true);
+
+    const idToDelete = selectedCarRef.current.ID;
+    const ok = await DeleteCar(idToDelete);
+
+    if (ok) {
+      message.success("ลบข้อมูลรถสำเร็จ");
+      setCars((prev) => prev.filter((c) => c.ID !== idToDelete));
+    } else {
+      message.error("เกิดข้อผิดพลาดในการลบ");
+    }
+    cancelDelete();
   };
 
   // -------- Export CSV --------
@@ -118,7 +148,6 @@ const CarList: React.FC = () => {
       message.warning("ไม่มีข้อมูลให้ดาวน์โหลด");
       return;
     }
-
     const data = cars.map((c) => ({
       No: c.Index,
       Brand: c.Brand,
@@ -128,12 +157,10 @@ const CarList: React.FC = () => {
       SpecialNumber: c.SpecialNumber ? "Yes" : "No",
       Owner: c.UserName,
     }));
-
     const ws = utils.json_to_sheet(data);
     const wb = utils.book_new();
     utils.book_append_sheet(wb, ws, "Cars");
     writeFile(wb, "car_list.xlsx");
-
     message.success("ดาวน์โหลดไฟล์สำเร็จ");
   };
 
@@ -193,6 +220,19 @@ const CarList: React.FC = () => {
       render: (v) => <span className="text-gray-700">{v}</span>,
     },
     {
+      title: "Special",
+      dataIndex: "SpecialNumber",
+      key: "special",
+      render: (v) =>
+        v ? (
+          <Tag color="gold" className="font-semibold ml-15">
+            ทะเบียนพิเศษ
+          </Tag>
+        ) : (
+          <Tag color="default">ทะเบียนธรรมดา</Tag>
+        ),
+    },
+    {
       title: "Owner",
       dataIndex: "UserName",
       key: "user",
@@ -226,19 +266,6 @@ const CarList: React.FC = () => {
       },
     },
     {
-      title: "Special",
-      dataIndex: "SpecialNumber",
-      key: "special",
-      render: (v) =>
-        v ? (
-          <Tag color="gold" className="font-semibold ml-4">
-            ทะเบียนพิเศษ
-          </Tag>
-        ) : (
-          <Tag color="default">ทะเบียนธรรมดา</Tag>
-        ),
-    },
-    {
       title: "Action",
       key: "action",
       width: 140,
@@ -257,16 +284,17 @@ const CarList: React.FC = () => {
             size="small"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.ID, record.Brand)}
+            onClick={() => openDeleteModal(record)}
           />
         </Space>
       ),
     },
   ];
 
+  const allPlates = cars.map((c) => c.LicensePlate);
+
   return (
     <div className="min-h-screen w-full bg-white mt-14 sm:mt-0">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <h1 className="text-sm sm:text-base font-semibold tracking-wide">Cars</h1>
@@ -280,9 +308,7 @@ const CarList: React.FC = () => {
         </div>
       </div>
 
-      {/* Content */}
       <div className="mx-auto max-w-screen-xl px-4 sm:px-6 py-6">
-        {/* Toolbar */}
         <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
           <Input
             allowClear
@@ -295,7 +321,6 @@ const CarList: React.FC = () => {
           />
         </div>
 
-        {/* Table */}
         <div className="rounded-xl overflow-hidden ring-1 ring-blue-100 bg-white mb-10">
           <Table<RowType>
             columns={columns}
@@ -322,36 +347,43 @@ const CarList: React.FC = () => {
         <ModalEditCar
           open={!!editCar}
           car={editCar}
+          allPlates={allPlates} // ✅ ส่งทะเบียนทั้งหมด
           onClose={() => setEditCar(null)}
           onUpdated={fetchCars}
         />
       )}
 
-      {/* EV Blue Theme */}
-      <style>{`
-        .ev-ant-table .ant-table-thead > tr > th {
-          background: #fff !important;
-          color: #0f172a !important;
-          border-bottom: 1px solid rgba(2,6,23,0.06) !important;
-          font-weight: 700;
-          font-size: 13px;
-          letter-spacing: .2px;
-        }
-        .ev-ant-table .ant-table-tbody > tr > td {
-          border-color: rgba(2,6,23,0.06) !important;
-          padding-top: 12px !important;
-          padding-bottom: 12px !important;
-        }
-        .ev-ant-table .ant-table-tbody > tr:hover > td {
-          background: #f8fafc !important;
-        }
-        .ev-ant-table .ant-table-tbody > tr:nth-child(even) > td {
-          background: #fcfcff;
-        }
-        .ev-ant-table .ant-table-pagination {
-          justify-content: center !important;
-        }
-      `}</style>
+      {/* ✅ Confirm Delete Modal */}
+      <EvModal open={openConfirmModal} onClose={cancelDelete}>
+        <div className="w-[min(92vw,420px)] px-5 py-5 flex flex-col items-center text-center">
+          <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
+            <Trash2 size={22} className="text-blue-600" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900">ยืนยันการลบข้อมูลรถ</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            คุณต้องการลบรถ{" "}
+            <span className="font-semibold text-blue-700">
+              “{selectedCarRef.current?.Brand}”
+            </span>{" "}
+            ใช่หรือไม่?
+          </p>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <button
+              onClick={confirmDelete}
+              disabled={confirmLoading}
+              className="min-w-[96px] h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+            >
+              {confirmLoading ? "กำลังลบ..." : "ลบ"}
+            </button>
+            <button
+              onClick={cancelDelete}
+              className="min-w-[96px] h-10 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50"
+            >
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      </EvModal>
     </div>
   );
 };

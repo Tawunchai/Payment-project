@@ -3,8 +3,9 @@ import { Button, Form, Input, Typography, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { FaBolt } from "react-icons/fa";
 
-import Background from "../../assets/woman-charging-electro-car-by-her-house.jpg"; // พื้นหลังเต็มจอแบบเดียวกับตัวอย่าง
-import { checkEmailExists } from "../../services/httpLogin";
+import Background from "../../assets/woman-charging-electro-car-by-her-house.jpg";
+import { checkEmailExists, SendOTP } from "../../services/httpLogin";
+import OTPModal from "../Signup1/otp"; // ✅ นำเข้า OTPModal
 
 const { Title } = Typography;
 
@@ -15,31 +16,48 @@ const ForgotPasswordForm: React.FC = () => {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
+  // สำหรับ OTP modal
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string>("");
+
   const onFinish = async (values: { email: string }) => {
     setEmailError(null);
     setLoading(true);
     try {
-      const res = await checkEmailExists(values.email);
-      if (res?.exists) {
-        messageApi.success("ตรวจสอบอีเมลสำเร็จ กำลังพาไปหน้ารีเซ็ตรหัสผ่าน…");
-        navigate(`/reset-password?email=${encodeURIComponent(values.email)}`);
-      } else {
+      // 1) ตรวจว่ามีอีเมลในระบบไหม
+      const chk = await checkEmailExists(values.email);
+      if (!chk?.exists) {
         setEmailError("ไม่พบอีเมลในระบบ กรุณาลองใหม่");
+        return;
       }
-    } catch {
-      setEmailError("เกิดข้อผิดพลาดในการตรวจสอบอีเมล");
+
+      // 2) ส่ง OTP ไปยังอีเมลนั้น
+      await SendOTP(values.email);
+
+      // 3) เปิด OTP Modal
+      setPendingEmail(values.email);
+      setOtpOpen(true);
+
+      messageApi.info("เราได้ส่งรหัส OTP ไปยังอีเมลของคุณแล้ว");
+    } catch (err) {
+      setEmailError("เกิดข้อผิดพลาดในการส่ง OTP");
     } finally {
       setLoading(false);
     }
+  };
+
+  // เรียกเมื่อ OTP ตรวจสอบผ่าน
+  const handleOtpSuccess = () => {
+    messageApi.success("ยืนยัน OTP สำเร็จ กำลังไปหน้ารีเซ็ตรหัสผ่าน...");
+    navigate(`/reset-password?email=${encodeURIComponent(pendingEmail)}`);
   };
 
   return (
     <>
       {contextHolder}
 
-      {/* พื้นหลังภาพเต็มจอ + overlay + grid + blobs (สไตล์เดียวกับตัวอย่าง) */}
+      {/* BG + Overlay + Grid + Blobs */}
       <div className="relative min-h-dvh flex items-center justify-center px-4 py-10 overflow-hidden">
-        {/* ภาพพื้นหลังเต็มจอ (แก้ white strip) */}
         <div className="absolute inset-0 -z-10">
           <img
             src={Background}
@@ -49,11 +67,7 @@ const ForgotPasswordForm: React.FC = () => {
             draggable={false}
           />
         </div>
-
-        {/* Overlay ให้อ่านง่าย */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-900/60 via-slate-900/35 to-blue-950/60" />
-
-        {/* Soft grid โปร่งบาง */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay"
@@ -63,8 +77,6 @@ const ForgotPasswordForm: React.FC = () => {
             backgroundSize: "36px 36px, 36px 36px",
           }}
         />
-
-        {/* Blur blobs */}
         <div
           aria-hidden
           className="pointer-events-none absolute -top-16 -right-16 w-80 h-80 rounded-full blur-3xl opacity-30 -z-10"
@@ -82,9 +94,8 @@ const ForgotPasswordForm: React.FC = () => {
           }}
         />
 
-        {/* กล่องฟอร์ม (การ์ดขาวล้วน) */}
+        {/* Card */}
         <div className="relative w-full max-w-xl">
-          {/* กรอบไล่เฉดบาง ๆ */}
           <div
             className="rounded-[28px] p-[1px]"
             style={{
@@ -93,7 +104,7 @@ const ForgotPasswordForm: React.FC = () => {
             }}
           >
             <div className="rounded-[26px] bg-white border border-gray-200 shadow-[0_20px_60px_rgba(2,6,23,0.18)] p-8 md:p-10">
-              {/* แบรนด์ */}
+              {/* Brand */}
               <div className="flex items-center gap-3 mb-6 justify-center">
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow">
                   <FaBolt className="text-xl" />
@@ -120,24 +131,24 @@ const ForgotPasswordForm: React.FC = () => {
                 </div>
               </div>
 
-              {/* แถบชาร์จ/โหลด */}
+              {/* Loading bar */}
               <div className="mb-8">
                 <div className="h-[3px] w-full rounded-full bg-gray-100 overflow-hidden">
                   <div className="h-full w-1/3 bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 animate-barSlide rounded-full" />
                 </div>
               </div>
 
-              {/* หัวข้อ */}
+              {/* Title */}
               <div className="mb-4 text-center">
                 <Title level={3} className="!m-0 !text-blue-900 !font-semibold">
                   ลืมรหัสผ่าน
                 </Title>
                 <p className="mt-1 text-sm text-blue-900/70">
-                  กรอกอีเมลที่ลงทะเบียนไว้ เราจะส่งลิงก์สำหรับรีเซ็ตรหัสผ่านให้คุณ
+                  กรอกอีเมลที่ลงทะเบียนไว้ เราจะส่งรหัส OTP เพื่อยืนยันก่อนรีเซ็ตรหัสผ่าน
                 </p>
               </div>
 
-              {/* ฟอร์ม */}
+              {/* Form */}
               <Form layout="vertical" onFinish={onFinish}>
                 <Form.Item
                   name="email"
@@ -171,7 +182,7 @@ const ForgotPasswordForm: React.FC = () => {
                 </Form.Item>
               </Form>
 
-              {/* ลิงก์ช่วยเหลือ */}
+              {/* Links */}
               <div className="flex items-center justify-between mt-4 text-sm">
                 <Link to="/auth/login-2" className="text-blue-600 hover:underline">
                   กลับไปเข้าสู่ระบบ
@@ -184,16 +195,24 @@ const ForgotPasswordForm: React.FC = () => {
         </div>
       </div>
 
-      {/* keyframes: gradient text + loading bar */}
+      {/* OTP Modal */}
+      <OTPModal
+        open={otpOpen}
+        email={pendingEmail}
+        onCancel={() => setOtpOpen(false)}
+        onSuccess={handleOtpSuccess}
+      />
+
+      {/* Animations */}
       <style>{`
         @keyframes evTextShine {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
         @keyframes barSlide {
-          0%   { transform: translateX(-100%); }
-          50%  { transform: translateX(30%); }
+          0% { transform: translateX(-100%); }
+          50% { transform: translateX(30%); }
           100% { transform: translateX(110%); }
         }
         .animate-barSlide { animation: barSlide 2.8s ease-in-out infinite; }

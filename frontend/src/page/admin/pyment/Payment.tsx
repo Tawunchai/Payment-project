@@ -141,7 +141,7 @@ const Payment = () => {
           {tableLoading ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <PaymentHistoryTable data={paymentData} onReload={fetchPayments} />
+            <PaymentHistoryTable data={paymentData}/>
           )}
         </section>
 

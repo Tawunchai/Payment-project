@@ -1899,26 +1899,26 @@ export const DeleteBookingByID = async (id: number): Promise<boolean> => {
   }
 };
 
-// ✅ อัปเดตข้อมูลการจองตาม ID
+export type UpdateBookingPayload = {
+  start_date: string;   // ส่งเป็น ISO string ดีสุด
+  end_date: string;
+  ev_cabinet_id: number;
+};
+
 export const UpdateBookingByID = async (
   id: number,
-  data: BookingInterface
+  data: UpdateBookingPayload
 ): Promise<any | null> => {
   try {
-    const response = await axios.put(`${apiUrl}/update-booking/${id}`, data, {
+    const res = await axios.put(`${apiUrl}/update-booking/${id}`, data, {
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeader(),
       },
     });
-    if (response.status === 200) {
-      return response.data;
-    } else {
-      console.error("Unexpected status:", response.status);
-      return null;
-    }
-  } catch (error: any) {
-    console.error("Error updating booking:", error.response?.data || error.message);
+    return res.status === 200 ? res.data : null;
+  } catch (e: any) {
+    console.error("Error updating booking:", e.response?.data || e.message);
     return null;
   }
 };
@@ -2017,5 +2017,48 @@ export const DeleteEVCabinetByID = async (id: number): Promise<boolean> => {
   } catch (error: any) {
     console.error("Error deleting EVCabinet:", error.response?.data || error.message);
     return false;
+  }
+};
+
+// ✅ DELETE หลายรายการพร้อมกัน
+export const DeletePaymentCoins = async (ids: number[]) => {
+  try {
+    const response = await axios.delete(`${apiUrl}/payment-coins`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      data: ids, // 🔸 axios จะส่ง body JSON array เช่น [1,2,3]
+    });
+
+    if (response.status === 200) {
+      return response.data; // { message: "ลบ PaymentCoin ทั้งหมดสำเร็จพร้อมลบรูปภาพ", deleted: [...] }
+    } else {
+      return null;
+    }
+  } catch (error: any) {
+    console.error("❌ DeletePaymentCoins error:", error.response?.data || error);
+    return null;
+  }
+};
+
+export const DeletePayments = async (ids: number[]) => {
+  try {
+    const response = await axios.delete(`${apiUrl}/payments`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      data: ids, // ส่ง body เป็น JSON array เช่น [1,2,3]
+    });
+
+    if (response.status === 200) {
+      return response.data; // { message, deleted }
+    } else {
+      return null;
+    }
+  } catch (error: any) {
+    console.error("❌ DeletePayments error:", error.response?.data || error);
+    return null;
   }
 };

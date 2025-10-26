@@ -4,7 +4,15 @@ import ImgCrop from "antd-img-crop";
 import { StatusInterface } from "../../../../interface/IStatus";
 import { TypeInterface } from "../../../../interface/IType";
 import { UpdateEVByID, apiUrlPicture } from "../../../../services/index";
-import { FaTimes, FaEdit, FaImage } from "react-icons/fa";
+import {
+  FaTimes,
+  FaEdit,
+  FaImage,
+  FaTag,
+  FaMoneyBillWave,
+  FaListAlt,
+  FaInfoCircle,
+} from "react-icons/fa";
 
 interface EditEVModalProps {
   open: boolean;
@@ -31,14 +39,23 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
   const [fileList, setFileList] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+  // ตรวจมือถือเพื่อกำหนดความสูงและการเลื่อนใน body
+  const isMobile =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 768px)").matches;
+
   useEffect(() => {
     if (!open) return;
     if (evCharging) {
       setName(evCharging.Name ?? "");
       setDescription(evCharging.Description ?? "");
       setPrice(evCharging.Price ?? "");
-      setStatusID(typeof evCharging.StatusID === "number" ? evCharging.StatusID : undefined);
-      setTypeID(typeof evCharging.TypeID === "number" ? evCharging.TypeID : undefined);
+      setStatusID(
+        typeof evCharging.StatusID === "number" ? evCharging.StatusID : undefined
+      );
+      setTypeID(
+        typeof evCharging.TypeID === "number" ? evCharging.TypeID : undefined
+      );
 
       if (evCharging.Picture) {
         setFileList([
@@ -72,7 +89,7 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
     formData.append("price", String(price));
     formData.append("statusID", String(statusID));
     formData.append("typeID", String(typeID));
-    formData.append("employeeID", "1"); // TODO: ผูกค่าจริง
+    formData.append("employeeID", "1"); // TODO: ผูกค่าจริงภายหลัง (เช่นจาก localStorage)
 
     if (fileList.length > 0 && fileList[0].originFileObj) {
       formData.append("picture", fileList[0].originFileObj);
@@ -121,31 +138,44 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
         aria-hidden="true"
       />
 
-      {/* Sheet/Dialog */}
+      {/* Dialog */}
       <div className="relative w-full max-w-[600px] mx-4 md:mx-auto mb-8 md:mb-0">
-        {/* โค้งมนทุกมุม + ring บาง ๆ ให้ฟีล EV */}
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
-          {/* Header — EV Blue */}
-          <div className="px-5 pt-3 pb-4 md:pt-4 md:pb-4 bg-blue-600 text-white">
-            <div className="mx-auto w-10 h-1.5 md:hidden rounded-full bg-white/60 mb-3" />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FaEdit className="opacity-90" />
-                <h2 className="text-base md:text-lg font-semibold">แก้ไข EV Charging</h2>
-              </div>
-              <button
-                onClick={onClose}
-                disabled={submitting}
-                className="p-2 -m-2 rounded-lg hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60"
-                aria-label="ปิดหน้าต่าง"
-              >
-                <FaTimes />
-              </button>
+        {/* กล่อง modal: header (fixed) + body (scroll) + footer (fixed) */}
+        <div
+          className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100 flex flex-col"
+          style={{ maxHeight: isMobile ? "78vh" : "82vh" }}
+        >
+          {/* Header */}
+          <div
+            className="px-5 pt-3 pb-4 bg-blue-600 text-white flex justify-between items-center"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
+          >
+            <div className="flex items-center gap-2">
+              <FaEdit className="opacity-90" />
+              <h2 className="text-base md:text-lg font-semibold">
+                แก้ไขข้อมูล EV Charging
+              </h2>
             </div>
+            <button
+              onClick={onClose}
+              disabled={submitting}
+              className="p-2 -m-2 rounded-lg hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60"
+              aria-label="ปิดหน้าต่าง"
+              title="ปิด"
+            >
+              <FaTimes />
+            </button>
           </div>
 
-          {/* Body */}
-          <div className="px-5 py-5 bg-blue-50/40">
+          {/* Body (scroll area) */}
+          <div
+            className="px-5 py-5 bg-blue-50/40 space-y-3"
+            style={{
+              overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
+              maxHeight: "100%",
+            }}
+          >
             {/* Upload */}
             <div className="flex justify-center mb-3">
               <ImgCrop rotationSlider>
@@ -176,55 +206,89 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
 
             {/* Form */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input
-                className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                type="text"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              {/* Name */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaTag className="text-blue-500" /> ชื่อสถานี (Name)
+                </span>
+                <input
+                  className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  type="text"
+                  placeholder="ชื่อ EV Charging"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
 
-              <input
-                className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                type="number"
-                placeholder="Price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-              />
+              {/* Price */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaMoneyBillWave className="text-blue-500" /> ราคา (Price)
+                </span>
+                <input
+                  className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  type="number"
+                  placeholder="ราคา (บาท)"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                />
+              </label>
 
-              {/* Status — Antd Select โค้งมน */}
-              <Select
-                className="ev-select w-full"
-                popupClassName="ev-select-dropdown"
-                placeholder="เลือกสถานะ"
-                value={statusID}
-                onChange={(val) => setStatusID(val as number)}
-                options={statusList.map((s) => ({ label: s.Status, value: s.ID }))}
-                allowClear
-                showSearch={false}
-                size="large"
-              />
+              {/* Status */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaListAlt className="text-blue-500" /> สถานะ (Status)
+                </span>
+                <Select
+                  className="ev-select w-full"
+                  popupClassName="ev-select-dropdown"
+                  placeholder="เลือกสถานะ"
+                  value={statusID}
+                  onChange={(val) => setStatusID(val as number)}
+                  options={statusList.map((s) => ({
+                    label: s.Status,
+                    value: s.ID,
+                  }))}
+                  allowClear
+                  showSearch={false}
+                  size="large"
+                />
+              </label>
 
               {/* Type */}
-              <Select
-                className="ev-select w-full"
-                popupClassName="ev-select-dropdown"
-                placeholder="เลือกประเภท"
-                value={typeID}
-                onChange={(val) => setTypeID(val as number)}
-                options={typeList.map((t) => ({ label: t.Type, value: t.ID }))}
-                allowClear
-                showSearch={false}
-                size="large"
-              />
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaInfoCircle className="text-blue-500" /> ประเภท (Type)
+                </span>
+                <Select
+                  className="ev-select w-full"
+                  popupClassName="ev-select-dropdown"
+                  placeholder="เลือกประเภท"
+                  value={typeID}
+                  onChange={(val) => setTypeID(val as number)}
+                  options={typeList.map((t) => ({
+                    label: t.Type,
+                    value: t.ID,
+                  }))}
+                  allowClear
+                  showSearch={false}
+                  size="large"
+                />
+              </label>
 
-              <textarea
-                className="md:col-span-2 w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                placeholder="Description"
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
+              {/* Description */}
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaInfoCircle className="text-blue-500" /> รายละเอียด (Description)
+                </span>
+                <textarea
+                  className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  placeholder="คำอธิบายเพิ่มเติม"
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </label>
             </div>
           </div>
 
@@ -246,7 +310,7 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
             </button>
           </div>
 
-          {/* ✅ Safe area (iOS) ภายในกล่อง เพื่อให้ความโค้งล่างไม่ถูกบัง */}
+          {/* safe-area ล่างสำหรับมือถือ */}
           <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>

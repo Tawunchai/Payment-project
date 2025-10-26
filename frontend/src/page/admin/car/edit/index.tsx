@@ -9,18 +9,26 @@ interface ModalEditCarProps {
   open: boolean;
   onClose: () => void;
   car: any;
+  allPlates: string[];
   onUpdated: () => void;
 }
 
-const ModalEditCar: React.FC<ModalEditCarProps> = ({ open, onClose, car, onUpdated }) => {
+const ModalEditCar: React.FC<ModalEditCarProps> = ({
+  open,
+  onClose,
+  car,
+  allPlates,
+  onUpdated,
+}) => {
   const [brand, setBrand] = useState<string>("");
   const [model, setModel] = useState<string>("");
   const [plate, setPlate] = useState<string>("");
   const [province, setProvince] = useState<string>("");
   const [special, setSpecial] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
+  const [plateError, setPlateError] = useState<string>("");
 
-  // 🧠 ตัวเลือกยี่ห้อ / รุ่น / จังหวัด
+  // 🧠 ตัวเลือก
   const brandOptions = ["Toyota", "Honda", "Mazda", "Nissan", "BYD", "Tesla"];
   const modelOptionsByBrand: Record<string, string[]> = {
     Toyota: ["Corolla Cross", "Yaris Ativ", "bZ4X"],
@@ -42,9 +50,19 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({ open, onClose, car, onUpdat
   ];
 
   const modelOptions = useMemo(() => modelOptionsByBrand[brand] ?? [], [brand]);
-  const canSubmit = Boolean(brand && model && plate && province);
+  const canSubmit = Boolean(brand && model && plate && province && !plateError);
 
-  // โหลดข้อมูลรถเข้าฟอร์ม
+  // ✅ รายชื่อเจ้าของ (เอาชื่อ-นามสกุล, ถ้ามีหลายคนคั่นด้วย , )
+  const ownerNames = useMemo(() => {
+    const users = car?.User ?? [];
+    if (!Array.isArray(users) || users.length === 0) return "-";
+    return users
+      .map((u: any) => `${u?.FirstName ?? ""} ${u?.LastName ?? ""}`.trim())
+      .filter((s: string) => s.length > 0)
+      .join(", ");
+  }, [car]);
+
+  // โหลดข้อมูลรถ
   useEffect(() => {
     if (car) {
       setBrand(car.Brand || "");
@@ -52,17 +70,29 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({ open, onClose, car, onUpdat
       setPlate(car.LicensePlate || "");
       setProvince(car.City || "");
       setSpecial(car.SpecialNumber || false);
+      setPlateError("");
     }
   }, [car]);
+
+  // ✅ ตรวจสอบเลขทะเบียนซ้ำแบบ realtime
+  useEffect(() => {
+    if (!plate.trim()) {
+      setPlateError("");
+      return;
+    }
+    const duplicate = allPlates
+      .filter((p) => p !== car.LicensePlate)
+      .some((p) => p.trim().toLowerCase() === plate.trim().toLowerCase());
+    setPlateError(duplicate ? "เลขทะเบียนนี้มีอยู่ในระบบแล้ว" : "");
+  }, [plate, allPlates, car.LicensePlate]);
 
   if (!open) return null;
 
   const handleSubmit = async () => {
     if (!canSubmit) {
-      message.warning("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      message.warning("กรุณากรอกข้อมูลให้ครบทุกช่องและตรวจสอบข้อผิดพลาด");
       return;
     }
-
     setLoading(true);
     try {
       const payload = {
@@ -116,7 +146,7 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({ open, onClose, car, onUpdat
             </button>
           </div>
 
-          {/* Body */}
+          {/* Body (scroll) */}
           <div className="px-5 py-5 bg-blue-50/40 overflow-y-auto">
             <div className="space-y-4">
               {/* Brand */}
@@ -178,8 +208,11 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({ open, onClose, car, onUpdat
                   value={plate}
                   onChange={(e) => setPlate(e.target.value)}
                   placeholder="เช่น 1กก 1234"
-                  className="mt-1 w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className={`mt-1 w-full px-3 py-2.5 rounded-xl bg-white border ${
+                    plateError ? "border-red-500 focus:ring-red-500/50" : "border-slate-300 focus:ring-blue-500/50"
+                  } focus:outline-none focus:ring-2`}
                 />
+                {plateError && <p className="text-red-500 text-xs mt-1">{plateError}</p>}
               </label>
 
               {/* Province */}
@@ -211,6 +244,13 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({ open, onClose, car, onUpdat
                 <Checkbox checked={special} onChange={(e) => setSpecial(e.target.checked)} />
                 <span className="text-sm text-slate-700">ทะเบียนพิเศษ (Special Number)</span>
               </div>
+
+              {/* ✅ Owner info (bottom, grey text) */}
+              <div className="pt-3">
+                <p className="text-xs text-slate-500 text-center">
+                  เจ้าของ: {ownerNames}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -226,9 +266,7 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({ open, onClose, car, onUpdat
               onClick={handleSubmit}
               disabled={loading || !canSubmit}
               className={`px-4 h-10 rounded-xl text-white text-sm font-semibold shadow-sm ${
-                canSubmit && !loading
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-blue-300 cursor-not-allowed"
+                canSubmit && !loading ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-300 cursor-not-allowed"
               }`}
             >
               {loading ? "กำลังบันทึก..." : "บันทึก"}

@@ -103,7 +103,7 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "Employees", element: <Employees /> },//edit
       { path: "Customers", element: <Customers /> },//edit
       { path: "Calendar", element: <Calendar /> },//edit
-      { path: "Editor", element: <Editor /> },//edit
+      { path: "Guide", element: <Editor /> },//edit
       { path: "create-editor", element: <Create_Editor /> },//edit
       { path: "edit-editor", element: <Edit_Editor /> },//edit
       { path: "New", element: <New /> }, //edit

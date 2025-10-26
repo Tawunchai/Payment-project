@@ -526,14 +526,14 @@ func seedContent(db *gorm.DB) {
 		Date:            time.Now(),
 		Amount:          100.00,
 		ReferenceNumber: "REF2024071401",
-		Picture:         "uploads/payment/1751999510090771300.jpg",
+		Picture:         "uploads/payment/1752000665992034400.jpg",
 		UserID:          uint(1),
 	}
 	payment2 := entity.PaymentCoin{
 		Date:            time.Now().Add(-24 * time.Hour),
 		Amount:          250.50,
 		ReferenceNumber: "REF2024071402",
-		Picture:         "uploads/payment/1751999510090771300.jpg",
+		Picture:         "uploads/payment/1752000665992034400.jpg",
 		UserID:          uint(1),
 	}
 	db.FirstOrCreate(&payment1, entity.PaymentCoin{ReferenceNumber: "REF2024071401"})
@@ -593,7 +593,7 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				Date:            createdAt,
 				Amount:          float64(amount),
 				ReferenceNumber: fmt.Sprintf("REF-%02d%02d", month, day),
-				Picture:         "uploads/payment/1751999510090771300.jpg",
+				Picture:         "uploads/payment/1752000665992034400.jpg",
 				UserID:          &userID,
 				MethodID:        &methodID,
 			}
