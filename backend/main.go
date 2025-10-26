@@ -95,6 +95,8 @@ func main() {
 		public.GET("/payment-coins", payment.ListPaymentCoins)
 		public.POST("/create-payment-coins", payment.CreatePaymentCoin)
 		public.GET("/payment-coins/:user_id", payment.ListPaymentCoinsByUserID)
+		public.DELETE("/payment-coins", payment.DeletePaymentCoins)
+		r.DELETE("/payments", payment.DeletePayment)
 
 		//Send Email
 		public.GET("/send-emails", sendemail.ListSendEmail)

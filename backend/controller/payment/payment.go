@@ -384,3 +384,97 @@ func CreatePaymentCoin(c *gin.Context) {
 
     c.JSON(http.StatusCreated, paymentCoin)
 }
+
+// DELETE /payment-coins
+func DeletePaymentCoins(c *gin.Context) {
+	var ids []uint
+
+	// อ่าน array ของ ID จาก body เช่น [1, 2, 3]
+	if err := c.ShouldBindJSON(&ids); err != nil || len(ids) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "กรุณาส่ง ID ของ PaymentCoin เป็น array เช่น [1,2,3]"})
+		return
+	}
+
+	db := config.DB()
+	var paymentCoins []entity.PaymentCoin
+
+	// ดึงข้อมูลทั้งหมดที่ต้องลบ
+	if err := db.Find(&paymentCoins, ids).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถดึงข้อมูลได้"})
+		return
+	}
+
+	// ลบรูปภาพทั้งหมด
+	for _, paymentCoin := range paymentCoins {
+		if paymentCoin.Picture != "" && filepath.HasPrefix(paymentCoin.Picture, "uploads/paymentcoin") {
+			if _, err := os.Stat(paymentCoin.Picture); err == nil {
+				if removeErr := os.Remove(paymentCoin.Picture); removeErr != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถลบรูปภาพได้: " + removeErr.Error()})
+					return
+				}
+			}
+		}
+	}
+
+	// ลบข้อมูลในฐานข้อมูลทั้งหมด
+	if err := db.Delete(&entity.PaymentCoin{}, ids).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถลบข้อมูลได้"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "ลบ PaymentCoin ทั้งหมดสำเร็จพร้อมลบรูปภาพ",
+		"deleted": ids,
+	})
+}
+
+// DELETE /payments
+func DeletePayment(c *gin.Context) {
+	var ids []uint
+
+	// อ่าน array ของ ID จาก body เช่น [1, 2, 3]
+	if err := c.ShouldBindJSON(&ids); err != nil || len(ids) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "กรุณาส่ง ID ของ Payment เป็น array เช่น [1,2,3]",
+		})
+		return
+	}
+
+	db := config.DB()
+	var payments []entity.Payment
+
+	// ดึงข้อมูลทั้งหมดที่ต้องลบ
+	if err := db.Find(&payments, ids).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "ไม่สามารถดึงข้อมูลได้",
+		})
+		return
+	}
+
+	// ลบรูปภาพทั้งหมด (ถ้ามี)
+	for _, payment := range payments {
+		if payment.Picture != "" && filepath.HasPrefix(payment.Picture, "uploads/payment") {
+			if _, err := os.Stat(payment.Picture); err == nil {
+				if removeErr := os.Remove(payment.Picture); removeErr != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"error": "ไม่สามารถลบรูปภาพได้: " + removeErr.Error(),
+					})
+					return
+				}
+			}
+		}
+	}
+
+	// ลบข้อมูลในฐานข้อมูลทั้งหมด
+	if err := db.Delete(&entity.Payment{}, ids).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "ไม่สามารถลบข้อมูลได้",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "ลบ Payment ทั้งหมดสำเร็จพร้อมลบรูปภาพ",
+		"deleted": ids,
+	})
+}

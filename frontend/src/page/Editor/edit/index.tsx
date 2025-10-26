@@ -27,7 +27,7 @@ const EditGettingStarted: React.FC = () => {
   useEffect(() => {
     if (!id) {
       message.warning("ไม่พบข้อมูลที่จะอัปเดต");
-      navigate("/admin/editor");
+      navigate("/admin/Guide");
     }
   }, [id, navigate]);
 
@@ -95,7 +95,7 @@ const EditGettingStarted: React.FC = () => {
       const ok = await UpdateGettingStartedByID(id, formData);
       if (ok) {
         message.success("อัปเดตข้อมูลสำเร็จ");
-        setTimeout(() => navigate("/admin/editor"), 700);
+        setTimeout(() => navigate("/admin/Guide"), 700);
       } else {
         message.error("อัปเดตข้อมูลล้มเหลว");
       }
@@ -240,7 +240,7 @@ const EditGettingStarted: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/admin/editor")}
+                  onClick={() => navigate("/admin/Guide")}
                   className="inline-flex items-center justify-center h-10 px-4 rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 text-sm font-semibold transition"
                 >
                   ยกเลิก

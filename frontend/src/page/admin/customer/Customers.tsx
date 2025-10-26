@@ -13,6 +13,7 @@ import {
   ListGenders,
   ListUserRoles,
   apiUrlPicture,
+  ListUsers, // ✅ ใช้ตรวจสอบซ้ำ
 } from "../../../services";
 
 import EditUserModal from "./edit/index";
@@ -35,7 +36,7 @@ type RowType = {
   Raw: any;
 };
 
-// ===== Inline EV Blue Minimal Modal (centered + safe-area) =====
+// ===== Inline EV Blue Minimal Modal =====
 const EvModal: React.FC<{ open: boolean; onClose: () => void; children: React.ReactNode }> = ({
   open,
   onClose,
@@ -43,20 +44,11 @@ const EvModal: React.FC<{ open: boolean; onClose: () => void; children: React.Re
 }) => {
   if (!open) return null;
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-    >
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-
-      {/* Dialog */}
       <div className="relative w-full max-w-[420px] mx-4 md:mx-auto">
         <div className="mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
           {children}
-          {/* Safe area (iOS) ภายในกล่อง เพื่อไม่บังมุมโค้ง */}
           <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
@@ -72,13 +64,32 @@ const Customers: React.FC = () => {
   const [editUser, setEditUser] = useState<any>(null);
   const [genders, setGenders] = useState<GendersInterface[]>([]);
   const [userRoles, setUserRoles] = useState<UserroleInterface[]>([]);
-
-  // Confirm delete (single)
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const selectedUserRef = useRef<RowType | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
-  // ------- Fetch -------
+  const [allUsersData, setAllUsersData] = useState<
+    { Username: string; Email: string; PhoneNumber: string }[]
+  >([]);
+
+  // ✅ โหลดข้อมูลผู้ใช้ทั้งหมด (เพื่อใช้ตรวจสอบซ้ำ)
+  const fetchAllUsers = async () => {
+    try {
+      const all = await ListUsers();
+      if (all && Array.isArray(all)) {
+        const allUsers = all.map((u: any) => ({
+          Username: u.Username ?? "",
+          Email: u.Email ?? "",
+          PhoneNumber: u.PhoneNumber ?? "",
+        }));
+        setAllUsersData(allUsers);
+      }
+    } catch (err) {
+      console.error("Error fetching all users:", err);
+    }
+  };
+
+  // ✅ โหลดเฉพาะผู้ใช้ Role=User สำหรับแสดงในตาราง
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -103,6 +114,7 @@ const Customers: React.FC = () => {
           Coin: u.Coin ?? 0,
           Raw: u,
         }));
+
         setTableData(formatted);
       }
     } finally {
@@ -119,6 +131,7 @@ const Customers: React.FC = () => {
   useEffect(() => {
     fetchUsers();
     fetchDropdowns();
+    fetchAllUsers(); // ✅ โหลดข้อมูลทั้งหมดเพื่อตรวจซ้ำ
   }, []);
 
   // ------- Search -------
@@ -135,7 +148,7 @@ const Customers: React.FC = () => {
     );
   }, [tableData, searchText]);
 
-  // ------- Confirm Delete Modal handlers -------
+  // ------- Delete -------
   const openDeleteModal = (record: RowType) => {
     selectedUserRef.current = record;
     setOpenConfirmModal(true);
@@ -152,6 +165,7 @@ const Customers: React.FC = () => {
     if (ok) {
       message.success("ลบข้อมูลสำเร็จ");
       await fetchUsers();
+      await fetchAllUsers();
     } else {
       message.error("เกิดข้อผิดพลาดในการลบ");
     }
@@ -169,9 +183,15 @@ const Customers: React.FC = () => {
         <Space size="middle">
           <Avatar src={record.CustomerImage} />
           <div className="min-w-0">
-            <div className="font-semibold text-gray-900 truncate">{record.CustomerName || "-"}</div>
-            <div className="text-gray-500 text-xs truncate">{record.Username}</div>
-            <div className="text-gray-500 text-xs truncate">{record.CustomerEmail}</div>
+            <div className="font-semibold text-gray-900 truncate">
+              {record.CustomerName || "-"}
+            </div>
+            <div className="text-gray-400 text-xs italic">
+              {record.Username}
+            </div>
+            <div className="text-gray-500 text-xs truncate">
+              {record.CustomerEmail}
+            </div>
           </div>
         </Space>
       ),
@@ -181,32 +201,54 @@ const Customers: React.FC = () => {
       dataIndex: "Role",
       key: "role",
       width: 120,
-      filters: [...Array.from(new Set(tableData.map((t) => t.Role))).map((r) => ({ text: r, value: r }))],
+      filters: [
+        ...Array.from(new Set(tableData.map((t) => t.Role))).map((r) => ({
+          text: r,
+          value: r,
+        })),
+      ],
       onFilter: (val, rec) => rec.Role === val,
-      render: (v) => <Tag color="blue" className="px-2 py-1 rounded-md">{v}</Tag>,
+      render: (v) => (
+        <Tag color="blue" className="px-2 py-1 rounded-md">
+          {v}
+        </Tag>
+      ),
     },
     {
       title: "Gender",
       dataIndex: "Status",
       key: "gender",
       width: 120,
-      filters: [...Array.from(new Set(tableData.map((t) => t.Status))).map((s) => ({ text: s, value: s }))],
+      filters: [
+        ...Array.from(new Set(tableData.map((t) => t.Status))).map((s) => ({
+          text: s,
+          value: s,
+        })),
+      ],
       onFilter: (val, rec) => rec.Status === val,
-      render: (v) => <Tag color={v === "Male" ? "green" : "orange"} className="px-2 py-1 rounded-md">{v}</Tag>,
+      render: (v) => (
+        <Tag
+          color={v === "Male" ? "green" : "orange"}
+          className="px-2 py-1 rounded-md"
+        >
+          {v}
+        </Tag>
+      ),
     },
-    { title: "Phone", dataIndex: "PhoneNumber", key: "phone", width: 140, responsive: ["md"] },
+    { title: "Phone", dataIndex: "PhoneNumber", key: "phone", width: 140 },
     {
       title: "Coin",
       dataIndex: "Coin",
       key: "coin",
       width: 90,
       sorter: (a, b) => a.Coin - b.Coin,
-      render: (v) => <span className="font-semibold text-blue-700">{v}</span>,
+      render: (v) => (
+        <span className="font-semibold text-blue-700">{v}</span>
+      ),
     },
     {
       title: "Action",
       key: "action",
-      fixed: "right",
       width: 120,
       render: (_, record) => (
         <Space>
@@ -218,7 +260,12 @@ const Customers: React.FC = () => {
           >
             Edit
           </Button>
-          <Button size="small" danger icon={<DeleteOutlined />} onClick={() => openDeleteModal(record)} />
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => openDeleteModal(record)}
+          />
         </Space>
       ),
     },
@@ -241,12 +288,15 @@ const Customers: React.FC = () => {
       cancelText: "ยกเลิก",
       okButtonProps: { danger: true },
       async onOk() {
-        const results = await Promise.all(selectedRowKeys.map((id) => DeleteUser(Number(id))));
+        const results = await Promise.all(
+          selectedRowKeys.map((id) => DeleteUser(Number(id)))
+        );
         const failed = results.some((r) => !r);
         if (!failed) {
           message.success("ลบข้อมูลสำเร็จ");
           setSelectedRowKeys([]);
           fetchUsers();
+          fetchAllUsers();
         } else {
           message.error("ลบบางรายการไม่สำเร็จ");
         }
@@ -265,6 +315,7 @@ const Customers: React.FC = () => {
       message.success("อัปเดตข้อมูลสำเร็จ");
       setEditUser(null);
       fetchUsers();
+      fetchAllUsers();
     } else {
       message.error("อัปเดตข้อมูลไม่สำเร็จ");
     }
@@ -272,10 +323,12 @@ const Customers: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-[linear-gradient(180deg,#eaf2ff_0%,#f6f9ff_60%,#ffffff_100%)] mt-14 sm:mt-0">
-      {/* Page Header — EV Blue */}
-      <div className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <h1 className="text-sm sm:text-base font-semibold tracking-wide">Customers</h1>
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm">
+        <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between">
+          <h1 className="text-sm sm:text-base font-semibold tracking-wide">
+            Customers
+          </h1>
         </div>
       </div>
 
@@ -311,13 +364,14 @@ const Customers: React.FC = () => {
             dataSource={filteredData}
             loading={loading}
             scroll={{ x: 900 }}
-            pagination={{ pageSize: 10, showSizeChanger: true, position: ["bottomCenter"] }}
-            className="ev-ant-table"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              position: ["bottomCenter"],
+            }}
             size="middle"
           />
         </div>
-
-        <p className="text-[12px] text-gray-500 text-center mt-6">โทนฟ้าสบายตา • มินิมอล • รองรับมือถือ/เดสก์ท็อป</p>
       </div>
 
       {/* Edit User Modal */}
@@ -329,66 +383,54 @@ const Customers: React.FC = () => {
           onSave={handleUpdate}
           genders={genders}
           userRoles={userRoles}
+          allUsersData={allUsersData} // ✅ ใช้ข้อมูลจาก ListUsers ทั้งหมด
         />
       )}
 
-      {/* Confirm Delete (Single) — centered text & buttons */}
+      {/* Confirm Delete */}
       <EvModal open={openConfirmModal} onClose={cancelDelete}>
         <div className="w-[min(92vw,420px)] text-center px-5 py-5">
           <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
             <Trash2 size={22} className="text-blue-600" />
           </div>
 
-          <h3 className="text-base font-bold text-slate-900">ยืนยันการลบผู้ใช้</h3>
+          <h3 className="text-base font-bold text-slate-900">
+            ยืนยันการลบผู้ใช้
+          </h3>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             คุณต้องการลบ
             {selectedUserRef.current?.CustomerName && (
               <>
                 <br />
-                <span className="font-semibold text-blue-700">“{selectedUserRef.current.CustomerName}”</span>
+                <span className="font-semibold text-blue-700">
+                  “{selectedUserRef.current.CustomerName}”
+                </span>
               </>
             )}{" "}
             ใช่หรือไม่?
             <br />
-            <span className="text-xs text-slate-500">การดำเนินการนี้ไม่สามารถย้อนกลับได้</span>
+            <span className="text-xs text-slate-500">
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </span>
           </p>
 
           <div className="mt-4 flex items-center justify-center gap-2">
             <button
               onClick={confirmDelete}
               disabled={confirmLoading}
-              className="min-w-[96px] h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-200 transition disabled:opacity-60"
+              className="min-w-[96px] h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700"
             >
               {confirmLoading ? "กำลังลบ..." : "ลบ"}
             </button>
             <button
               onClick={cancelDelete}
-              className="min-w-[96px] h-10 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-100 transition"
+              className="min-w-[96px] h-10 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50"
             >
               ยกเลิก
             </button>
           </div>
         </div>
       </EvModal>
-
-      {/* EV Blue — Minimal override for Ant Table */}
-      <style>{`
-        .ev-ant-table .ant-table-thead > tr > th {
-          background: #fff !important;
-          color: #0f172a !important;
-          border-bottom: 1px solid rgba(2,6,23,0.06) !important;
-          font-weight: 700; font-size: 13px; letter-spacing: .2px;
-        }
-        .ev-ant-table .ant-table-tbody > tr > td {
-          border-color: rgba(2,6,23,0.06) !important;
-          padding-top: 12px !important; padding-bottom: 12px !important;
-        }
-        .ev-ant-table .ant-table-tbody > tr:hover > td { background: #f8fafc !important; }
-        .ev-ant-table .ant-table-tbody > tr:nth-child(even) > td { background: #fcfcff; }
-        .ev-ant-table .ant-table-pagination { justify-content: center !important; }
-        .ev-ant-table .ant-pagination .ant-pagination-item-active { border-color: rgba(2,6,23,0.2) !important; }
-        .ev-ant-table .ant-pagination .ant-pagination-item-active a { color: #0f172a !important; font-weight: 600; }
-      `}</style>
     </div>
   );
 };

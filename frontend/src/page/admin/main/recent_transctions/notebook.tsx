@@ -1,103 +1,144 @@
+import React, { useEffect, useMemo, useState } from "react";
 import { BsCurrencyDollar } from "react-icons/bs";
+import { FaCoins, FaUniversity, FaBolt } from "react-icons/fa";
 import { useStateContext } from "../../../../contexts/ContextProvider";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
-import { dropdownData } from "../../../../assets/admin/dummy";
-import { useEffect, useState } from "react";
 import {
   ListPayments,
   ListUsers,
   ListEVChargingPayments,
 } from "../../../../services";
-import { FaCoins, FaUniversity, FaBolt } from "react-icons/fa";
 
-const DropDown = ({ currentMode }: any) => (
-  <div className="w-28 border border-blue-200 px-2 py-1 rounded-md">
-    <DropDownListComponent
-      id="time"
-      fields={{ text: "Time", value: "Id" }}
-      style={{
-        border: "none",
-        color: currentMode === "Dark" ? "white" : undefined,
-      }}
-      value="1"
-      dataSource={dropdownData}
-      popupHeight="220px"
-      popupWidth="120px"
-    />
-  </div>
-);
+// ======= Month options (Jan–Dec) =======
+const MONTH_OPTIONS = [
+  { Id: 0,  Time: "Jan" },
+  { Id: 1,  Time: "Feb" },
+  { Id: 2,  Time: "Mar" },
+  { Id: 3,  Time: "Apr" },
+  { Id: 4,  Time: "May" },
+  { Id: 5,  Time: "Jun" },
+  { Id: 6,  Time: "Jul" },
+  { Id: 7,  Time: "Aug" },
+  { Id: 8,  Time: "Sep" },
+  { Id: 9,  Time: "Oct" },
+  { Id: 10, Time: "Nov" },
+  { Id: 11, Time: "Dec" },
+];
 
-const Index = () => {
+type EVRevenueRow = { name: string; revenue: number };
+
+const MonthDropDown: React.FC<{
+  currentMode: string;
+  value: number; // 0-11
+  onChange: (val: number) => void;
+}> = ({ currentMode, value, onChange }) => {
+  return (
+    <div className="w-32 border border-blue-200 px-2 py-1 rounded-md">
+      <DropDownListComponent
+        id="month"
+        // ใช้ฟิลด์ตามรูปแบบ Syncfusion: text/value
+        fields={{ text: "Time", value: "Id" }}
+        style={{
+          border: "none",
+          color: currentMode === "Dark" ? "white" : undefined,
+        }}
+        value={value}
+        dataSource={MONTH_OPTIONS}
+        popupHeight="260px"
+        popupWidth="140px"
+        change={(e: any) => {
+          // e.value คือ Id ที่เราเซ็ตไว้ (0-11)
+          if (typeof e?.value === "number") onChange(e.value);
+        }}
+      />
+    </div>
+  );
+};
+
+const Index: React.FC = () => {
   const { currentMode } = useStateContext();
 
-  const [currentMonthAmount, setCurrentMonthAmount] = useState<number>(0);
-  const [totalCoins, setTotalCoins] = useState<number>(0);
-  const [currentMonthTransactionCount, setCurrentMonthTransactionCount] =
-    useState<number>(0);
-  const [evRevenueByCharger, setEvRevenueByCharger] = useState<
-    { name: string; revenue: number }[]
-  >([]);
+  const now = useMemo(() => new Date(), []);
+  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth()); // 0-11 (ค่าเริ่มต้น = เดือนปัจจุบัน)
+  const [selectedYear] = useState<number>(now.getFullYear()); // หากอนาคตอยากเลือกปีค่อยเพิ่ม Dropdown ปีได้
+
+  const [currentMonthAmount, setCurrentMonthAmount] = useState<number>(0);       // PromptPay Money Added
+  const [totalCoins, setTotalCoins] = useState<number>(0);                       // Coins (All users)
+  const [currentMonthTransactionCount, setCurrentMonthTransactionCount] = useState<number>(0); // Transactions count
+  const [evRevenueByCharger, setEvRevenueByCharger] = useState<EVRevenueRow[]>([]);
+
+  // Helper: ตรวจว่า date อยู่ในเดือน/ปีที่เลือก
+  const inSelectedMonth = (d: Date | string | null | undefined) => {
+    if (!d) return false;
+    const dd = typeof d === "string" ? new Date(d) : d;
+    if (isNaN(dd.getTime())) return false;
+    return dd.getMonth() === selectedMonth && dd.getFullYear() === selectedYear;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
+      // ------- 1) PromptPay / Money Added (ListPayments) -------
       const payments = await ListPayments();
-      if (payments) {
-        const filteredPayments = payments.filter((p: any) => {
-          const paymentDate = new Date(p.Date);
-          return (
-            paymentDate.getMonth() === currentMonth &&
-            paymentDate.getFullYear() === currentYear
-          );
-        });
-
-        const total = filteredPayments.reduce(
-          (acc, curr) => acc + (curr.Amount || 0),
+      if (Array.isArray(payments)) {
+        const filtered = payments.filter((p: any) => inSelectedMonth(p?.Date));
+        const total = filtered.reduce(
+          (acc, curr) => acc + (Number(curr?.Amount) || 0),
           0
         );
         setCurrentMonthAmount(total);
-        setCurrentMonthTransactionCount(filteredPayments.length);
+        setCurrentMonthTransactionCount(filtered.length);
+      } else {
+        setCurrentMonthAmount(0);
+        setCurrentMonthTransactionCount(0);
       }
 
+      // ------- 2) Coins (รวมจากทุก user) -------
       const users = await ListUsers();
-      if (users) {
-        const totalCoin = users.reduce(
-          (acc, curr) => acc + (curr.Coin || 0),
+      if (Array.isArray(users)) {
+        const coinSum = users.reduce(
+          (acc, curr) => acc + (Number(curr?.Coin) || 0),
           0
         );
-        setTotalCoins(totalCoin);
+        setTotalCoins(coinSum);
+      } else {
+        setTotalCoins(0);
       }
 
+      // ------- 3) EV Charger Revenue (ListEVChargingPayments) -------
       const evPayments = await ListEVChargingPayments();
-      if (evPayments) {
-        const filteredEV = evPayments.filter((p: any) => {
-          if (!p?.CreatedAt) return false;
-          const d = new Date(p.CreatedAt);
-          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-        });
-
-        const revenueMap = filteredEV.reduce((acc, curr) => {
-          const name = curr.EVcharging?.Name ?? "Unknown EV";
-          acc[name] = (acc[name] || 0) + (curr.Price || 0);
-          return acc;
-        }, {} as Record<string, number>);
-
-        const revenueArray = Object.entries(revenueMap).map(
-          ([name, revenue]) => ({
-            name,
-            revenue,
-          })
+      if (Array.isArray(evPayments)) {
+        const filteredEV = evPayments.filter((p: any) =>
+          inSelectedMonth(p?.CreatedAt)
         );
+
+        // รวมรายได้ต่อชื่อเครื่องชาร์จ (EVcharging.Name)
+        const revenueMap = filteredEV.reduce((acc: Record<string, number>, curr: any) => {
+          const name = curr?.EVcharging?.Name ?? "Unknown EV";
+          const price =
+            Number(curr?.Price) ??
+            Number(curr?.Amount) ??
+            0; // เผื่อบางระบบเก็บเป็น Amount
+          acc[name] = (acc[name] || 0) + (price || 0);
+          return acc;
+        }, {});
+
+        const revenueArray: EVRevenueRow[] = Object.entries(revenueMap).map(
+          ([name, revenue]) => ({ name, revenue })
+        );
+
+        // เรียงจากมากไปน้อย (สวยงามเวลาแสดง)
+        revenueArray.sort((a, b) => b.revenue - a.revenue);
+
         setEvRevenueByCharger(revenueArray);
+      } else {
+        setEvRevenueByCharger([]);
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
+  // ----- Cards -----
   const recentTransactionsBase = [
     {
       icon: <BsCurrencyDollar />,
@@ -134,13 +175,14 @@ const Index = () => {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}฿`,
-    title: ev.name,
+    title: ev.name,                 // ตัวอย่าง: "Charger A1", "Charger B2"
     desc: "EV Charger Revenue",
     iconColor: "#1E40AF",
     iconBg: "#E0E7FF",
     pcColor: "blue-700",
   }));
 
+  // จัดเรียงให้เป็น: PromptPay(Money Added), Coins, ...EV รายเครื่อง..., Transactions(Payment transactions)
   const recentTransactions = [
     recentTransactionsBase[0],
     recentTransactionsBase[1],
@@ -148,21 +190,29 @@ const Index = () => {
     recentTransactionsBase[2],
   ];
 
+  const monthLabel = MONTH_OPTIONS.find((m) => m.Id === selectedMonth)?.Time ?? "";
+
   return (
     <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl border border-blue-100 shadow-sm">
       {/* Header */}
-      <div className="flex justify-between items-center gap-1">
+      <div className="flex justify-between items-center gap-2">
         <p className="text-xl font-semibold text-blue-800">
-          Recent Transactions
+          Recent Transactions <span className="text-blue-500">({monthLabel} {selectedYear})</span>
         </p>
-        <DropDown currentMode={currentMode} />
+
+        {/* Month Selector */}
+        <MonthDropDown
+          currentMode={currentMode}
+          value={selectedMonth}
+          onChange={setSelectedMonth}
+        />
       </div>
 
       {/* Transactions */}
       <div className="mt-8 w-80 md:w-96">
         {recentTransactions.map((item, idx) => (
           <div
-            key={idx}
+            key={`${item.title}-${idx}`}
             className="flex justify-between items-center bg-gradient-to-r from-blue-50 to-white rounded-xl p-4 mb-3 hover:shadow-md transition-all"
           >
             <div className="flex gap-4 items-center">
@@ -173,19 +223,16 @@ const Index = () => {
                   backgroundColor: item.iconBg,
                 }}
                 className="text-2xl rounded-lg p-4 hover:scale-105 transition-transform"
+                aria-label={item.title}
               >
                 {item.icon}
               </button>
               <div>
-                <p className="text-md font-semibold text-blue-900">
-                  {item.title}
-                </p>
+                <p className="text-md font-semibold text-blue-900">{item.title}</p>
                 <p className="text-sm text-blue-500">{item.desc}</p>
               </div>
             </div>
-            <p className={`font-semibold text-${item.pcColor}`}>
-              {item.amount}
-            </p>
+            <p className={`font-semibold text-${item.pcColor}`}>{item.amount}</p>
           </div>
         ))}
       </div>

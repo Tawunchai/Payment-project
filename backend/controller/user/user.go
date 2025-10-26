@@ -585,7 +585,7 @@ func CheckEmailExists(c *gin.Context) {
 
 type ResetPasswordRequest struct {
 	Email       string `json:"email" binding:"required,email"`
-	NewPassword string `json:"new_password" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required"`
 }
 
 func ResetPassword(c *gin.Context) {

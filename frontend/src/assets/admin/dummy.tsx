@@ -1,5 +1,5 @@
 import { AiOutlineCalendar, AiOutlineShoppingCart } from 'react-icons/ai';
-import { FiShoppingBag, FiEdit, FiBarChart, FiCreditCard, FiStar, FiShoppingCart } from 'react-icons/fi';
+import { FiShoppingBag, FiEdit, FiBarChart, FiCreditCard, FiStar, FiShoppingCart, FiBook } from 'react-icons/fi';
 import { BsBoxSeam, BsCurrencyDollar, BsShield, BsChatLeft } from 'react-icons/bs';
 import { IoMdContacts } from 'react-icons/io';
 import { RiContactsLine } from 'react-icons/ri';
@@ -563,8 +563,8 @@ export const links = [
         icon: <AiOutlineCalendar />,
       },
       {
-        name: 'Editor',
-        icon: <FiEdit />,
+        name: 'Guide',
+        icon: <FiBook />,
       },
       {
         name: 'New',
