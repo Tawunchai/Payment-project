@@ -91,10 +91,10 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       {/* ---------- HEADER ---------- */}
       <header
-        className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden"
+        className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center gap-2">
+        <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
           <button
             onClick={() => window.history.back()}
             aria-label="ย้อนกลับ"
@@ -116,8 +116,14 @@ const Index = () => {
           </button>
 
           <div className="flex items-center gap-2">
-            <BoltIcon className="h-5 w-5 text-white" />
-            <span className="text-sm font-semibold tracking-wide">
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="h-5 w-5 text-white"
+            >
+              <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
+            </svg>
+            <span className="text-sm md:text-base font-semibold tracking-wide">
               EV Selector
             </span>
           </div>
@@ -235,10 +241,9 @@ const Index = () => {
             onClick={handleNext}
             disabled={loading || evChargers.length === 0}
             className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-white transition
-              ${
-                loading || evChargers.length === 0
-                  ? "bg-blue-300"
-                  : "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 active:from-blue-800 active:to-sky-700 shadow-md"
+              ${loading || evChargers.length === 0
+                ? "bg-blue-300"
+                : "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 active:from-blue-800 active:to-sky-700 shadow-md"
               }`}
           >
             <BoltIcon className="h-5 w-5 text-white" />

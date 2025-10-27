@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Table, Avatar, Tag, Space, Button, Input, Modal, message } from "antd";
 import type { ColumnsType, TableProps } from "antd/es/table";
-import { DeleteOutlined, EditOutlined, ExclamationCircleOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { Trash2 } from "react-feather";
 
 import type { GendersInterface } from "../../../interface/IGender";
@@ -13,7 +18,7 @@ import {
   ListGenders,
   ListUserRoles,
   apiUrlPicture,
-  ListUsers, // ✅ ใช้ตรวจสอบซ้ำ
+  ListUsers,
 } from "../../../services";
 
 import EditUserModal from "./edit/index";
@@ -36,18 +41,26 @@ type RowType = {
   Raw: any;
 };
 
-// ===== Inline EV Blue Minimal Modal =====
-const EvModal: React.FC<{ open: boolean; onClose: () => void; children: React.ReactNode }> = ({
-  open,
-  onClose,
-  children,
-}) => {
+// ------- Custom Modal -------
+const EvModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ open, onClose, children }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div className="relative w-full max-w-[420px] mx-4 md:mx-auto">
-        <div className="mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100">
           {children}
           <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
@@ -56,6 +69,7 @@ const EvModal: React.FC<{ open: boolean; onClose: () => void; children: React.Re
   );
 };
 
+// ------- Component -------
 const Customers: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [tableData, setTableData] = useState<RowType[]>([]);
@@ -67,29 +81,46 @@ const Customers: React.FC = () => {
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const selectedUserRef = useRef<RowType | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
-
   const [allUsersData, setAllUsersData] = useState<
     { Username: string; Email: string; PhoneNumber: string }[]
   >([]);
 
-  // ✅ โหลดข้อมูลผู้ใช้ทั้งหมด (เพื่อใช้ตรวจสอบซ้ำ)
+  // ✅ Responsive scrollX
+  const [scrollX, setScrollX] = useState(950);
+
+  useEffect(() => {
+    const updateScrollX = () => {
+      if (window.innerWidth <= 1300 && window.innerWidth >= 768) {
+        // iPad
+        setScrollX(830);
+      } else {
+        setScrollX(950);
+      }
+    };
+
+    updateScrollX();
+    window.addEventListener("resize", updateScrollX);
+    return () => window.removeEventListener("resize", updateScrollX);
+  }, []);
+
+  // ------- Fetch all users (for duplicate check) -------
   const fetchAllUsers = async () => {
     try {
       const all = await ListUsers();
-      if (all && Array.isArray(all)) {
-        const allUsers = all.map((u: any) => ({
+      if (Array.isArray(all)) {
+        const mapped = all.map((u: any) => ({
           Username: u.Username ?? "",
           Email: u.Email ?? "",
           PhoneNumber: u.PhoneNumber ?? "",
         }));
-        setAllUsersData(allUsers);
+        setAllUsersData(mapped);
       }
     } catch (err) {
       console.error("Error fetching all users:", err);
     }
   };
 
-  // ✅ โหลดเฉพาะผู้ใช้ Role=User สำหรับแสดงในตาราง
+  // ------- Fetch customers -------
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -114,7 +145,6 @@ const Customers: React.FC = () => {
           Coin: u.Coin ?? 0,
           Raw: u,
         }));
-
         setTableData(formatted);
       }
     } finally {
@@ -131,7 +161,7 @@ const Customers: React.FC = () => {
   useEffect(() => {
     fetchUsers();
     fetchDropdowns();
-    fetchAllUsers(); // ✅ โหลดข้อมูลทั้งหมดเพื่อตรวจซ้ำ
+    fetchAllUsers();
   }, []);
 
   // ------- Search -------
@@ -363,7 +393,7 @@ const Customers: React.FC = () => {
             columns={columns}
             dataSource={filteredData}
             loading={loading}
-            scroll={{ x: 900 }}
+            scroll={{ x: scrollX }}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -383,7 +413,7 @@ const Customers: React.FC = () => {
           onSave={handleUpdate}
           genders={genders}
           userRoles={userRoles}
-          allUsersData={allUsersData} // ✅ ใช้ข้อมูลจาก ListUsers ทั้งหมด
+          allUsersData={allUsersData}
         />
       )}
 
@@ -393,7 +423,6 @@ const Customers: React.FC = () => {
           <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
             <Trash2 size={22} className="text-blue-600" />
           </div>
-
           <h3 className="text-base font-bold text-slate-900">
             ยืนยันการลบผู้ใช้
           </h3>
@@ -413,7 +442,6 @@ const Customers: React.FC = () => {
               การดำเนินการนี้ไม่สามารถย้อนกลับได้
             </span>
           </p>
-
           <div className="mt-4 flex items-center justify-center gap-2">
             <button
               onClick={confirmDelete}

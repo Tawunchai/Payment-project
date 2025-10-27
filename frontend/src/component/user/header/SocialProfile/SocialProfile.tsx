@@ -48,9 +48,14 @@ const SocialProfile: React.FC = () => {
                   </span>
                 ),
                 children: (
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 mt-3">
-                    <div className="md:col-span-5 md:col-start-1">
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Contact (ซ้าย) */}
+                    <div className="flex flex-col gap-4">
                       <Contact />
+                    </div>
+
+                    {/* Cars (ขวา) */}
+                    <div className="flex flex-col gap-4">
                       <Cars userID={userID} /><br /><br />
                     </div>
                   </div>
@@ -69,7 +74,9 @@ const SocialProfile: React.FC = () => {
                 ),
                 children: (
                   <div className="mt-3">
-                    <BookingHistory /><br /><br />
+                    <BookingHistory />
+                    <br />
+                    <br />
                   </div>
                 ),
               },
@@ -86,7 +93,9 @@ const SocialProfile: React.FC = () => {
                 ),
                 children: (
                   <div className="mt-3">
-                    <SupportCard /><br /><br />
+                    <SupportCard />
+                    <br />
+                    <br />
                   </div>
                 ),
               },

@@ -116,6 +116,9 @@ func SetupDatabase() {
 	// ต่อด้วย seed ข้อมูลที่เหลือ (ดึง Employee คนแรกมาอ้างอิง)
 	seedContent(db)
 
+	// ข้อมูลรถ
+	SeedVehicleCatalog(db)
+
 	// ตัวอย่าง: seed payments หากยังไม่มี
 	userID := uint(1)
 	methodID := uint(1)
@@ -650,4 +653,80 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 
 	fmt.Println("✅ Successfully seeded payments for all 12 months (20 days each).")
 	return nil
+}
+
+// เรียกใช้หลัง AutoMigrate เพื่อเติมข้อมูลเริ่มต้นให้ Brand/Modal
+func SeedVehicleCatalog(db *gorm.DB) error {
+	data := map[string][]string{
+		"AJ EV":         {"GODDESS", "NCV"},
+		"Audi":          {"Audi RS E-Tron Gt", "Audi e-tron 55 quattro", "Audi e-tron GT"},
+		"BMW":           {"330e", "530e", "740 Le", "745 Le xDrive M Sport", "IX", "IX3", "X1 xDrive25e", "X2 xDrive25e", "X3 xDrive30e", "X5 xDrive40e", "X5 xDrive45e", "i3", "i3s", "i7 xDrive60 2022", "i8", "iX xDrive40 Sport"},
+		"BYD":           {"ATTO 3 2022", "Denza 09 EV", "Denza 09 PHEV", "Dolphin 2021", "Dolphin EV 2022", "HAN EV 2022", "M6", "SEAL EV 2022", "SEALION 6", "SEALION 7", "Tang EV 2022", "e6"},
+		"Changan":       {"Deepal L07", "Deepal L07 S", "Deepal S05", "Deepal S07", "Deepal S07 L", "LUMIN L", "LUMIN L DC"},
+		"Chery":         {"JAECOO 6 EV", "OMODA C5 Ev", "Tiggo 8", "V 23"},
+		"FOMM":          {"One"},
+		"FORD":          {"Mustang Mach E"},
+		"FOXCONN":       {"MODEL C", "MODEL E"},
+		"GAC":           {"AION ES", "AION UT", "AION V", "AION Y Plus", "Hyptec HT", "Hyptec SSR"},
+		"GWM":           {"HAVAL PHEV", "ORA BLACKCAT", "ORA GOODCAT GT", "ORA GRAND CAT", "ORA Good Cat 400 Pro", "ORA Good Cat 400 Tech", "ORA Good Cat 500 Ultra", "ORA Good Cat Ultra", "ora good cat 07", "ora good cat GT"},
+		"Geely":         {"EX5 Max", "EX5 Pro"},
+		"HONDA":         {"HONDA E"},
+		"Hyundai":       {"IONIQ", "IONIQ 5 2022", "IONIQ 6 2022", "Kona"},
+		"JAECOO 5":      {"Long Range Dynamic", "Long Range Max"},
+		"Jaguar":        {"i-PACE"},
+		"Kia":           {"KIA EV +A+B37", "Kia EV5 Kia EV9", "Soul EV"},
+		"LEXUS":         {"Lexus RZ 450e", "Lexus ux300e"},
+		"Land Rover":    {"Range Rover Sport HSE Plus", "Range Rover Sport P400e"},
+		"MG":            {"EP PLUS 2022", "ES", "HS PHEV (New)", "MG4", "Maximus (MG5)", "ZS EV", "ZS EV X 2022"},
+		"MINI":          {"Cooper SE"},
+		"Mercedes-Benz": {"C 300e", "C 350e", "E 300e", "E350e", "EQB 250", "EQS", "EQS 500 4MATIC", "GLC 300 e4Metric", "GLC 350 e4MATRIC", "GLC 500e", "GLE 500e", "S500e", "S560e"},
+		"Mitsubishi":    {"Outander Phev (NEW)", "i-Miev"},
+		"Neta":          {"NETA S", "NETA V", "Neta U Pro", "V II", "x"},
+		"Nissan":        {"Ariya", "Leaf"},
+		"Peugeot":       {"e-2008 SUV"},
+		"Pocco":         {"DD", "MM"},
+		"Porsche":       {"Cayenne S E-Hybrid", "Panamera 4 E-Hybrid", "TAYCAN 4S 2022", "TAYCAN GTS 2022", "Taycan"},
+		"Takano":        {"TTE 500"},
+		"Tesla":         {"Model 3 Long Range", "Model 3 Performance", "Model 3 Standard Range Plus", "Model S Long Range", "Model S Performance", "Model S Standard", "Model X Long Range Plus", "Model X Performance", "Model Y Long Range", "Model Y Performance"},
+		"Toyota":        {"BZ4"},
+		"Volvo":         {"C40", "S60 T8", "S90 T8", "V60 T8", "V90 T8", "XC40", "XC60 T8", "XC90 T8"},
+		"Xpeng":         {"G6", "X9"},
+		"ZEEKR":         {"ZEEKR X", "ZEEKR 009"},
+	}
+
+	// ใช้ Transaction เพื่อความถูกต้องของชุดข้อมูล
+	return db.Transaction(func(tx *gorm.DB) error {
+		for brandName, modals := range data {
+			cleanBrand := strings.TrimSpace(brandName)
+			if cleanBrand == "" {
+				continue
+			}
+
+			// ✅ Create or get Brand
+			var brand entity.Brand
+			if err := tx.
+				Where("brand_name = ?", cleanBrand).
+				FirstOrCreate(&brand, entity.Brand{BrandName: cleanBrand}).Error; err != nil {
+				return fmt.Errorf("seed brand '%s' failed: %w", cleanBrand, err)
+			}
+
+			// ✅ Create or get each Modal
+			for _, m := range modals {
+				cleanModal := strings.TrimSpace(m)
+				if cleanModal == "" {
+					continue
+				}
+				var modal entity.Modal
+				if err := tx.
+					Where("modal_name = ? AND brand_id = ?", cleanModal, brand.ID).
+					FirstOrCreate(&modal, entity.Modal{
+						ModalName: cleanModal,
+						BrandID:   &brand.ID,
+					}).Error; err != nil {
+					return fmt.Errorf("seed modal '%s' of brand '%s' failed: %w", cleanModal, cleanBrand, err)
+				}
+			}
+		}
+		return nil
+	})
 }

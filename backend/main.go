@@ -141,6 +141,7 @@ func main() {
 		public.GET("/cars/user/:id", car.GetCarByUserID)
 		public.PUT("/cars/:id", car.UpdateCarByID)
 		public.DELETE("/cars/:id", car.DeleteCarByID)
+		public.GET("/modals", car.ListModal)
 
 		//service
 		public.GET("/services", service.ListService)
