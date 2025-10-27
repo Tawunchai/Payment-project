@@ -428,12 +428,14 @@ func seedContent(db *gorm.DB) {
 		EndDate:     time.Date(year, month, day, 10, 0, 0, 0, loc),
 		UserID:      &uid1,
 		EVCabinetID: &cabinetID,
+		IsEmailSent: true,
 	}
 	db.FirstOrCreate(booking1, entity.Booking{
 		UserID:      &uid1,
 		EVCabinetID: &cabinetID,
 		StartDate:   booking1.StartDate,
 		EndDate:     booking1.EndDate,
+		IsEmailSent: true,
 	})
 
 	// User 2 (13:00 - 15:00)
@@ -442,12 +444,14 @@ func seedContent(db *gorm.DB) {
 		EndDate:     time.Date(year, month, day, 15, 0, 0, 0, loc),
 		UserID:      &uid2,
 		EVCabinetID: &cabinetID,
+		IsEmailSent: true,
 	}
 	db.FirstOrCreate(booking2, entity.Booking{
 		UserID:      &uid2,
 		EVCabinetID: &cabinetID,
 		StartDate:   booking2.StartDate,
 		EndDate:     booking2.EndDate,
+		IsEmailSent: true,
 	})
 
 	// User 3 (19:00 - 20:00)
@@ -456,12 +460,14 @@ func seedContent(db *gorm.DB) {
 		EndDate:     time.Date(year, month, day, 20, 0, 0, 0, loc),
 		UserID:      &uid3,
 		EVCabinetID: &cabinetID,
+		IsEmailSent: true,
 	}
 	db.FirstOrCreate(booking3, entity.Booking{
 		UserID:      &uid3,
 		EVCabinetID: &cabinetID,
 		StartDate:   booking3.StartDate,
 		EndDate:     booking3.EndDate,
+		IsEmailSent: true,
 	})
 
 	// Status & Type
