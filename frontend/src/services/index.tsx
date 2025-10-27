@@ -20,6 +20,7 @@ import { CarsInterface } from "../interface/ICar";
 import { ServiceInterface } from "../interface/IService";
 import { SendEmailInterface } from "../interface/ISendEmail";
 import { BookingInterface,EVCabinetInterface } from "../interface/IBooking";
+import { ModalInterface } from "../interface/ICarCatalog";
 
 //const apiUrl = "http://10.0.14.228:8000";
 //export const apiUrlPicture = "http://10.0.14.228:8000/";
@@ -2069,6 +2070,27 @@ export const DeletePayments = async (ids: number[]) => {
     }
   } catch (error: any) {
     console.error("❌ DeletePayments error:", error.response?.data || error);
+    return null;
+  }
+};
+
+// ดึงรายการ Modal ทั้งหมด (พร้อม Brand ที่ preload มาด้วย)
+export const ListModals = async (): Promise<ModalInterface[] | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/modals`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data as ModalInterface[];
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching modals:", error.response?.data || error.message);
     return null;
   }
 };

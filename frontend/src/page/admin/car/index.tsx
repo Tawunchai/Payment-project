@@ -9,12 +9,7 @@ import {
 } from "@ant-design/icons";
 import { ListCars, DeleteCar, apiUrlPicture } from "../../../services";
 import type { CarsInterface } from "../../../interface/ICar";
-import {
-  FaCarSide,
-  FaTruckPickup,
-  FaTaxi,
-  FaBusAlt,
-} from "react-icons/fa";
+import { FaCarSide, FaTruckPickup, FaTaxi, FaBusAlt } from "react-icons/fa";
 import { Trash2 } from "react-feather";
 import { utils, writeFile } from "xlsx";
 import ModalEditCar from "./edit";
@@ -66,6 +61,24 @@ const CarList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [editCar, setEditCar] = useState<any | null>(null);
+
+  // ✅ Responsive scrollX
+  const [scrollX, setScrollX] = useState(1000);
+
+  useEffect(() => {
+    const updateScrollX = () => {
+      if (window.innerWidth <= 1180 && window.innerWidth >= 768) {
+        // iPad
+        setScrollX(830);
+      } else {
+        setScrollX(1000);
+      }
+    };
+
+    updateScrollX();
+    window.addEventListener("resize", updateScrollX);
+    return () => window.removeEventListener("resize", updateScrollX);
+  }, []);
 
   // Confirm Delete Modal
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
@@ -326,7 +339,7 @@ const CarList: React.FC = () => {
             columns={columns}
             dataSource={filteredData}
             loading={loading}
-            scroll={{ x: 1000 }}
+            scroll={{ x: scrollX }}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -347,7 +360,7 @@ const CarList: React.FC = () => {
         <ModalEditCar
           open={!!editCar}
           car={editCar}
-          allPlates={allPlates} // ✅ ส่งทะเบียนทั้งหมด
+          allPlates={allPlates}
           onClose={() => setEditCar(null)}
           onUpdated={fetchCars}
         />

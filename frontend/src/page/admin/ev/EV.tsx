@@ -216,10 +216,10 @@ const CabinetModal: React.FC<{
       <div className="relative w-full max-w-[680px] mx-4 md:mx-auto mb-8 md:mb-0">
         {/* กล่อง modal ให้เป็น flex-col: header (fixed) + body (scroll) + footer (fixed) */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100 flex flex-col"
-             style={{ maxHeight: isMobile ? "78vh" : "82vh" }}>
+          style={{ maxHeight: isMobile ? "78vh" : "82vh" }}>
           {/* Header */}
           <div className="px-5 pt-3 pb-4 bg-blue-600 text-white flex justify-between items-center"
-               style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}>
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}>
             <h2 className="text-base md:text-lg font-semibold">
               {isEdit ? "แก้ไข EV Cabinet" : "เพิ่ม EV Cabinet"}
             </h2>
@@ -394,6 +394,24 @@ const EV: React.FC = () => {
   const [openCabinetConfirm, setOpenCabinetConfirm] = useState(false);
   const [confirmCabinetLoading, setConfirmCabinetLoading] = useState(false);
   const selectedCabinetRef = useRef<CabinetType | null>(null);
+
+  // ✅ Responsive scrollX
+  const [scrollX, setScrollX] = useState(960);
+
+  useEffect(() => {
+    const updateScrollX = () => {
+      if (window.innerWidth <= 1300 && window.innerWidth >= 768) {
+        // iPad
+        setScrollX(830);
+      } else {
+        setScrollX(960);
+      }
+    };
+
+    updateScrollX();
+    window.addEventListener("resize", updateScrollX);
+    return () => window.removeEventListener("resize", updateScrollX);
+  }, []);
 
   // ---------- Fetch ----------
   const fetchEVData = async () => {
@@ -694,7 +712,7 @@ const EV: React.FC = () => {
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
           />
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -722,7 +740,7 @@ const EV: React.FC = () => {
             columns={columns}
             dataSource={filteredData}
             loading={loading}
-            scroll={{ x: 960 }}
+            scroll={{ x: scrollX }}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -773,8 +791,8 @@ const EV: React.FC = () => {
                         cab.Status?.toLowerCase().includes("active")
                           ? "green"
                           : cab.Status?.toLowerCase().includes("maintenance")
-                          ? "orange"
-                          : "default"
+                            ? "orange"
+                            : "default"
                       }
                       className="mt-1"
                     >

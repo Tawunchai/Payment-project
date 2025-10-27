@@ -221,3 +221,20 @@ func DeleteCarByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Car deleted successfully"})
 }
+
+// ✅ ดึงข้อมูล Modal ทั้งหมด พร้อมข้อมูล Brand ที่เกี่ยวข้อง
+func ListModal(c *gin.Context) {
+	var modals []entity.Modal
+	db := config.DB()
+
+	results := db.
+		Preload("Brand"). // โหลดข้อมูล Brand มาด้วย
+		Find(&modals)
+
+	if results.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, modals)
+}

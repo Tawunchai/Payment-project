@@ -90,6 +90,24 @@ const Employees: React.FC = () => {
     { Username: string; Email: string; PhoneNumber: string }[]
   >([]);
 
+  // ✅ Responsive scrollX
+  const [scrollX, setScrollX] = useState(950);
+
+  useEffect(() => {
+    const updateScrollX = () => {
+      if (window.innerWidth <= 1300 && window.innerWidth >= 768) {
+        // iPad
+        setScrollX(830);
+      } else {
+        setScrollX(950);
+      }
+    };
+
+    updateScrollX();
+    window.addEventListener("resize", updateScrollX);
+    return () => window.removeEventListener("resize", updateScrollX);
+  }, []);
+
   // Confirm delete
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -406,7 +424,7 @@ const Employees: React.FC = () => {
             columns={columns}
             dataSource={filteredData}
             loading={loading}
-            scroll={{ x: 950 }}
+            scroll={{ x: scrollX }}
             pagination={{ pageSize: 10, showSizeChanger: true }}
           />
         </div>

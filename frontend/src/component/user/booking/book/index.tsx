@@ -10,7 +10,7 @@ import {
   Tag,
   Alert,
 } from "antd";
-import { FaMapMarkerAlt, FaBolt, FaUserCircle } from "react-icons/fa";
+import { FaMapMarkerAlt, FaUserCircle } from "react-icons/fa";
 import dayjs, { Dayjs } from "dayjs";
 import locale from "antd/es/date-picker/locale/th_TH";
 import "dayjs/locale/th";
@@ -29,7 +29,7 @@ interface TimeSlot {
 }
 
 /* =========================
-   HeaderBar EV Style
+   HeaderBar EV Gradient Blue
    ========================= */
 const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
   title = "จองตู้ชาร์จไฟฟ้า",
@@ -37,12 +37,15 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
 }) => {
   const goBack = () => (onBack ? onBack() : window.history.back());
   return (
-    <header className="sticky top-0 z-30 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-b-2xl shadow-lg">
-      <div className="w-full px-5 py-3 flex items-center gap-3 max-w-6xl mx-auto">
+    <header
+      className="sticky top-0 z-30 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
         <button
           onClick={goBack}
           aria-label="ย้อนกลับ"
-          className="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-white/20 transition-colors"
+          className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
         >
           <svg
             viewBox="0 0 24 24"
@@ -58,14 +61,24 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
             />
           </svg>
         </button>
+
         <div className="flex items-center gap-2">
-          <FaBolt className="h-4 w-4 text-white-300" />
-          <span className="text-base font-semibold tracking-wide">{title}</span>
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="h-5 w-5 text-white"
+          >
+            <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
+          </svg>
+          <span className="text-sm md:text-base font-semibold tracking-wide">
+            {title}
+          </span>
         </div>
       </div>
     </header>
   );
 };
+
 
 /* =========================
    BookingDate Component

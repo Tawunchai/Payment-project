@@ -101,14 +101,31 @@ const PaymentCoinsTable: React.FC = () => {
   const [pageSize, setPageSize] = useState(10); // ✅ pageSize state
   const selectedIDsRef = useRef<number[]>([]);
 
+  // ✅ Responsive scrollX
+  const [scrollX, setScrollX] = useState(900);
+
+  useEffect(() => {
+    const updateScrollX = () => {
+      if (window.innerWidth <= 1300 && window.innerWidth >= 768) {
+        // iPad
+        setScrollX(750);
+      } else {
+        setScrollX(900);
+      }
+    };
+
+    updateScrollX();
+    window.addEventListener("resize", updateScrollX);
+    return () => window.removeEventListener("resize", updateScrollX);
+  }, []);
+
   const fetchCoins = async () => {
     setTableLoading(true);
     try {
       const res = await ListPaymentCoins();
       const mapped: RowType[] = (res || []).map((p, idx) => {
-        const name = `${p.User?.FirstName ?? ""} ${
-          p.User?.LastName ?? ""
-        }`.trim();
+        const name = `${p.User?.FirstName ?? ""} ${p.User?.LastName ?? ""
+          }`.trim();
         return {
           key: p.ID!,
           Index: idx + 1,
@@ -426,7 +443,7 @@ const PaymentCoinsTable: React.FC = () => {
               onChange: (_, size) => setPageSize(size),
               position: ["bottomCenter"],
             }}
-            scroll={{ x: 900 }}
+            scroll={{ x: scrollX }}
             className="ev-ant-table"
             size="middle"
           />

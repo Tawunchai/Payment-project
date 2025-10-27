@@ -79,6 +79,24 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
   const [pageSize, setPageSize] = useState(10); // ✅ เพิ่ม state ควบคุมจำนวนแถวต่อหน้า
   const selectedIDsRef = useRef<number[]>([]);
 
+  // ✅ Responsive scrollX
+  const [scrollX, setScrollX] = useState(900);
+
+  useEffect(() => {
+    const updateScrollX = () => {
+      if (window.innerWidth <= 1300 && window.innerWidth >= 768) {
+        // iPad
+        setScrollX(750);
+      } else {
+        setScrollX(900);
+      }
+    };
+
+    updateScrollX();
+    window.addEventListener("resize", updateScrollX);
+    return () => window.removeEventListener("resize", updateScrollX);
+  }, []);
+
   // ✅ แปลง data → rows
   useEffect(() => {
     if (data) {
@@ -428,7 +446,7 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
             onChange: (_, size) => setPageSize(size), // ✅ sync pageSize เมื่อเปลี่ยน
             position: ["bottomCenter"],
           }}
-          scroll={{ x: 900 }}
+          scroll={{ x: scrollX }}
           size="middle"
         />
       </div>

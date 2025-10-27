@@ -163,24 +163,39 @@ const HistoryPay = () => {
     <div className="min-h-screen w-full bg-white flex flex-col">
       {/* HEADER */}
       <header
-        className="sticky top-0 z-30 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden w-full"
+        className="sticky top-0 z-30 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden w-full"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto max-w-screen-sm md:max-w-6xl px-4 py-3 flex items-center gap-2">
+        <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
+          {/* ปุ่มย้อนกลับ */}
           <button
             onClick={() => navigate(-1)}
             aria-label="ย้อนกลับ"
             className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                d="M15 18l-6-6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
+
+          {/* ไอคอนและชื่อหัวข้อ */}
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
-              <FaWallet className="text-white" />
+              <FaWallet className="h-5 w-5 text-white" />
             </span>
-            <span className="text-sm md:text-base font-semibold tracking-wide">Wallet & History</span>
+            <span className="text-sm md:text-base font-semibold tracking-wide">
+              Wallet & History
+            </span>
           </div>
         </div>
       </header>
