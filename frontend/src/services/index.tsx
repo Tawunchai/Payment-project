@@ -1074,10 +1074,13 @@ export const GetEmployeeByUserID = async (id: number): Promise<EmployeeInterface
 
 export const UpdateAdminByID = async (
   id: number,
-  data: Partial<Pick<EmployeeInterface, "Salary">> & { userRoleID?: number }
+  data: Partial<Pick<EmployeeInterface, "Salary">> & {
+    userRoleID?: number;
+    password?: string; // ✅ เพิ่ม password ที่นี่
+  }
 ): Promise<{ message: string; data: EmployeeInterface } | null> => {
   try {
-    // สร้าง payload เป็น JSON object
+    // ✅ สร้าง payload เป็น JSON object ที่ยืดหยุ่น
     const payload: any = {};
 
     if (data.Salary !== undefined) {
@@ -1088,12 +1091,20 @@ export const UpdateAdminByID = async (
       payload.userRoleID = data.userRoleID;
     }
 
-    const response = await axios.patch(`${apiUrl}/update-boss-admins/${id}`, payload, {
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeader(),
-      },
-    });
+    if (data.password !== undefined && data.password.trim() !== "") {
+      payload.password = data.password.trim(); // ✅ ส่งเฉพาะเมื่อไม่ว่าง
+    }
+
+    const response = await axios.patch(
+      `${apiUrl}/update-boss-admins/${id}`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      }
+    );
 
     if (response.status === 200) {
       return response.data;
@@ -1106,7 +1117,6 @@ export const UpdateAdminByID = async (
     return null;
   }
 };
-
 
 export const DeleteAdmin = async (
   id: number

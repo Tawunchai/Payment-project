@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt, FaClock } from "react-icons/fa";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Modal, Button } from "antd";
 
-import { ListCabinetsEV, apiUrlPicture } from "../../../services";
+import { ListCabinetsEV, apiUrlPicture, GetCarByUserID } from "../../../services";
 import type { EVCabinetInterface } from "../../../interface/IBooking";
+import type { CarsInterface } from "../../../interface/ICar";
 
 /* =========================
    EV Bolt Icon
@@ -18,7 +20,7 @@ const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 /* =========================
-   HeaderBar (Desktop version)
+   HeaderBar (Desktop)
    ========================= */
 const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
   title = "แผนที่สถานีชาร์จไฟฟ้า",
@@ -31,7 +33,6 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="w-full px-6 py-3 flex items-center justify-start gap-2">
-        {/* Back Button */}
         <button
           onClick={goBack}
           aria-label="ย้อนกลับ"
@@ -52,12 +53,9 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
           </svg>
         </button>
 
-        {/* Title */}
         <div className="flex items-center gap-2">
           <BoltIcon className="h-5 w-5 text-white" />
-          <span className="text-base font-semibold tracking-wide">
-            {title}
-          </span>
+          <span className="text-base font-semibold tracking-wide">{title}</span>
         </div>
       </div>
     </header>
@@ -65,7 +63,7 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
 };
 
 /* =========================
-   EV Map (Notebook/Desktop)
+   EV Marker Icon
    ========================= */
 const createEVIcon = (selected: boolean) =>
   new L.DivIcon({
@@ -81,20 +79,23 @@ const createEVIcon = (selected: boolean) =>
     className: "animate-fadeIn",
   });
 
+/* =========================
+   EV Map (Desktop)
+   ========================= */
 const EVMapNotebook: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
   const [cabinets, setCabinets] = useState<EVCabinetInterface[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCarModal, setShowCarModal] = useState(false);
   const navigate = useNavigate();
 
-  // โหลดข้อมูลจาก Backend
+  const userID = Number(localStorage.getItem("userid"));
+
   useEffect(() => {
     const fetchCabinets = async () => {
       try {
         const res = await ListCabinetsEV();
-        if (res) {
-          setCabinets(res);
-        }
+        if (res) setCabinets(res);
       } catch (error) {
         console.error("Error loading EV cabinets:", error);
       } finally {
@@ -104,7 +105,22 @@ const EVMapNotebook: React.FC = () => {
     fetchCabinets();
   }, []);
 
-  // Loading State
+  // ✅ ตรวจสอบว่าผู้ใช้มีรถไหม
+  const handleBookingClick = async (cabinet: EVCabinetInterface) => {
+    try {
+      const cars: CarsInterface[] | null = await GetCarByUserID(userID);
+      if (!cars || cars.length === 0) {
+        setShowCarModal(true);
+        return;
+      }
+      navigate("/user/booking-date", { state: { cabinet } });
+    } catch (error) {
+      console.error("Error checking car:", error);
+      setShowCarModal(true);
+    }
+  };
+
+  // ✅ Loading
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-blue-700 font-semibold">
@@ -113,7 +129,7 @@ const EVMapNotebook: React.FC = () => {
     );
   }
 
-  // No Data
+  // ✅ No Data
   if (!cabinets.length) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-gray-500">
@@ -149,7 +165,7 @@ const EVMapNotebook: React.FC = () => {
           ))}
         </MapContainer>
 
-        {/* Floating Card (กลางล่าง) */}
+        {/* Floating Card */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-full flex justify-center">
           <div className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 pb-2 w-full max-w-4xl justify-center scrollbar-hide">
             {cabinets.map((cabinet) => (
@@ -162,7 +178,6 @@ const EVMapNotebook: React.FC = () => {
                     : "border-gray-100"
                 }`}
               >
-                {/* Image */}
                 <div className="relative w-full h-28 rounded-lg overflow-hidden">
                   <img
                     src={`${apiUrlPicture}${cabinet.Image}`}
@@ -178,7 +193,6 @@ const EVMapNotebook: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Info */}
                 <div className="mt-2 space-y-0.5">
                   <h2 className="font-semibold text-blue-800 text-[13px] truncate">
                     {cabinet.Name}
@@ -196,10 +210,7 @@ const EVMapNotebook: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => {
-                    navigate("/user/booking-date", { state: { cabinet } });
-                    console.log("Selected Cabinet:", cabinet);
-                  }}
+                  onClick={() => handleBookingClick(cabinet)}
                   className="mt-2 w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] rounded-lg shadow-sm transition-all"
                 >
                   จองจุดชาร์จนี้
@@ -214,6 +225,64 @@ const EVMapNotebook: React.FC = () => {
       <div className="absolute bottom-1 w-full text-center text-[10px] text-gray-400">
         ⚡ EV Smart Charging App © {new Date().getFullYear()}
       </div>
+
+      {/* ✅ EV BLUE MODAL */}
+      <Modal
+        open={showCarModal}
+        onCancel={() => setShowCarModal(false)}
+        footer={null}
+        centered
+        closable={false}
+        maskStyle={{ backgroundColor: "rgba(0, 102, 204, 0.15)" }}
+        className="ev-modal-clean"
+      >
+        <div className="text-4xl mb-3">🚗</div>
+        <h3 className="text-lg font-semibold text-blue-700 mb-2">
+          ไม่พบข้อมูลรถของคุณ
+        </h3>
+        <p className="text-gray-600 mb-5">
+          ก่อนทำการจอง กรุณาเพิ่มข้อมูลรถของคุณในระบบ
+        </p>
+
+        <div className="flex justify-center gap-3">
+          <Button
+            onClick={() => setShowCarModal(false)}
+            className="rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50"
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            type="primary"
+            className="rounded-lg bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 border-0 shadow-md"
+            onClick={() => navigate("/user/add-cars")}
+          >
+            ไปเพิ่มข้อมูลรถ
+          </Button>
+        </div>
+      </Modal>
+
+      <style>
+        {`
+          .ev-modal-clean .ant-modal-content {
+            border-radius: 20px !important;
+            background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%) !important;
+            box-shadow: 0 8px 30px rgba(59,130,246,0.25) !important;
+            text-align: center;
+            padding: 32px 28px !important;
+            border: none !important;
+            animation: fadeIn 0.3s ease-out;
+          }
+
+          .ev-modal-clean .ant-modal-body {
+            padding: 0 !important;
+          }
+
+          @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+          }
+        `}
+      </style>
     </div>
   );
 };

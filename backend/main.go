@@ -1,8 +1,11 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
+
+	"github.com/robfig/cron/v3" 
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/controller/booking"
@@ -18,6 +21,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/login"
 	"github.com/Tawunchai/work-project/controller/method"
 	"github.com/Tawunchai/work-project/controller/new"
+	"github.com/Tawunchai/work-project/controller/notify"
 	"github.com/Tawunchai/work-project/controller/otp"
 	"github.com/Tawunchai/work-project/controller/payment"
 	"github.com/Tawunchai/work-project/controller/report"
@@ -46,6 +50,15 @@ func main() {
 	r.Use(CORSMiddleware())
 
 	r.POST("/login", login.AddLogin)
+
+	// ✅ 2. เพิ่ม Cron Job หลัง DB setup และก่อนรันเซิร์ฟเวอร์
+	c := cron.New()
+	c.AddFunc("0 7 * * *", func() {
+		log.Println("🕖 เริ่มทำงานส่งอีเมลแจ้งเตือน Booking วันนี้...")
+		notify.SendBookingReminder(nil)
+	})
+	c.Start()
+	log.Println("✅ Scheduler started (runs every day at 07:00 AM).")
 
 	authorized := r.Group("")
 	authorized.Use(middlewares.Authorizes())
@@ -189,6 +202,9 @@ func main() {
 		public.POST("/create-evcabinet", cabinet.CreateEVCabinet) // เพิ่มข้อมูลใหม่
 		public.PUT("/evcabinet/:id", cabinet.UpdateEVCabinetByID) // อัปเดตข้อมูลตาม ID
 		public.DELETE("/evcabinet/:id", cabinet.DeleteEVCabinetByID)
+
+		//Notify
+		public.GET("/booking/reminder", notify.SendBookingReminder)
 
 	}
 

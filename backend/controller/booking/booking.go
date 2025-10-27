@@ -61,6 +61,7 @@ func CreateBooking(c *gin.Context) {
 		EndDate:     input.EndDate,
 		UserID:      &input.UserID,
 		EVCabinetID: &input.EVCabinetID,
+		IsEmailSent: false,
 	}
 
 	if err := db.Create(&booking).Error; err != nil {

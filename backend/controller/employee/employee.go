@@ -141,7 +141,7 @@ func DeleteAdminByID(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"message": "Admin and related user deleted successfully"})
 }
 
-
+// ✅ Controller: อัปเดตข้อมูลผู้ดูแลระบบ
 func UpdateAdminByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -151,10 +151,11 @@ func UpdateAdminByID(c *gin.Context) {
 		return
 	}
 
-	// สร้าง struct สำหรับรับ JSON
+	// ✅ struct สำหรับรับ JSON Input
 	type UpdateAdminInput struct {
 		Salary     *float64 `json:"salary"`
 		UserRoleID *uint    `json:"userRoleID"`
+		Password   *string  `json:"password"` // ✅ เพิ่มช่องสำหรับอัปเดตรหัสผ่าน
 	}
 
 	var input UpdateAdminInput
@@ -163,22 +164,38 @@ func UpdateAdminByID(c *gin.Context) {
 		return
 	}
 
-	// อัปเดต Salary ถ้ามี
+	db := config.DB()
+
+	// ✅ อัปเดต Salary ถ้ามี
 	if input.Salary != nil {
 		employee.Salary = *input.Salary
 	}
 
-	// อัปเดต UserRoleID ถ้ามีและ User ไม่เป็น nil
+	// ✅ อัปเดต UserRoleID ถ้ามี และ User ไม่เป็น nil
 	if input.UserRoleID != nil && employee.User != nil {
 		employee.User.UserRoleID = *input.UserRoleID
-		if err := config.DB().Save(employee.User).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถอัปเดต UserRoleID ได้"})
+	}
+
+	// ✅ อัปเดตรหัสผ่าน (เฉพาะเมื่อส่งมาด้วย)
+	if input.Password != nil && employee.User != nil {
+		hashed, err := bcrypt.GenerateFromPassword([]byte(*input.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถเข้ารหัสรหัสผ่านได้"})
+			return
+		}
+		employee.User.Password = string(hashed)
+	}
+
+	// ✅ บันทึกข้อมูลในตาราง User (เฉพาะเมื่อมีข้อมูล User)
+	if employee.User != nil {
+		if err := db.Save(employee.User).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถอัปเดตข้อมูล User ได้"})
 			return
 		}
 	}
 
-	// บันทึก Employee
-	if err := config.DB().Save(&employee).Error; err != nil {
+	// ✅ บันทึกข้อมูลในตาราง Employee
+	if err := db.Save(&employee).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถอัปเดต Salary ได้"})
 		return
 	}

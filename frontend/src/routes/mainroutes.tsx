@@ -6,7 +6,7 @@ const Login = Loadable(lazy(() => import("../page/LoginForm1/LoginForm1")));
 const SignUp = Loadable(lazy(() => import("../page/Signup1/Signup2Form")));
 const ForgotPassword = Loadable(lazy(() => import("../page/ForgotPasswordForm/ForgotPasswordForm")));
 const ResetPassword = Loadable(lazy(() => import("../page/ResetPassword/ResetPassword")));
-
+const Loader = Loadable(lazy(() => import("../component/third-patry/Loader")));
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
 const BookingEV = Loadable(lazy(() => import("../component/user/booking/index")));
@@ -135,6 +135,7 @@ const MainRoutes = (): RouteObject[] => [
     children: [
       { index: true, element: <Login /> }, //edit
       { path: "/register", element: <SignUp /> },
+      { path: "/loader", element: <Loader /> },
       { path: "*", element: <Login /> }, //edit 
       { path: "/register", element: <SignUp /> }, //edit
       { path: "/forgot-password", element: <ForgotPassword /> }, //edit

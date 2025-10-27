@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.ant-message,
+.ant-message-wrapper {
+  z-index: 15000 !important;
+}
 
 :root {
   --primary: #1f3e72;

@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt, FaClock } from "react-icons/fa";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Modal, Button } from "antd";
 
-import { ListCabinetsEV, apiUrlPicture } from "../../../services"; // ✅ ดึง apiUrlPicture มาใช้
+import { ListCabinetsEV, apiUrlPicture, GetCarByUserID } from "../../../services";
 import type { EVCabinetInterface } from "../../../interface/IBooking";
+import type { CarsInterface } from "../../../interface/ICar";
 
 /* =========================
    EV Bolt Icon (minimal)
@@ -18,7 +20,7 @@ const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 /* =========================
-   Reusable HeaderBar
+   HeaderBar (Mobile)
    ========================= */
 const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
   title = "จองเข้าชาร์จไฟฟ้า",
@@ -61,16 +63,15 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
 };
 
 /* =========================
-   EV Map Page
+   EV Marker icon
    ========================= */
-
-// EV Marker icon
 const createEVIcon = (selected: boolean) =>
   new L.DivIcon({
     html: `
-      <div class="flex items-center justify-center ${selected
-        ? "bg-blue-600 shadow-blue-400 scale-110"
-        : "bg-blue-400 hover:bg-blue-500"
+      <div class="flex items-center justify-center ${
+        selected
+          ? "bg-blue-600 shadow-blue-400 scale-110"
+          : "bg-blue-400 hover:bg-blue-500"
       } transition-all duration-200 rounded-full w-8 h-8 text-white shadow-md border-2 border-white">
         ⚡
       </div>`,
@@ -78,20 +79,23 @@ const createEVIcon = (selected: boolean) =>
     className: "animate-fadeIn",
   });
 
+/* =========================
+   EVMapMobile Component
+   ========================= */
 const EVMapMobile: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
   const [cabinets, setCabinets] = useState<EVCabinetInterface[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCarModal, setShowCarModal] = useState(false);
   const navigate = useNavigate();
+  const userID = Number(localStorage.getItem("userid"));
 
   // โหลดข้อมูลจาก Backend
   useEffect(() => {
     const fetchCabinets = async () => {
       try {
         const res = await ListCabinetsEV();
-        if (res) {
-          setCabinets(res);
-        }
+        if (res) setCabinets(res);
       } catch (error) {
         console.error("Error loading EV cabinets:", error);
       } finally {
@@ -100,6 +104,21 @@ const EVMapMobile: React.FC = () => {
     };
     fetchCabinets();
   }, []);
+
+  // ✅ ตรวจสอบว่าผู้ใช้มีรถไหม ก่อนกดจอง
+  const handleBookingClick = async (cabinet: EVCabinetInterface) => {
+    try {
+      const cars: CarsInterface[] | null = await GetCarByUserID(userID);
+      if (!cars || cars.length === 0) {
+        setShowCarModal(true);
+        return;
+      }
+      navigate("/user/booking-date", { state: { cabinet } });
+    } catch (error) {
+      console.error("Error checking car:", error);
+      setShowCarModal(true);
+    }
+  };
 
   // หากกำลังโหลด
   if (loading) {
@@ -154,15 +173,16 @@ const EVMapMobile: React.FC = () => {
               <div
                 key={cabinet.ID}
                 onClick={() => setSelected(cabinet.ID)}
-                className={`snap-center min-w-[210px] bg-white rounded-xl p-2 shadow-md border flex-shrink-0 transition-all duration-300 ${selected === cabinet.ID
+                className={`snap-center min-w-[210px] bg-white rounded-xl p-2 shadow-md border flex-shrink-0 transition-all duration-300 ${
+                  selected === cabinet.ID
                     ? "border-blue-500 shadow-blue-300 scale-105"
                     : "border-gray-100"
-                  }`}
+                }`}
               >
                 {/* Image */}
                 <div className="relative w-full h-24 rounded-lg overflow-hidden">
                   <img
-                    src={`${apiUrlPicture}${cabinet.Image}`} // ✅ ใช้รูปจาก Backend
+                    src={`${apiUrlPicture}${cabinet.Image}`}
                     alt={cabinet.Name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -193,10 +213,7 @@ const EVMapMobile: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => {
-                    navigate("/user/booking-date", { state: { cabinet } });
-                    console.log("Selected Cabinet:", cabinet);
-                  }}
+                  onClick={() => handleBookingClick(cabinet)}
                   className="mt-2 w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] rounded-lg shadow-sm transition-all"
                 >
                   จองจุดชาร์จนี้
@@ -211,6 +228,64 @@ const EVMapMobile: React.FC = () => {
       <div className="absolute bottom-1 w-full text-center text-[10px] text-gray-400">
         ⚡ EV Smart Charging App © {new Date().getFullYear()}
       </div>
+
+      {/* ✅ EV BLUE MODAL */}
+      <Modal
+        open={showCarModal}
+        onCancel={() => setShowCarModal(false)}
+        footer={null}
+        centered
+        closable={false}
+        maskStyle={{ backgroundColor: "rgba(0, 102, 204, 0.15)" }}
+        className="ev-modal-clean"
+      >
+        <div className="text-4xl mb-3">🚗</div>
+        <h3 className="text-lg font-semibold text-blue-700 mb-2">
+          ไม่พบข้อมูลรถของคุณ
+        </h3>
+        <p className="text-gray-600 mb-5">
+          ก่อนทำการจอง กรุณาเพิ่มข้อมูลรถของคุณในระบบ
+        </p>
+
+        <div className="flex justify-center gap-3">
+          <Button
+            onClick={() => setShowCarModal(false)}
+            className="rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50"
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            type="primary"
+            className="rounded-lg bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 border-0 shadow-md"
+            onClick={() => navigate("/user/add-cars")}
+          >
+            ไปเพิ่มข้อมูลรถ
+          </Button>
+        </div>
+      </Modal>
+
+      <style>
+        {`
+          .ev-modal-clean .ant-modal-content {
+            border-radius: 20px !important;
+            background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%) !important;
+            box-shadow: 0 8px 30px rgba(59,130,246,0.25) !important;
+            text-align: center;
+            padding: 32px 28px !important;
+            border: none !important;
+            animation: fadeIn 0.3s ease-out;
+          }
+
+          .ev-modal-clean .ant-modal-body {
+            padding: 0 !important;
+          }
+
+          @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+          }
+        `}
+      </style>
     </div>
   );
 };
