@@ -77,16 +77,16 @@ const toAvatarUrl = (raw?: string) => {
 const sanitize = (s: string) =>
   s.replace(/[\\/:*?"<>|\s]+/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
 
-const formatDate = (iso?: string) => {
-  if (!iso) return "";
+const formatDateTime = (iso?: string) => {
+  if (!iso) return "-";
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return "";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${y}-${m}-${dd} ${hh}:${mm}`;
+  if (isNaN(d.getTime())) return "-";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
 const PaymentCoinsTable: React.FC = () => {
@@ -98,34 +98,32 @@ const PaymentCoinsTable: React.FC = () => {
   const [exportingZip, setExportingZip] = useState(false);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [pageSize, setPageSize] = useState(10); // ✅ pageSize state
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const selectedIDsRef = useRef<number[]>([]);
 
-  // ✅ Responsive scrollX
   const [scrollX, setScrollX] = useState(900);
 
   useEffect(() => {
     const updateScrollX = () => {
       if (window.innerWidth <= 1300 && window.innerWidth >= 768) {
-        // iPad
         setScrollX(750);
       } else {
         setScrollX(900);
       }
     };
-
     updateScrollX();
     window.addEventListener("resize", updateScrollX);
     return () => window.removeEventListener("resize", updateScrollX);
   }, []);
 
+  // ✅ ดึงข้อมูล + เรียงจากใหม่ → เก่า
   const fetchCoins = async () => {
     setTableLoading(true);
     try {
       const res = await ListPaymentCoins();
       const mapped: RowType[] = (res || []).map((p, idx) => {
-        const name = `${p.User?.FirstName ?? ""} ${p.User?.LastName ?? ""
-          }`.trim();
+        const name = `${p.User?.FirstName ?? ""} ${p.User?.LastName ?? ""}`.trim();
         return {
           key: p.ID!,
           Index: idx + 1,
@@ -141,7 +139,15 @@ const PaymentCoinsTable: React.FC = () => {
           Raw: p,
         };
       });
-      setRows(mapped);
+
+      // ✅ เรียงจากวันล่าสุด → วันเก่าสุด
+      const sorted = mapped.sort((a, b) => {
+        const da = new Date(a.DateISO).getTime();
+        const db = new Date(b.DateISO).getTime();
+        return db - da;
+      });
+
+      setRows(sorted);
     } catch (e) {
       console.error(e);
       message.error("โหลดข้อมูล Coin ไม่สำเร็จ");
@@ -154,6 +160,7 @@ const PaymentCoinsTable: React.FC = () => {
     fetchCoins();
   }, []);
 
+  // ✅ Filter Search
   const filtered = useMemo(() => {
     const q = searchText.trim().toLowerCase();
     if (!q) return rows;
@@ -165,18 +172,16 @@ const PaymentCoinsTable: React.FC = () => {
     );
   }, [rows, searchText]);
 
-  // ===== ลบข้อมูล =====
+  // ✅ Modal ลบข้อมูล
   const openDeleteModal = () => {
     if (selectedRowKeys.length === 0) return;
     selectedIDsRef.current = selectedRowKeys.map((k) => Number(k));
     setOpenConfirmModal(true);
   };
-
   const cancelDelete = () => {
     setOpenConfirmModal(false);
     setConfirmLoading(false);
   };
-
   const confirmDelete = async () => {
     setConfirmLoading(true);
     const ids = selectedIDsRef.current;
@@ -191,14 +196,13 @@ const PaymentCoinsTable: React.FC = () => {
     cancelDelete();
   };
 
-  // ===== Export CSV =====
+  // ✅ Export CSV
   const handleExportCSV = async () => {
     try {
       setExportingCsv(true);
       const pick = selectedRowKeys.length
         ? filtered.filter((r) => selectedRowKeys.includes(r.key))
         : filtered;
-
       if (!pick.length) {
         message.info("ไม่มีข้อมูลสำหรับส่งออก");
         return;
@@ -209,7 +213,7 @@ const PaymentCoinsTable: React.FC = () => {
         "ID",
         "Name",
         "Email",
-        "Date",
+        "Date & Time",
         "Coins",
         "Reference",
         "HasProof",
@@ -219,12 +223,11 @@ const PaymentCoinsTable: React.FC = () => {
         r.ID,
         r.CustomerName,
         r.CustomerEmail,
-        formatDate(r.DateISO),
+        formatDateTime(r.DateISO),
         r.Amount,
         r.ReferenceNumber,
         r.Picture ? "Yes" : "No",
       ]);
-
       const csvContent = [
         headers.join(","),
         ...rowsCsv.map((cols) =>
@@ -237,7 +240,6 @@ const PaymentCoinsTable: React.FC = () => {
             .join(",")
         ),
       ].join("\n");
-
       const blob = new Blob(["\ufeff" + csvContent], {
         type: "text/csv;charset=utf-8;",
       });
@@ -255,25 +257,22 @@ const PaymentCoinsTable: React.FC = () => {
     }
   };
 
-  // ===== Download Proof ZIP =====
+  // ✅ Download Proof ZIP
   const handleDownloadImagesZip = async () => {
     try {
       setExportingZip(true);
       const pick = selectedRowKeys.length
         ? filtered.filter((r) => selectedRowKeys.includes(r.key))
         : filtered;
-
       const withPics = pick.filter((r) => !!r.Picture);
       if (!withPics.length) {
         message.info("ไม่มีรูปหลักฐานสำหรับดาวน์โหลด");
         return;
       }
-
       const zip = new JSZip();
       const folder = zip.folder(
         `coin_proofs_${new Date().toISOString().slice(0, 10)}`
       )!;
-
       for (const r of withPics) {
         const url = `${apiUrlPicture}${r.Picture}`;
         try {
@@ -287,7 +286,6 @@ const PaymentCoinsTable: React.FC = () => {
           console.warn("โหลดรูปไม่ได้:", url, err);
         }
       }
-
       const zipBlob = await zip.generateAsync({ type: "blob" });
       saveAs(zipBlob, `coin_proofs_${Date.now()}.zip`);
       message.success("ดาวน์โหลด ZIP สำเร็จ");
@@ -299,15 +297,15 @@ const PaymentCoinsTable: React.FC = () => {
     }
   };
 
-  // ===== Columns =====
+  // ✅ Columns
   const columns: ColumnsType<RowType> = [
     {
       title: "#",
-      dataIndex: "Index",
       key: "index",
       width: 60,
       align: "center",
-      sorter: (a, b) => a.Index - b.Index,
+      render: (_: any, __: RowType, index: number) =>
+        (currentPage - 1) * pageSize + index + 1,
     },
     {
       title: "User",
@@ -323,11 +321,11 @@ const PaymentCoinsTable: React.FC = () => {
       ),
     },
     {
-      title: "Date",
+      title: "Date & Time",
       dataIndex: "DateISO",
       key: "date",
-      width: 140,
-      render: (v) => (v ? new Date(v).toLocaleDateString() : "-"),
+      width: 180,
+      render: (v) => formatDateTime(v),
     },
     {
       title: "Coins",
@@ -376,7 +374,6 @@ const PaymentCoinsTable: React.FC = () => {
     onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
   };
 
-  // ===== Render =====
   return (
     <div className="rounded-2xl overflow-hidden ring-1 ring-blue-100 bg-white relative">
       <div className="px-4 sm:px-6 py-3 border-b border-blue-100 bg-blue-50/40 flex flex-wrap items-center justify-between gap-2">
@@ -436,15 +433,18 @@ const PaymentCoinsTable: React.FC = () => {
             rowKey="key"
             rowSelection={rowSelection}
             pagination={{
+              current: currentPage,
               pageSize,
               showSizeChanger: true,
-              pageSizeOptions: ["5", "10", "20", "50", "100"], // ✅ เลือกจำนวนแถว
+              pageSizeOptions: ["5", "10", "20", "50", "100"],
               onShowSizeChange: (_, size) => setPageSize(size),
-              onChange: (_, size) => setPageSize(size),
+              onChange: (page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              },
               position: ["bottomCenter"],
             }}
             scroll={{ x: scrollX }}
-            className="ev-ant-table"
             size="middle"
           />
         )}

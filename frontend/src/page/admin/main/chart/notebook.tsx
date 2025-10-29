@@ -14,8 +14,8 @@ import {
 import type { EdgeLabelPlacement } from "@syncfusion/ej2-react-charts";
 import { ListPayments } from "../../../../services";
 
-// ---------------- UI helpers ----------------
-type MonthOption = { Id: number; Time: string }; // Id: -1=All, 0..11=Jan..Dec
+// Month list
+type MonthOption = { Id: number; Time: string };
 const MONTH_OPTIONS: MonthOption[] = [
   { Id: -1, Time: "All" },
   { Id: 0, Time: "Jan" },
@@ -41,7 +41,10 @@ const MonthDropDown: React.FC<{
     <DropDownListComponent
       id="month"
       fields={{ text: "Time", value: "Id" }}
-      style={{ border: "none", color: currentMode === "Dark" ? "white" : "#1D4ED8" }}
+      style={{
+        border: "none",
+        color: currentMode === "Dark" ? "white" : "#1D4ED8",
+      }}
       value={value}
       dataSource={MONTH_OPTIONS}
       popupHeight="240px"
@@ -61,7 +64,10 @@ const YearDropDown: React.FC<{
     <DropDownListComponent
       id="year"
       fields={{ text: "label", value: "value" }}
-      style={{ border: "none", color: currentMode === "Dark" ? "white" : "#1D4ED8" }}
+      style={{
+        border: "none",
+        color: currentMode === "Dark" ? "white" : "#1D4ED8",
+      }}
       value={value}
       dataSource={years.map((y) => ({ label: String(y), value: y }))}
       popupHeight="240px"
@@ -71,12 +77,10 @@ const YearDropDown: React.FC<{
   </div>
 );
 
-// ---------------- Chart axis base (จูนสไตล์) ----------------
 const basePrimaryYAxis = {
   labelFormat: "{value}฿",
   rangePadding: "None" as const,
   minimum: 0,
-  // maximum จะกำหนดแบบไดนามิกใน component
   interval: 1000,
   lineStyle: { width: 0 },
   majorTickLines: { width: 1, color: "#BFDBFE" },
@@ -107,15 +111,13 @@ type Point = { x: Date; y: number };
 
 const MonthlyRevenueChart: React.FC = () => {
   const { currentMode } = useStateContext();
-
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const now = useMemo(() => new Date(), []);
   const [year, setYear] = useState<number>(now.getFullYear());
-  const [month, setMonth] = useState<number>(-1); // -1 = All (ทั้งปี)
+  const [month, setMonth] = useState<number>(-1);
   const [data, setData] = useState<Point[]>([]);
-  const [yMax, setYMax] = useState<number>(5000); // default ก่อนมีข้อมูล
+  const [yMax, setYMax] = useState<number>(5000);
 
-  // ดึงปีที่มีในข้อมูล + เตรียม chart data
   useEffect(() => {
     const run = async () => {
       const payments = await ListPayments();
@@ -126,7 +128,6 @@ const MonthlyRevenueChart: React.FC = () => {
         return;
       }
 
-      // 1) สร้างรายการปีจากข้อมูลจริง
       const yearsSet = new Set<number>();
       for (const p of payments) {
         const d = new Date(p?.Date);
@@ -135,23 +136,19 @@ const MonthlyRevenueChart: React.FC = () => {
       const years = Array.from(yearsSet).sort((a, b) => a - b);
       setAvailableYears(years);
 
-      // ถ้าปีที่เลือกไม่มีในข้อมูล ให้ fallback เป็นปีล่าสุดในข้อมูล
-      const activeYear = years.includes(year) ? year : years[years.length - 1] ?? now.getFullYear();
+      const activeYear =
+        years.includes(year) ? year : years[years.length - 1] ?? now.getFullYear();
       if (activeYear !== year) setYear(activeYear);
 
-      // 2) เตรียมโครง 12 เดือนของปี (ค่าตั้งต้น = 0)
       const monthlyMap = Array.from({ length: 12 }, () => 0);
-
-      // 3) รวมยอดตามปีที่เลือก
       for (const p of payments) {
         const d = new Date(p?.Date);
         if (isNaN(d.getTime())) continue;
         if (d.getFullYear() !== activeYear) continue;
-        const m = d.getMonth(); // 0..11
+        const m = d.getMonth();
         monthlyMap[m] += Number(p?.Amount) || 0;
       }
 
-      // 4) ถ้า month = -1 (All) แสดงทั้ง 12 จุด, ถ้าเลือกเดือน ให้แสดงเฉพาะเดือนนั้น (1 จุด)
       let points: Point[] = [];
       if (month === -1) {
         points = monthlyMap.map((sum, m) => ({
@@ -159,13 +156,14 @@ const MonthlyRevenueChart: React.FC = () => {
           y: sum,
         }));
       } else {
-        points = [{
-          x: new Date(activeYear, month, 1),
-          y: monthlyMap[month] || 0,
-        }];
+        points = [
+          {
+            x: new Date(activeYear, month, 1),
+            y: monthlyMap[month] || 0,
+          },
+        ];
       }
 
-      // 5) จัดเรียงตามเวลา + คำนวณ yMax อัตโนมัติ (ปัดขึ้นเป็นขั้นละ 1,000)
       points.sort((a, b) => a.x.getTime() - b.x.getTime());
       const localMax = Math.max(0, ...points.map((p) => p.y));
       const roundedMax = Math.max(1000, Math.ceil(localMax / 1000) * 1000);
@@ -174,7 +172,6 @@ const MonthlyRevenueChart: React.FC = () => {
     };
 
     run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month]);
 
   const monthLabel = useMemo(
@@ -189,8 +186,8 @@ const MonthlyRevenueChart: React.FC = () => {
       yName: "y",
       name: "Monthly Revenue",
       width: "3",
-      fill: "rgba(59,130,246,0.15)",        // พื้นกราฟฟ้าใส
-      border: { width: 3, color: "#2563EB" },// เส้นฟ้าเข้ม EV
+      fill: "rgba(59,130,246,0.15)",
+      border: { width: 3, color: "#2563EB" },
       marker: {
         visible: true,
         width: 10,
@@ -199,12 +196,12 @@ const MonthlyRevenueChart: React.FC = () => {
         border: { width: 2, color: "#1E3A8A" },
       },
       type: "Line",
-      animation: { enable: true, duration: 800, delay: 0 },
+      animation: { enable: true, duration: 800 },
     },
   ];
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 via-white to-blue-100 text-blue-800 p-6 rounded-2xl w-96 md:w-760 shadow-sm border border-blue-200">
+    <div className="flex-1 bg-gradient-to-br from-blue-50 via-white to-blue-100 text-blue-800 p-6 rounded-2xl w-full md:w-[660px] lg:w-[700px] xl:w-[740px] shadow-sm border border-blue-200">
       {/* Header */}
       <div className="flex justify-between items-center gap-2 mb-8">
         <p className="text-xl font-semibold text-blue-800">
@@ -214,7 +211,6 @@ const MonthlyRevenueChart: React.FC = () => {
           </span>
         </p>
 
-        {/* Filters: Month + Year */}
         <div className="flex items-center gap-2">
           <MonthDropDown currentMode={currentMode} value={month} onChange={setMonth} />
           <YearDropDown
@@ -236,7 +232,6 @@ const MonthlyRevenueChart: React.FC = () => {
           chartArea={{ border: { width: 0 } }}
           tooltip={{
             enable: true,
-            // แสดงเป็น: "Oct 2025 : 28,680฿"
             format: "${point.x} : ${point.y}฿",
           }}
           margin={{ top: 10, bottom: 40, left: 10, right: 10 }}
@@ -251,7 +246,7 @@ const MonthlyRevenueChart: React.FC = () => {
         >
           <Inject services={[LineSeries, DateTime, Legend, Tooltip]} />
           <SeriesCollectionDirective>
-            {lineCustomSeries.map((item: any, index: number) => (
+            {lineCustomSeries.map((item, index) => (
               <SeriesDirective key={index} {...item} />
             ))}
           </SeriesCollectionDirective>

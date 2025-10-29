@@ -103,7 +103,7 @@ func main() {
 		public.GET("/banks", payment.ListBank)
 		public.PATCH("/banks/:id", payment.UpdateBank)
 		public.POST("/create-payments", payment.CreatePayment)
-		public.POST("/create-evchargingpayments", payment.CreateEVChargingPayment)
+		public.POST("/create-evchargingpayments", payment.CreateEVChargingPayment) //Persen
 		public.GET("/evcharging-payments", payment.ListEVChargingPayment)
 		public.GET("/payment-coins", payment.ListPaymentCoins)
 		public.POST("/create-payment-coins", payment.CreatePaymentCoin)

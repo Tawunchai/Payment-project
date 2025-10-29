@@ -79,6 +79,7 @@ const UserRoutes = (): RouteObject[] => [
       { path: "after-payment", element: <AfterPayment/> }, //edit real
       { path: "booking-ev", element: <BookingEV/> }, //edit real
       { path: "booking-date", element: <BookingDate/> }, //edit real
+      { path: "*", element: <User /> }, //edit 
     ],
   },
 ];
@@ -124,6 +125,7 @@ const AdminRoutes = (): RouteObject[] => [
       { path: "Pie", element: <Pie /> },
       { path: "Pyramid", element: <Pyramid /> },
       { path: "Stacked", element: <Stacked /> },
+      { path: "*", element: <Admin /> }, //edit 
     ],
   },
 ];

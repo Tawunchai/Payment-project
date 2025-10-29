@@ -11,16 +11,16 @@ import {
 
 // ======= Month options (Jan–Dec) =======
 const MONTH_OPTIONS = [
-  { Id: 0,  Time: "Jan" },
-  { Id: 1,  Time: "Feb" },
-  { Id: 2,  Time: "Mar" },
-  { Id: 3,  Time: "Apr" },
-  { Id: 4,  Time: "May" },
-  { Id: 5,  Time: "Jun" },
-  { Id: 6,  Time: "Jul" },
-  { Id: 7,  Time: "Aug" },
-  { Id: 8,  Time: "Sep" },
-  { Id: 9,  Time: "Oct" },
+  { Id: 0, Time: "Jan" },
+  { Id: 1, Time: "Feb" },
+  { Id: 2, Time: "Mar" },
+  { Id: 3, Time: "Apr" },
+  { Id: 4, Time: "May" },
+  { Id: 5, Time: "Jun" },
+  { Id: 6, Time: "Jul" },
+  { Id: 7, Time: "Aug" },
+  { Id: 8, Time: "Sep" },
+  { Id: 9, Time: "Oct" },
   { Id: 10, Time: "Nov" },
   { Id: 11, Time: "Dec" },
 ];
@@ -29,14 +29,13 @@ type EVRevenueRow = { name: string; revenue: number };
 
 const MonthDropDown: React.FC<{
   currentMode: string;
-  value: number; // 0-11
+  value: number;
   onChange: (val: number) => void;
 }> = ({ currentMode, value, onChange }) => {
   return (
     <div className="w-32 border border-blue-200 px-2 py-1 rounded-md">
       <DropDownListComponent
         id="month"
-        // ใช้ฟิลด์ตามรูปแบบ Syncfusion: text/value
         fields={{ text: "Time", value: "Id" }}
         style={{
           border: "none",
@@ -47,7 +46,6 @@ const MonthDropDown: React.FC<{
         popupHeight="260px"
         popupWidth="140px"
         change={(e: any) => {
-          // e.value คือ Id ที่เราเซ็ตไว้ (0-11)
           if (typeof e?.value === "number") onChange(e.value);
         }}
       />
@@ -59,15 +57,17 @@ const Index: React.FC = () => {
   const { currentMode } = useStateContext();
 
   const now = useMemo(() => new Date(), []);
-  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth()); // 0-11 (ค่าเริ่มต้น = เดือนปัจจุบัน)
-  const [selectedYear] = useState<number>(now.getFullYear()); // หากอนาคตอยากเลือกปีค่อยเพิ่ม Dropdown ปีได้
+  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth());
+  const [selectedYear] = useState<number>(now.getFullYear());
 
-  const [currentMonthAmount, setCurrentMonthAmount] = useState<number>(0);       // PromptPay Money Added
-  const [totalCoins, setTotalCoins] = useState<number>(0);                       // Coins (All users)
-  const [currentMonthTransactionCount, setCurrentMonthTransactionCount] = useState<number>(0); // Transactions count
-  const [evRevenueByCharger, setEvRevenueByCharger] = useState<EVRevenueRow[]>([]);
+  const [currentMonthAmount, setCurrentMonthAmount] = useState<number>(0);
+  const [totalCoins, setTotalCoins] = useState<number>(0);
+  const [currentMonthTransactionCount, setCurrentMonthTransactionCount] =
+    useState<number>(0);
+  const [evRevenueByCharger, setEvRevenueByCharger] = useState<
+    EVRevenueRow[]
+  >([]);
 
-  // Helper: ตรวจว่า date อยู่ในเดือน/ปีที่เลือก
   const inSelectedMonth = (d: Date | string | null | undefined) => {
     if (!d) return false;
     const dd = typeof d === "string" ? new Date(d) : d;
@@ -77,7 +77,6 @@ const Index: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // ------- 1) PromptPay / Money Added (ListPayments) -------
       const payments = await ListPayments();
       if (Array.isArray(payments)) {
         const filtered = payments.filter((p: any) => inSelectedMonth(p?.Date));
@@ -92,7 +91,6 @@ const Index: React.FC = () => {
         setCurrentMonthTransactionCount(0);
       }
 
-      // ------- 2) Coins (รวมจากทุก user) -------
       const users = await ListUsers();
       if (Array.isArray(users)) {
         const coinSum = users.reduce(
@@ -104,31 +102,25 @@ const Index: React.FC = () => {
         setTotalCoins(0);
       }
 
-      // ------- 3) EV Charger Revenue (ListEVChargingPayments) -------
       const evPayments = await ListEVChargingPayments();
       if (Array.isArray(evPayments)) {
         const filteredEV = evPayments.filter((p: any) =>
           inSelectedMonth(p?.CreatedAt)
         );
-
-        // รวมรายได้ต่อชื่อเครื่องชาร์จ (EVcharging.Name)
-        const revenueMap = filteredEV.reduce((acc: Record<string, number>, curr: any) => {
-          const name = curr?.EVcharging?.Name ?? "Unknown EV";
-          const price =
-            Number(curr?.Price) ??
-            Number(curr?.Amount) ??
-            0; // เผื่อบางระบบเก็บเป็น Amount
-          acc[name] = (acc[name] || 0) + (price || 0);
-          return acc;
-        }, {});
-
+        const revenueMap = filteredEV.reduce(
+          (acc: Record<string, number>, curr: any) => {
+            const name = curr?.EVcharging?.Name ?? "Unknown EV";
+            const price =
+              Number(curr?.Price) ?? Number(curr?.Amount) ?? 0;
+            acc[name] = (acc[name] || 0) + (price || 0);
+            return acc;
+          },
+          {}
+        );
         const revenueArray: EVRevenueRow[] = Object.entries(revenueMap).map(
           ([name, revenue]) => ({ name, revenue })
         );
-
-        // เรียงจากมากไปน้อย (สวยงามเวลาแสดง)
         revenueArray.sort((a, b) => b.revenue - a.revenue);
-
         setEvRevenueByCharger(revenueArray);
       } else {
         setEvRevenueByCharger([]);
@@ -138,7 +130,6 @@ const Index: React.FC = () => {
     fetchData();
   }, [selectedMonth, selectedYear]);
 
-  // ----- Cards -----
   const recentTransactionsBase = [
     {
       icon: <BsCurrencyDollar />,
@@ -175,14 +166,13 @@ const Index: React.FC = () => {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}฿`,
-    title: ev.name,                 // ตัวอย่าง: "Charger A1", "Charger B2"
+    title: ev.name,
     desc: "EV Charger Revenue",
     iconColor: "#1E40AF",
     iconBg: "#E0E7FF",
     pcColor: "blue-700",
   }));
 
-  // จัดเรียงให้เป็น: PromptPay(Money Added), Coins, ...EV รายเครื่อง..., Transactions(Payment transactions)
   const recentTransactions = [
     recentTransactionsBase[0],
     recentTransactionsBase[1],
@@ -190,17 +180,20 @@ const Index: React.FC = () => {
     recentTransactionsBase[2],
   ];
 
-  const monthLabel = MONTH_OPTIONS.find((m) => m.Id === selectedMonth)?.Time ?? "";
+  const monthLabel =
+    MONTH_OPTIONS.find((m) => m.Id === selectedMonth)?.Time ?? "";
 
   return (
-    <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl border border-blue-100 shadow-sm">
+    <div className="flex-1 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl border border-blue-100 shadow-sm">
       {/* Header */}
       <div className="flex justify-between items-center gap-2">
         <p className="text-xl font-semibold text-blue-800">
-          Recent Transactions <span className="text-blue-500">({monthLabel} {selectedYear})</span>
+          Recent Transactions{" "}
+          <span className="text-blue-500">
+            ({monthLabel} {selectedYear})
+          </span>
         </p>
 
-        {/* Month Selector */}
         <MonthDropDown
           currentMode={currentMode}
           value={selectedMonth}
@@ -209,7 +202,7 @@ const Index: React.FC = () => {
       </div>
 
       {/* Transactions */}
-      <div className="mt-8 w-80 md:w-96">
+      <div className="mt-8 w-full md:w-[420px] lg:w-[460px] xl:w-[480px] 2xl:w-[500px]">
         {recentTransactions.map((item, idx) => (
           <div
             key={`${item.title}-${idx}`}
@@ -228,11 +221,15 @@ const Index: React.FC = () => {
                 {item.icon}
               </button>
               <div>
-                <p className="text-md font-semibold text-blue-900">{item.title}</p>
+                <p className="text-md font-semibold text-blue-900">
+                  {item.title}
+                </p>
                 <p className="text-sm text-blue-500">{item.desc}</p>
               </div>
             </div>
-            <p className={`font-semibold text-${item.pcColor}`}>{item.amount}</p>
+            <p className={`font-semibold text-${item.pcColor}`}>
+              {item.amount}
+            </p>
           </div>
         ))}
       </div>

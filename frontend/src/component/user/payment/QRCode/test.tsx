@@ -105,13 +105,15 @@ const PayPalCard: React.FC = () => {
               evcharging_id: charger.id,
               payment_id: paymentResult.ID,
               price: charger.total,
-              quantity: charger.power,
+              percent: charger.percent || 0, // ✅ เพิ่ม Percent
+              power: charger.power || 0,     // ✅ เพิ่ม Power
             };
             const evPaymentResult = await CreateEVChargingPayment(evChargingPaymentData);
             if (!evPaymentResult) {
               message.error(`สร้าง EVChargingPayment สำหรับ ${charger.name} ล้มเหลว`);
             }
           }
+
         } else {
           message.error("ไม่มีข้อมูล chargers ที่ถูกต้อง");
         }
