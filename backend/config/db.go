@@ -627,7 +627,8 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				EVchargingID: 1,
 				PaymentID:    payment.ID,
 				Price:        float64(price1),
-				Quantity:     quantity1,
+				Power:     quantity1,
+				Percent: 20.00,
 			}
 			if err := db.FirstOrCreate(
 				&evcp1,
@@ -640,7 +641,8 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				EVchargingID: 2,
 				PaymentID:    payment.ID,
 				Price:        float64(price2),
-				Quantity:     quantity2,
+				Power:     quantity2,
+				Percent: 80.00,
 			}
 			if err := db.FirstOrCreate(
 				&evcp2,

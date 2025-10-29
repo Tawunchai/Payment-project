@@ -24,7 +24,7 @@ const Ecommerce = () => {
         </div>
       </div>
 
-      <div className="flex gap-2 m-4 flex-wrap justify-center">
+      <div className="flex gap-4 m-4 flex-wrap justify-center">
         <RecentTransactions />
         <LineChart />
       </div>

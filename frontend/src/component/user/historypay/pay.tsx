@@ -35,10 +35,15 @@ const HistoryPay = () => {
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [userid, setUserid] = useState<number>(Number(localStorage.getItem("userid")) || 0);
+  const [userid, setUserid] = useState<number>(
+    Number(localStorage.getItem("userid")) || 0
+  );
 
   const fmt = (n: number) =>
-    n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    n.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   const fmtDate = (d: string | Date) =>
     new Date(d).toLocaleDateString("th-TH", {
@@ -114,7 +119,7 @@ const HistoryPay = () => {
             title: style.title,
             desc: style.desc,
             amountNum: amount,
-            amountText: `฿${fmt(amount)}`,
+            amountText: `-${fmt(amount)} ฿`,
             color: "text-red-500",
             date: dateRaw,
             displayDate: dateRaw ? fmtDate(dateRaw) : "",
@@ -122,7 +127,6 @@ const HistoryPay = () => {
           } as TransactionItem;
         });
 
-        // เติม Coin (จาก PaymentCoin)
         const coins = (coinList ?? []).map((it: PaymentCoinInterface) => {
           const amount = Number(it.Amount) || 0;
           const dateRaw: string = it?.CreatedAt || it?.Date || "";
@@ -162,12 +166,8 @@ const HistoryPay = () => {
   return (
     <div className="min-h-screen w-full bg-white flex flex-col">
       {/* HEADER */}
-      <header
-        className="sticky top-0 z-30 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden w-full"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden w-full">
         <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
-          {/* ปุ่มย้อนกลับ */}
           <button
             onClick={() => navigate(-1)}
             aria-label="ย้อนกลับ"
@@ -188,7 +188,6 @@ const HistoryPay = () => {
             </svg>
           </button>
 
-          {/* ไอคอนและชื่อหัวข้อ */}
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
               <FaWallet className="h-5 w-5 text-white" />
@@ -219,13 +218,17 @@ const HistoryPay = () => {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-gray-900 truncate">
-                      {user ? `${user.FirstName} ${user.LastName}` : "Loading..."}
+                      {user
+                        ? `${user.FirstName} ${user.LastName}`
+                        : "Loading..."}
                     </div>
-                    <div className="text-xs text-gray-500 truncate">กระเป๋าเงินของฉัน</div>
+                    <div className="text-xs text-gray-500 truncate">
+                      กระเป๋าเงินของฉัน
+                    </div>
                   </div>
                   <button
                     onClick={() => navigate("/user/add-coins")}
-                    className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 active:bg-blue-800 transition"
+                    className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition"
                   >
                     เติมเงิน
                   </button>
@@ -233,12 +236,20 @@ const HistoryPay = () => {
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-xl bg-blue-50 p-3">
-                    <div className="text-[11px] text-blue-900">ยอดคงเหลือ (Coins)</div>
-                    <div className="mt-1 text-lg font-bold text-blue-700">{fmt(coinBalance)} Coins</div>
+                    <div className="text-[11px] text-blue-900">
+                      ยอดคงเหลือ (Coins)
+                    </div>
+                    <div className="mt-1 text-lg font-bold text-blue-700">
+                      {fmt(coinBalance)}
+                    </div>
                   </div>
                   <div className="rounded-xl bg-blue-50 p-3">
-                    <div className="text-[11px] text-blue-900">รวมธุรกรรมทั้งหมด</div>
-                    <div className="mt-1 text-lg font-bold text-blue-700">฿{fmt(totalAmount)}</div>
+                    <div className="text-[11px] text-blue-900">
+                      รวมธุรกรรมทั้งหมด
+                    </div>
+                    <div className="mt-1 text-lg font-bold text-blue-700">
+                      {fmt(totalAmount)} ฿
+                    </div>
                   </div>
                 </div>
               </div>
@@ -247,42 +258,69 @@ const HistoryPay = () => {
 
           {/* RIGHT HISTORY */}
           <main className="md:col-span-8 mt-4 md:mt-0">
-            <div className="mb-2 text-sm md:text-base font-bold text-gray-900">ประวัติการชำระเงิน</div>
+            <div className="mb-2 text-sm md:text-base font-bold text-gray-900">
+              ประวัติการชำระเงิน
+            </div>
 
             <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
               {loading ? (
                 <div className="p-4 space-y-3">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-12 rounded-xl bg-gray-100 animate-pulse" />
+                    <div
+                      key={i}
+                      className="h-12 rounded-xl bg-gray-100 animate-pulse"
+                    />
                   ))}
                 </div>
               ) : transactions.length === 0 ? (
-                <div className="p-6 text-center text-sm text-gray-400">ไม่มีประวัติการชำระเงิน</div>
+                <div className="p-6 text-center text-sm text-gray-400">
+                  ไม่มีประวัติการชำระเงิน
+                </div>
               ) : (
                 <>
-                  <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-100">
-                    <div className="col-span-6">ประเภท / รายละเอียด</div>
-                    <div className="col-span-2">วันที่</div>
-                    <div className="col-span-2">เวลา</div>
-                    <div className="col-span-2 text-right">จำนวน</div>
+                  {/* Header */}
+                  <div className="hidden md:grid grid-cols-[6fr_2fr_2fr_2.5fr] gap-3 px-5 py-3 text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-100">
+                    <div>ประเภท / รายละเอียด</div>
+                    <div>วันที่</div>
+                    <div>เวลา</div>
+                    <div className="text-right">จำนวน</div>
                   </div>
 
-                  <div className="hidden md:block overflow-y-auto" style={{ maxHeight: `${MAX_LIST_HEIGHT}px` }}>
+                  {/* Desktop Rows */}
+                  <div
+                    className="hidden md:block overflow-y-auto"
+                    style={{ maxHeight: `${MAX_LIST_HEIGHT}px` }}
+                  >
                     <ul className="divide-y divide-gray-100">
                       {transactions.map((item, idx) => (
-                        <li key={idx} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-gray-50">
-                          <div className="col-span-6 flex items-center gap-3 min-w-0">
-                            <div className={`shrink-0 h-10 w-10 rounded-xl ${item.bg} text-white flex items-center justify-center`}>
+                        <li
+                          key={idx}
+                          className="grid grid-cols-[6fr_2fr_2fr_2.5fr] gap-3 px-5 py-3 hover:bg-gray-50 items-center"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className={`shrink-0 h-10 w-10 rounded-xl ${item.bg} text-white flex items-center justify-center`}
+                            >
                               {item.icon}
                             </div>
                             <div className="min-w-0">
-                              <div className="truncate text-sm font-semibold text-gray-900">{item.title}</div>
-                              <div className="truncate text-[12px] text-gray-500">{item.desc}</div>
+                              <div className="truncate text-sm font-semibold text-gray-900">
+                                {item.title}
+                              </div>
+                              <div className="truncate text-[12px] text-gray-500">
+                                {item.desc}
+                              </div>
                             </div>
                           </div>
-                          <div className="col-span-2 flex items-center text-sm text-gray-700">{item.displayDate}</div>
-                          <div className="col-span-2 flex items-center text-sm text-gray-700">{item.displayTime}</div>
-                          <div className="col-span-2 flex items-center justify-end text-sm font-bold text-green-600">
+                          <div className="text-sm text-gray-700">
+                            {item.displayDate}
+                          </div>
+                          <div className="text-sm text-gray-700">
+                            {item.displayTime}
+                          </div>
+                          <div
+                            className={`text-sm font-bold text-right ${item.color}`}
+                          >
                             {item.amountText}
                           </div>
                         </li>
@@ -291,24 +329,45 @@ const HistoryPay = () => {
                   </div>
 
                   {/* Mobile */}
-                  <div className="md:hidden" style={{ maxHeight: `${MAX_LIST_HEIGHT}px`, overflowY: "auto" }}>
+                  <div
+                    className="md:hidden"
+                    style={{
+                      maxHeight: `${MAX_LIST_HEIGHT}px`,
+                      overflowY: "auto",
+                    }}
+                  >
                     <ul className="divide-y divide-gray-100">
                       {transactions.map((item, idx) => (
-                        <li key={idx} className="flex items-center gap-3 px-4 py-3">
-                          <div className={`shrink-0 h-10 w-10 rounded-xl ${item.bg} text-white flex items-center justify-center`}>
+                        <li
+                          key={idx}
+                          className="flex items-center gap-3 px-4 py-3"
+                        >
+                          <div
+                            className={`shrink-0 h-10 w-10 rounded-xl ${item.bg} text-white flex items-center justify-center`}
+                          >
                             {item.icon}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-3">
-                              <div className="truncate text-sm font-semibold text-gray-900">{item.title}</div>
-                              <div className={`text-sm font-bold ${item.color}`}>{item.amountText}</div>
+                              <div className="truncate text-sm font-semibold text-gray-900">
+                                {item.title}
+                              </div>
+                              <div
+                                className={`text-sm font-bold ${item.color}`}
+                              >
+                                {item.amountText}
+                              </div>
                             </div>
                             <div className="mt-1 flex items-center justify-between gap-3">
-                              <div className="truncate text-[12px] text-gray-500">{item.desc}</div>
+                              <div className="truncate text-[12px] text-gray-500">
+                                {item.desc}
+                              </div>
                               {(item.displayDate || item.displayTime) && (
                                 <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] text-gray-600">
                                   {item.displayDate}
-                                  {item.displayTime ? ` • ${item.displayTime}` : ""}
+                                  {item.displayTime
+                                    ? ` • ${item.displayTime}`
+                                    : ""}
                                 </span>
                               )}
                             </div>

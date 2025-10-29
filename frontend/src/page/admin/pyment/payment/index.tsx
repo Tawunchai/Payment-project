@@ -76,7 +76,10 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
   const [exportingZip, setExportingZip] = useState(false);
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [pageSize, setPageSize] = useState(10); // ✅ เพิ่ม state ควบคุมจำนวนแถวต่อหน้า
+
+  // ✅ Pagination
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const selectedIDsRef = useRef<number[]>([]);
 
   // ✅ Responsive scrollX
@@ -85,13 +88,11 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
   useEffect(() => {
     const updateScrollX = () => {
       if (window.innerWidth <= 1300 && window.innerWidth >= 768) {
-        // iPad
         setScrollX(750);
       } else {
         setScrollX(900);
       }
     };
-
     updateScrollX();
     window.addEventListener("resize", updateScrollX);
     return () => window.removeEventListener("resize", updateScrollX);
@@ -99,7 +100,7 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
 
   // ✅ แปลง data → rows
   useEffect(() => {
-    if (data) {
+    if (data && data.length > 0) {
       const mapped: RowType[] = data.map((p, idx) => {
         const name = `${p.User?.FirstName ?? ""} ${p.User?.LastName ?? ""}`.trim();
         return {
@@ -119,7 +120,15 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
           Raw: p,
         };
       });
-      setRows(mapped);
+
+      // ✅ เรียงจากวันล่าสุด → วันเก่าสุด
+      const sorted = mapped.sort((a, b) => {
+        const da = new Date(a.Date).getTime();
+        const db = new Date(b.Date).getTime();
+        return db - da; // เรียงจากมาก → น้อย (ใหม่ → เก่า)
+      });
+
+      setRows(sorted);
     }
   }, [data]);
 
@@ -151,7 +160,7 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
     const ids = selectedIDsRef.current;
     const res = await DeletePayments(ids);
     if (res) {
-      setRows((prev) => prev.filter((row) => !ids.includes(row.ID))); // ✅ ลบออกจาก state
+      setRows((prev) => prev.filter((row) => !ids.includes(row.ID)));
       setSelectedRowKeys([]);
       message.success("ลบข้อมูลการชำระเงินสำเร็จ");
     } else {
@@ -303,10 +312,11 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
   const columns: ColumnsType<RowType> = [
     {
       title: "#",
-      dataIndex: "Index",
       key: "index",
       width: 60,
       align: "center",
+      render: (_: any, __: RowType, index: number) =>
+        (currentPage - 1) * pageSize + index + 1,
     },
     {
       title: "User",
@@ -322,11 +332,21 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
       ),
     },
     {
-      title: "Date",
+      title: "Date & Time",
       dataIndex: "Date",
       key: "date",
-      width: 140,
-      render: (v: string) => (v ? new Date(v).toLocaleDateString() : "-"),
+      width: 180,
+      render: (v: string) => {
+        if (!v) return "-";
+        const d = new Date(v);
+        if (isNaN(d.getTime())) return "-";
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, "0");
+        const minutes = String(d.getMinutes()).padStart(2, "0");
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+      },
     },
     {
       title: "Amount (฿)",
@@ -438,12 +458,15 @@ const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
           rowKey="key"
           rowSelection={rowSelection}
           pagination={{
-            current: 1,
+            current: currentPage,
             pageSize: pageSize,
             showSizeChanger: true,
-            pageSizeOptions: ["5", "10", "20", "50", "100"], // ✅ ตัวเลือก
-            onShowSizeChange: (_, size) => setPageSize(size), // ✅ ปรับ pageSize
-            onChange: (_, size) => setPageSize(size), // ✅ sync pageSize เมื่อเปลี่ยน
+            pageSizeOptions: ["5", "10", "20", "50", "100"],
+            onShowSizeChange: (_, size) => setPageSize(size),
+            onChange: (page, size) => {
+              setCurrentPage(page);
+              setPageSize(size);
+            },
             position: ["bottomCenter"],
           }}
           scroll={{ x: scrollX }}

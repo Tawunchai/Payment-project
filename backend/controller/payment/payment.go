@@ -212,36 +212,47 @@ func CreatePayment(c *gin.Context) {
 	})
 }
 
+// ✅ Struct สำหรับรับ JSON จาก frontend
 type CreateEVChargingPaymentInput struct {
 	EVchargingID uint    `json:"evcharging_id" binding:"required"`
 	PaymentID    uint    `json:"payment_id" binding:"required"`
 	Price        float64 `json:"price" binding:"required"`
-	Quantity     float64 `json:"quantity" binding:"required"`
+	Percent      float64 `json:"percent" binding:"required"` // เปลี่ยนจาก Quantity เป็น Percent
+	Power        float64 `json:"power" binding:"required"`   // เพิ่ม Power
 }
 
+// ✅ Controller สำหรับสร้างข้อมูล EVChargingPayment
 func CreateEVChargingPayment(c *gin.Context) {
 	var input CreateEVChargingPaymentInput
 
-	// Bind JSON input
+	// ตรวจสอบความถูกต้องของ JSON input
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ข้อมูลไม่ครบหรือไม่ถูกต้อง: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "ข้อมูลไม่ครบหรือไม่ถูกต้อง: " + err.Error(),
+		})
 		return
 	}
 
 	db := config.DB()
 
+	// ✅ สร้างข้อมูลใหม่ตาม struct entity.EVChargingPayment
 	evPayment := entity.EVChargingPayment{
 		EVchargingID: input.EVchargingID,
 		PaymentID:    input.PaymentID,
 		Price:        input.Price,
-		Quantity:     input.Quantity,
+		Percent:      input.Percent, // ✅ ใช้ Percent แทน Quantity
+		Power:        input.Power,   // ✅ เพิ่ม Power
 	}
 
+	// ✅ บันทึกลงฐานข้อมูล
 	if err := db.Create(&evPayment).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถบันทึกข้อมูลได้: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "ไม่สามารถบันทึกข้อมูลได้: " + err.Error(),
+		})
 		return
 	}
 
+	// ✅ ตอบกลับข้อมูลที่สร้างสำเร็จ
 	c.JSON(http.StatusOK, evPayment)
 }
 

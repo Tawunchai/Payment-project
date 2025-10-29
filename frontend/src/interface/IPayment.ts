@@ -16,7 +16,8 @@ export interface EVChargingPaymentInterface {
   evcharging_id: number;
   payment_id: number;
   price: number;
-  quantity: number;
+  percent:number;
+  power:number;
   created_at?: string;
   updated_at?: string;
 }

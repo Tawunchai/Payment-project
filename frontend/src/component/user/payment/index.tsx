@@ -131,7 +131,7 @@ const Index: React.FC = () => {
       });
       return;
     }
-
+    //
     // ชำระแบบ Coin
     if (!coinMethod?.ID) {
       message.error("ไม่พบ Method สำหรับ Coin");
@@ -180,7 +180,8 @@ const Index: React.FC = () => {
             evcharging_id: charger.id,
             payment_id: paymentResult.ID,
             price: charger.total,
-            quantity: charger.power,
+            percent: charger.percent || 0, // ✅ เพิ่ม
+            power: charger.power || 0,     // ✅ เพิ่ม
           };
           await CreateEVChargingPayment(evChargingPaymentData);
         }

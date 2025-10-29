@@ -1,36 +1,35 @@
 import { useState, useEffect } from 'react';
 import EcommerceDesktop from './EcommerceNotebook';
 import EcommerceMobile from './EcommercePhone';
+import EcommerceIPad from './EcommerceIPad'; 
 
 const Ecommerce = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [deviceType, setDeviceType] = useState<'mobile' | 'ipad' | 'desktop'>('desktop');
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const width = window.innerWidth;
+      if (width <= 768) {
+        setDeviceType('mobile');
+      } else if (width > 768 && width <= 1300) {
+        setDeviceType('ipad');
+      } else {
+        setDeviceType('desktop');
+      }
     };
 
     handleResize();
-
     window.addEventListener('resize', handleResize);
-
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return (
     <>
-      {isMobile ? <EcommerceMobile /> : <EcommerceDesktop />}
+      {deviceType === 'mobile' && <EcommerceMobile />}
+      {deviceType === 'ipad' && <EcommerceIPad />}   {/* 🆕 แสดง iPad */}
+      {deviceType === 'desktop' && <EcommerceDesktop />}
     </>
   );
 };
 
 export default Ecommerce;
-
-/**    <header
-        className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm mt-14 sm:mt-0"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <h1 className="text-sm sm:text-base font-semibold tracking-wide">Dashboard</h1>
-        </div>
-      </header> */
