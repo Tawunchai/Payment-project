@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/robfig/cron/v3" 
+	"github.com/robfig/cron/v3"
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/controller/booking"
+	"github.com/Tawunchai/work-project/controller/brand"
 	"github.com/Tawunchai/work-project/controller/cabinet"
 	"github.com/Tawunchai/work-project/controller/calendar"
 	"github.com/Tawunchai/work-project/controller/car"
@@ -20,6 +21,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/like"
 	"github.com/Tawunchai/work-project/controller/login"
 	"github.com/Tawunchai/work-project/controller/method"
+	modal "github.com/Tawunchai/work-project/controller/modal"
 	"github.com/Tawunchai/work-project/controller/new"
 	"github.com/Tawunchai/work-project/controller/notify"
 	"github.com/Tawunchai/work-project/controller/otp"
@@ -207,6 +209,15 @@ func main() {
 		//Notify
 		public.GET("/booking/reminder", notify.SendBookingReminder)
 
+		//brand
+		public.POST("/create-brand", brand.CreateBrand)
+		public.PATCH("/update-brand/:id", brand.UpdateBrandByID)
+		public.DELETE("/delete-brand/:id", brand.DeleteBrandByID)
+
+		//brand
+		r.POST("/create-modal", modal.CreateModal)
+		r.PATCH("/update-modal/:id", modal.UpdateModalByID)
+		r.DELETE("/delete-modal/:id", modal.DeleteModalByID)
 	}
 
 	r.GET("/", func(c *gin.Context) {

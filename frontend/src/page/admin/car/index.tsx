@@ -6,7 +6,9 @@ import {
   DeleteOutlined,
   SearchOutlined,
   DownloadOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import { ListCars, DeleteCar, apiUrlPicture } from "../../../services";
 import type { CarsInterface } from "../../../interface/ICar";
 import { FaCarSide, FaTruckPickup, FaTaxi, FaBusAlt } from "react-icons/fa";
@@ -61,6 +63,8 @@ const CarList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [editCar, setEditCar] = useState<any | null>(null);
+
+  const navigate = useNavigate(); // ✅ ใช้ navigate ไปหน้า CarData
 
   // ✅ Responsive scrollX
   const [scrollX, setScrollX] = useState(1000);
@@ -310,14 +314,25 @@ const CarList: React.FC = () => {
     <div className="min-h-screen w-full bg-white mt-14 sm:mt-0">
       <div className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <h1 className="text-sm sm:text-base font-semibold tracking-wide">Cars</h1>
-          <Button
-            icon={<DownloadOutlined />}
-            onClick={handleExportCSV}
-            className="bg-white text-blue-600 hover:bg-blue-50 font-semibold"
-          >
-            Export CSV
-          </Button>
+          <h1 className="text-sm sm:text-base font-semibold tracking-wide">
+            Cars
+          </h1>
+          <div className="flex gap-2">
+            <Button
+              icon={<SettingOutlined />}
+              className="bg-white text-blue-600 hover:bg-blue-50 font-semibold"
+              onClick={() => navigate("/admin/Car-data")} // ✅ ไปยังหน้า CarData
+            >
+              Manage Data
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExportCSV}
+              className="bg-white text-blue-600 hover:bg-blue-50 font-semibold"
+            >
+              Export CSV
+            </Button>
+          </div>
         </div>
       </div>
 

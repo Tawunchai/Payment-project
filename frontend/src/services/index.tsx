@@ -21,6 +21,7 @@ import { ServiceInterface } from "../interface/IService";
 import { SendEmailInterface } from "../interface/ISendEmail";
 import { BookingInterface,EVCabinetInterface } from "../interface/IBooking";
 import { ModalInterface } from "../interface/ICarCatalog";
+import { BrandInterface } from "../interface/IBrand";
 
 //const apiUrl = "http://10.0.14.228:8000";
 //export const apiUrlPicture = "http://10.0.14.228:8000/";
@@ -2092,5 +2093,130 @@ export const ListModals = async (): Promise<ModalInterface[] | null> => {
   } catch (error: any) {
     console.error("Error fetching modals:", error.response?.data || error.message);
     return null;
+  }
+};
+
+export const CreateBrand = async (
+  data: Partial<BrandInterface>
+): Promise<BrandInterface | { error: string } | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-brand`, data, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 201) {
+      return response.data; // ✅ { Brand, default_modal } หรือ error message
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    const errMsg =
+      error.response?.data?.error || error.response?.data || error.message;
+    console.error("Error creating brand:", errMsg);
+    return { error: errMsg };
+  }
+};
+
+export const UpdateBrandByID = async (
+  id: number,
+  data: Partial<BrandInterface>
+): Promise<
+  | BrandInterface
+  | { error: string }
+  | { message: string; data: BrandInterface }
+  | null
+> => {
+  try {
+    const response = await axios.patch(`${apiUrl}/update-brand/${id}`, data, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data; // ✅ รองรับทั้ง {message, data} หรือ {error}
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    const errMsg =
+      error.response?.data?.error || error.response?.data || error.message;
+    console.error("Error updating brand:", errMsg);
+    return { error: errMsg };
+  }
+};
+
+
+export const DeleteBrandByID = async (id: number): Promise<boolean> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-brand/${id}`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    return response.status === 200;
+  } catch (error: any) {
+    console.error("Error deleting brand:", error.response?.data || error.message);
+    return false;
+  }
+};
+
+export const CreateModal = async (data: Partial<ModalInterface>): Promise<ModalInterface | null> => {
+  try {
+    const response = await axios.post(`${apiUrl}/create-modal`, data, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error creating modal:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const UpdateModalByID = async (id: number, data: Partial<ModalInterface>): Promise<ModalInterface | null> => {
+  try {
+    const response = await axios.patch(`${apiUrl}/update-modal/${id}`, data, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating modal:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const DeleteModalByID = async (id: number): Promise<boolean> => {
+  try {
+    const response = await axios.delete(`${apiUrl}/delete-modal/${id}`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    return response.status === 200;
+  } catch (error: any) {
+    console.error("Error deleting modal:", error.response?.data || error.message);
+    return false;
   }
 };
