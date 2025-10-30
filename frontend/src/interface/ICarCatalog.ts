@@ -9,4 +9,6 @@ export interface ModalInterface {
   ModalName: string;
   BrandID?: number;
   Brand?: BrandInterface | null;
+  CreatedAt?: string;
+  UpdatedAt?: string;
 }

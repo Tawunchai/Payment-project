@@ -216,9 +216,9 @@ func CreatePayment(c *gin.Context) {
 type CreateEVChargingPaymentInput struct {
 	EVchargingID uint    `json:"evcharging_id" binding:"required"`
 	PaymentID    uint    `json:"payment_id" binding:"required"`
-	Price        float64 `json:"price" binding:"required"`
-	Percent      float64 `json:"percent" binding:"required"` // เปลี่ยนจาก Quantity เป็น Percent
-	Power        float64 `json:"power" binding:"required"`   // เพิ่ม Power
+	Price        float64 `json:"price"`
+	Percent      float64 `json:"percent"` // เปลี่ยนจาก Quantity เป็น Percent
+	Power        float64 `json:"power"`   // เพิ่ม Power
 }
 
 // ✅ Controller สำหรับสร้างข้อมูล EVChargingPayment

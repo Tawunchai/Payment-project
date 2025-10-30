@@ -108,6 +108,7 @@ const PayPalCard: React.FC = () => {
               percent: charger.percent || 0, // ✅ เพิ่ม Percent
               power: charger.power || 0,     // ✅ เพิ่ม Power
             };
+            console.log(evChargingPaymentData)
             const evPaymentResult = await CreateEVChargingPayment(evChargingPaymentData);
             if (!evPaymentResult) {
               message.error(`สร้าง EVChargingPayment สำหรับ ${charger.name} ล้มเหลว`);
