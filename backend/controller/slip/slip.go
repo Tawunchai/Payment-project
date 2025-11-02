@@ -95,7 +95,6 @@ func CheckSlipOI(c *gin.Context) {
 
 	// ❌ ไม่ใช้ amount แล้ว
 	apiURL := "https://slip-c.oiioioiiioooioio.download/api/slip"
-
 	// เตรียม JSON payload
 	payload, err := json.Marshal(req)
 	if err != nil {

@@ -9,6 +9,7 @@ import {
   CreatePayment,
   CreateEVChargingPayment,
   apiUrlPicture,
+  CreateChargingToken,
 } from "../../../services";
 import { UsersInterface } from "../../../interface/IUser";
 import { MethodInterface } from "../../../interface/IMethod";
@@ -187,7 +188,16 @@ const Index: React.FC = () => {
         }
       }
 
+      // ✅ สร้าง token สำหรับ session การชาร์จ
+      const token = await CreateChargingToken(paymentResult.ID);
+      if (!token) {
+        message.error("ไม่สามารถสร้าง session การชาร์จได้");
+        setIsProcessing(false);
+        return;
+      }
+
       // ✅ เปลี่ยนปลายทางตามที่คุณต้องการ
+      localStorage.setItem("charging_token", token);
       setTimeout(() => {
         navigate("/user/after-payment");
         setIsProcessing(false);

@@ -2220,3 +2220,49 @@ export const DeleteModalByID = async (id: number): Promise<boolean> => {
     return false;
   }
 };
+
+// services/token.ts
+export const CreateChargingToken = async (paymentID: number): Promise<string | null> => {
+  try {
+    const res = await axios.post(
+      `${apiUrl}/token/payment-success`,
+      { payment_id: paymentID }, // ✅ ส่งค่า PaymentID มาที่ backend
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      }
+    );
+
+    if (res.status === 200 && res.data.charging_token) {
+      return res.data.charging_token;
+    } else {
+      console.error("Unexpected response:", res.data);
+      return null;
+    }
+  } catch (err) {
+    console.error("Error creating charging token:", err);
+    return null;
+  }
+};
+
+
+// ===========================
+// 🟩 ตรวจสอบ Token ยังใช้ได้ไหม
+// ===========================
+export const VerifyChargingToken = async (token: string): Promise<boolean> => {
+  try {
+    const res = await axios.get(`${apiUrl}/token/verify`, {
+      params: { token },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return res.status === 200;
+  } catch (err) {
+    console.error("Error verifying charging token:", err);
+    return false;
+  }
+};

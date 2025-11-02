@@ -8,6 +8,7 @@ import {
   CreatePayment,
   CreateEVChargingPayment,
   ListBank,
+  CreateChargingToken, // ✅ เพิ่มฟังก์ชันนี้
 } from "../../../../services/index";
 import { FileImageOutlined } from "@ant-design/icons";
 import LoadingAnimation from "../../../../component/user/money/LoadingAnimation";
@@ -69,7 +70,7 @@ const PayPalCard: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ส่งหลักฐาน
+  // ✅ ส่งหลักฐานและสร้าง Token สำหรับ session การชาร์จ
   const handleSubmit = async () => {
     if (!uploadedFile) {
       message.warning("กรุณาอัปโหลดสลิปก่อนส่ง");
@@ -93,7 +94,7 @@ const PayPalCard: React.FC = () => {
         user_id: userID,
         method_id: MethodID,
         reference_number: result.data.ref,
-        picture: uploadedFile, // หรือเปลี่ยนเป็น path ที่ server ส่งกลับมาก็ได้
+        picture: uploadedFile,
       };
 
       const paymentResult = await CreatePayment(paymentData);
@@ -105,28 +106,38 @@ const PayPalCard: React.FC = () => {
               evcharging_id: charger.id,
               payment_id: paymentResult.ID,
               price: charger.total,
-              percent: charger.percent || 0, // ✅ เพิ่ม Percent
-              power: charger.power || 0,     // ✅ เพิ่ม Power
+              percent: charger.percent || 0,
+              power: charger.power || 0,
             };
-            console.log(evChargingPaymentData)
             const evPaymentResult = await CreateEVChargingPayment(evChargingPaymentData);
             if (!evPaymentResult) {
               message.error(`สร้าง EVChargingPayment สำหรับ ${charger.name} ล้มเหลว`);
             }
           }
-
         } else {
           message.error("ไม่มีข้อมูล chargers ที่ถูกต้อง");
         }
+
+        // ✅ สร้าง Token หลังชำระสำเร็จ
+        const token = await CreateChargingToken(paymentResult.ID);
+        if (!token) {
+          message.error("ไม่สามารถสร้าง session การชาร์จได้");
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem("charging_token", token);
+
+        setTimeout(() => {
+          navigate("/user/after-payment");
+          setLoading(false);
+        }, 800);
       } else {
         message.error("สร้าง Payment ล้มเหลว");
-      }
-
-      setTimeout(() => {
-        navigate("/user/after-payment");
         setLoading(false);
-      }, 800);
-    } catch {
+      }
+    } catch (error) {
+      console.error(error);
       message.error("เกิดข้อผิดพลาดในการส่งหลักฐาน");
       setLoading(false);
     }
@@ -145,7 +156,7 @@ const PayPalCard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header น้ำเงินโค้งมน (สไตล์เดียวกับหน้า Payment) */}
+      {/* Header */}
       <header
         className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -163,20 +174,12 @@ const PayPalCard: React.FC = () => {
               stroke="currentColor"
               strokeWidth="2"
             >
-              <path
-                d="M15 18l-6-6 6-6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
           <div className="flex items-center gap-2">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="h-5 w-5 text-white"
-            >
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 text-white">
               <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
             </svg>
             <span className="text-sm md:text-base font-semibold tracking-wide">
@@ -186,7 +189,7 @@ const PayPalCard: React.FC = () => {
         </div>
       </header>
 
-      {/* Overlay Loading */}
+      {/* Loading overlay */}
       {loading && (
         <div className="fixed inset-0 bg-black/60 flex flex-col items-center justify-center z-50">
           <LoadingAnimation />
@@ -195,13 +198,11 @@ const PayPalCard: React.FC = () => {
 
       {/* Content */}
       <main className="mx-auto max-w-screen-sm px-4 pb-28 pt-4">
-        {/* Summary capsule */}
         <div className="mb-4 flex items-center justify-between rounded-2xl bg-blue-50 px-4 py-3">
           <div className="text-sm text-blue-900">ยอดชำระทั้งหมด</div>
           <div className="text-xl font-bold text-blue-700">฿{amountNumber.toFixed(2)}</div>
         </div>
 
-        {/* Card หลัก: QR + อัปโหลด สไตล์ minimal */}
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
           {/* QR Section */}
           <div className="flex flex-col items-center">
@@ -259,26 +260,6 @@ const PayPalCard: React.FC = () => {
               </div>
             )}
 
-            {/* ปุ่มในการ์ด (สำรอง ถ้าไม่อยากใช้ bottom bar สามารถย้าย logic มาที่นี่) */}
-            <div className="hidden">
-              <button
-                onClick={handleUploadClick}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 transition font-medium"
-              >
-                <FaUpload />
-                อัปโหลดสลิป
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={!uploadedFile}
-                className={`mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-medium transition
-                  ${uploadedFile ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800" : "bg-blue-300 cursor-not-allowed"}`}
-              >
-                <FaPaperPlane />
-                ส่งหลักฐานการชำระเงิน
-              </button>
-            </div>
-
             <input
               ref={fileInputRef}
               type="file"
@@ -290,7 +271,7 @@ const PayPalCard: React.FC = () => {
         </div>
       </main>
 
-      {/* Bottom Action Bar: ปุ่มใหญ่กดง่ายบนมือถือ */}
+      {/* Bottom Bar */}
       <div
         className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}

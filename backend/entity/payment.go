@@ -20,4 +20,6 @@ type Payment struct {
 	Method   		*Method `gorm:"foreignKey:MethodID"`
 
 	EVChargingPayments []EVChargingPayment `gorm:"foreignKey:PaymentID"`
+
+	ChargingSessions []ChargingSession `gorm:"foreignKey:PaymentID"`
 }

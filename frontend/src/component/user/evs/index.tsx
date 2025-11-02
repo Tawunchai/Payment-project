@@ -109,7 +109,7 @@ const Index = () => {
       <header className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md">
         <div className="w-full px-4 py-3 flex items-center gap-2">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => navigate("/user")}
             className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15"
           >
             <svg
@@ -253,11 +253,10 @@ const Index = () => {
           <button
             onClick={handleNext}
             disabled={loading || evChargers.length === 0}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-white transition ${
-              loading || evChargers.length === 0
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-white transition ${loading || evChargers.length === 0
                 ? "bg-blue-300"
                 : "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 shadow-md"
-            }`}
+              }`}
           >
             <BoltIcon className="h-5 w-5 text-white" />
             <span className="text-sm font-semibold">Next</span>
