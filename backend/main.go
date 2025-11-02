@@ -32,6 +32,7 @@ import (
 	"github.com/Tawunchai/work-project/controller/service"
 	"github.com/Tawunchai/work-project/controller/slip"
 	"github.com/Tawunchai/work-project/controller/status"
+	tokening "github.com/Tawunchai/work-project/controller/token"
 	types "github.com/Tawunchai/work-project/controller/type"
 	"github.com/Tawunchai/work-project/controller/user"
 	"github.com/Tawunchai/work-project/middlewares"
@@ -214,9 +215,15 @@ func main() {
 		public.DELETE("/delete-brand/:id", brand.DeleteBrandByID)
 
 		//brand
-		r.POST("/create-modal", modal.CreateModal)
-		r.PATCH("/update-modal/:id", modal.UpdateModalByID)
-		r.DELETE("/delete-modal/:id", modal.DeleteModalByID)
+		public.POST("/create-modal", modal.CreateModal)
+		public.PATCH("/update-modal/:id", modal.UpdateModalByID)
+		public.DELETE("/delete-modal/:id", modal.DeleteModalByID)
+
+		// ✅ สร้าง token หลังชำระเงินสำเร็จ
+		public.POST("/token/payment-success", middlewares.JwtAuth(), tokening.PaymentSuccess)
+
+		// ✅ ตรวจสอบ token
+		public.GET("/token/verify", tokening.VerifyChargingSession)
 	}
 
 	r.GET("/", func(c *gin.Context) {

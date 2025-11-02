@@ -158,27 +158,44 @@ const AddMoneyCoin: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header น้ำเงินโค้งมน (เข้าชุดหน้าอื่น) */}
-      <header
-        className="sticky top-0 z-20 bg-blue-600 text-white rounded-b-2xl shadow-md overflow-hidden"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
-        <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center gap-2">
+      {/* ✅ HEADER — Gradient โค้งมน สวยหรู ชิดซ้าย และขนาดตัวอักษรเล็กลง */}
+      {/* HEADER */}
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden w-full">
+        <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
+          {/* ปุ่มย้อนกลับ */}
           <button
             onClick={() => navigate(-1)}
             aria-label="ย้อนกลับ"
             className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                d="M15 18l-6-6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
+
+          {/* ไอคอน + ข้อความหัวข้อ */}
           <div className="flex items-center gap-2">
-            <BoltIcon className="h-5 w-5 text-white" />
-            <span className="text-sm font-semibold tracking-wide">เติม Coin (PromptPay)</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
+              <BoltIcon className="h-5 w-5 text-white" />
+            </span>
+            <span className="text-sm md:text-base font-semibold tracking-wide">
+              ADD Coin (PromptPay)
+            </span>
           </div>
         </div>
       </header>
+
+
 
       {/* Loading Overlay */}
       {loading && (
@@ -324,10 +341,9 @@ const AddMoneyCoin: React.FC = () => {
             onClick={handleSubmit}
             disabled={!canSubmit}
             className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white transition
-              ${
-                canSubmit
-                  ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 active:from-blue-800 active:to-blue-700"
-                  : "bg-blue-300 cursor-not-allowed"
+              ${canSubmit
+                ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 active:from-blue-800 active:to-blue-700"
+                : "bg-blue-300 cursor-not-allowed"
               }`}
             aria-busy={canSubmit ? loading : undefined}
           >

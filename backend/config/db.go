@@ -95,6 +95,7 @@ func SetupDatabase() {
 		&entity.EVChargingPayment{},
 		&entity.Bank{},
 		&entity.Service{},
+		&entity.ChargingSession{},
 	); err != nil {
 		log.Fatalf("automigrate failed: %v", err)
 	}
