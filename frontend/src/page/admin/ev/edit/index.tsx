@@ -4,6 +4,7 @@ import ImgCrop from "antd-img-crop";
 import { StatusInterface } from "../../../../interface/IStatus";
 import { TypeInterface } from "../../../../interface/IType";
 import { UpdateEVByID, apiUrlPicture } from "../../../../services/index";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 import {
   FaTimes,
   FaEdit,
@@ -38,6 +39,26 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
   const [typeID, setTypeID] = useState<number | undefined>(undefined);
   const [fileList, setFileList] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ ดึง employee_id จาก JWT token
+  const [employeeID, setEmployeeID] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      try {
+        await initUserProfile();
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.employee_id) {
+          setEmployeeID(currentUser.employee_id);
+        } else {
+          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        }
+      } catch {
+        message.error("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
+      }
+    };
+    fetchEmployee();
+  }, []);
 
   // ตรวจมือถือเพื่อกำหนดความสูงและการเลื่อนใน body
   const isMobile =
@@ -89,7 +110,13 @@ const EditEVModal: React.FC<EditEVModalProps> = ({
     formData.append("price", String(price));
     formData.append("statusID", String(statusID));
     formData.append("typeID", String(typeID));
-    formData.append("employeeID", "1"); // TODO: ผูกค่าจริงภายหลัง (เช่นจาก localStorage)
+
+    // ✅ ผูก employee_id จาก JWT token
+    if (employeeID) {
+      formData.append("employeeID", String(employeeID));
+    } else {
+      message.warning("ไม่พบรหัสพนักงานในระบบ");
+    }
 
     if (fileList.length > 0 && fileList[0].originFileObj) {
       formData.append("picture", fileList[0].originFileObj);

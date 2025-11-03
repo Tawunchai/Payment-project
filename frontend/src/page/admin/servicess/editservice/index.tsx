@@ -1,8 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Input, message } from "antd";
-import { FaEnvelope, FaPhoneAlt, FaMapMarkerAlt, FaLink, FaTimes, FaBolt } from "react-icons/fa";
+import {
+  FaEnvelope,
+  FaPhoneAlt,
+  FaMapMarkerAlt,
+  FaLink,
+  FaTimes,
+  FaBolt,
+} from "react-icons/fa";
 import type { ServiceInterface } from "../../../../interface/IService";
-import { UpdateServiceByID } from "../../../../services"; // ← ต้องมี service ฟังก์ชันนี้
+import { UpdateServiceByID } from "../../../../services";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 
 interface EditServiceModalProps {
   open: boolean;
@@ -39,15 +47,30 @@ const ModalEditService: React.FC<EditServiceModalProps> = ({
 
   const handleSubmit = async () => {
     if (!record?.ID || submitting || !canSubmit) return;
+
     setSubmitting(true);
     try {
+      // ✅ โหลด user profile จาก token
+      await initUserProfile();
+      const currentUser = getCurrentUser();
+
+      if (!currentUser || !currentUser.employee_id) {
+        messageApi.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        setSubmitting(false);
+        return;
+      }
+
+      // ✅ ใช้ employee_id จาก token
       const payload = {
         Email: email.trim(),
         Phone: phone.trim(),
         Location: location.trim(),
         MapURL: mapURL.trim(),
+        employee_id: currentUser.employee_id,
       };
+
       const res = await UpdateServiceByID(record.ID, payload);
+
       if (res?.data) {
         messageApi.success("อัปเดต Service Contact สำเร็จ!");
         onUpdated(res.data as ServiceInterface);
@@ -56,7 +79,7 @@ const ModalEditService: React.FC<EditServiceModalProps> = ({
         messageApi.error("ไม่สามารถอัปเดตข้อมูลได้");
       }
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error updating service:", err);
       messageApi.error("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
     } finally {
       setSubmitting(false);

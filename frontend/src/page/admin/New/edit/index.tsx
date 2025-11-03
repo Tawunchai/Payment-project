@@ -4,6 +4,7 @@ import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { UpdateNewsByID, apiUrlPicture } from "../../../../services";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 
 const EditNews: React.FC = () => {
   const location = useLocation();
@@ -42,8 +43,28 @@ const EditNews: React.FC = () => {
       : []
   );
   const [loading, setLoading] = useState(false);
+  const [employeeId, setEmployeeId] = useState<number | null>(null);
 
-  // preview url (รองรับทั้งรูปเดิมและรูปที่เพิ่งเลือก)
+  // ✅ โหลด employee_id จาก token
+  useEffect(() => {
+    const loadEmployee = async () => {
+      try {
+        await initUserProfile();
+        const currentUser = getCurrentUser();
+        if (!currentUser || !currentUser.employee_id) {
+          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+          return;
+        }
+        setEmployeeId(currentUser.employee_id);
+      } catch (err) {
+        console.error("❌ Error loading employee_id:", err);
+        message.error("เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้");
+      }
+    };
+    loadEmployee();
+  }, []);
+
+  // preview url
   const previewUrl = useMemo(() => {
     const f = fileList[0];
     if (!f) return "";
@@ -74,12 +95,13 @@ const EditNews: React.FC = () => {
       });
     }
     const imgWindow = window.open(src);
-    imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
+    imgWindow?.document.write(`<img src="${src}" style="max-width:100%;" />`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsId) return;
+    if (!employeeId) return message.error("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
 
     if (!title.trim() || !description.trim()) {
       message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
@@ -89,11 +111,10 @@ const EditNews: React.FC = () => {
     const formData = new FormData();
     formData.append("title", title.trim());
     formData.append("description", description.trim());
+    formData.append("employeeID", String(employeeId)); // ✅ ใช้ employee_id จาก token
 
     const hasNewImage = fileList.length > 0 && fileList[0].originFileObj;
-    if (hasNewImage) {
-      formData.append("picture", fileList[0].originFileObj);
-    }
+    if (hasNewImage) formData.append("picture", fileList[0].originFileObj);
 
     try {
       setLoading(true);
@@ -104,7 +125,8 @@ const EditNews: React.FC = () => {
       } else {
         message.error("อัปเดตข่าวล้มเหลว");
       }
-    } catch {
+    } catch (err) {
+      console.error("❌ Error updating news:", err);
       message.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setLoading(false);
@@ -160,7 +182,7 @@ const EditNews: React.FC = () => {
                         message.error("กรุณาอัปโหลดไฟล์รูปภาพ");
                         return Upload.LIST_IGNORE;
                       }
-                      return false; // ไม่อัปโหลดอัตโนมัติ
+                      return false;
                     }}
                     maxCount={1}
                     multiple={false}
@@ -209,7 +231,7 @@ const EditNews: React.FC = () => {
                   required
                 />
                 <div className="mt-1 text-[12px] text-gray-400">
-                  ผู้แก้ไข: admin@gmail.com
+                  ผู้แก้ไข: {employeeId ? `Employee ID ${employeeId}` : "กำลังโหลด..."}
                 </div>
               </div>
 
@@ -236,14 +258,20 @@ const EditNews: React.FC = () => {
           {/* Right: Live Preview */}
           <div className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Live Preview</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Live Preview
+              </h3>
               <p className="text-xs text-gray-500">ดูตัวอย่างข่าวที่กำลังแก้ไข</p>
             </div>
 
             <div className="space-y-4">
               <div className="w-full aspect-[16/9] bg-blue-50/60 border border-blue-100 rounded-xl overflow-hidden grid place-items-center">
                 {previewUrl ? (
-                  <img src={previewUrl} alt="preview" className="w-full h-full object-cover" />
+                  <img
+                    src={previewUrl}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="text-blue-400 text-sm">ยังไม่มีรูปภาพ</span>
                 )}

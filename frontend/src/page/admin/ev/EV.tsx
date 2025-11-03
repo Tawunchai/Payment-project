@@ -36,7 +36,7 @@ import {
 } from "../../../services";
 import type { StatusInterface } from "../../../interface/IStatus";
 import type { TypeInterface } from "../../../interface/IType";
-
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import EditEVModal from "./edit";
 import CreateEVModal from "./create";
 
@@ -108,6 +108,8 @@ const CabinetModal: React.FC<{
   const [fileList, setFileList] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+  const [employeeID, setEmployeeID] = useState<number | null>(null);
+
   useEffect(() => {
     if (!open) return;
     setName(initial?.Name ?? "");
@@ -150,6 +152,23 @@ const CabinetModal: React.FC<{
     return true;
   };
 
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      try {
+        await initUserProfile();
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.employee_id) {
+          setEmployeeID(currentUser.employee_id);
+        } else {
+          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        }
+      } catch {
+        message.error("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
+      }
+    };
+    fetchEmployee();
+  }, []);
+
   const handleSubmit = async () => {
     if (!validate()) return;
     setSubmitting(true);
@@ -161,13 +180,7 @@ const CabinetModal: React.FC<{
       formData.append("status", status.trim());
       formData.append("latitude", latitude.trim());
       formData.append("longitude", longitude.trim());
-
-      // employeeID จาก localStorage (ถ้าไม่มีจะไม่ส่ง)
-      const empIdLS =
-        typeof window !== "undefined" ? window.localStorage.getItem("employeeID") : null;
-      if (empIdLS && empIdLS.trim().length > 0) {
-        formData.append("employeeID", empIdLS.trim());
-      }
+      formData.append("employeeID", String(employeeID));
 
       // รูปภาพคีย์ "image" ตาม backend
       if (fileList.length > 0 && fileList[0].originFileObj) {

@@ -5,9 +5,10 @@ import {
   apiUrlPicture,
   GetCarByUserID,
 } from "../../../services";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import { EVchargingInterface } from "../../../interface/IEV";
 import { CarsInterface } from "../../../interface/ICar";
-import { ConfigProvider, Modal, Button, Input, Slider } from "antd";
+import { ConfigProvider, Modal, Button, Input, Slider, message } from "antd";
 
 // ⚡ EV Icon
 const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -16,47 +17,74 @@ const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const Index = () => {
+const Index: React.FC = () => {
   const [evChargers, setEvChargers] = useState<EVchargingInterface[]>([]);
   const [percentMap, setPercentMap] = useState<{ [id: number]: number }>({});
   const [money, setMoney] = useState<number>(1000);
   const [loading, setLoading] = useState(true);
   const [showCarModal, setShowCarModal] = useState(false);
+  const [userID, setUserID] = useState<number | undefined>(undefined);
+
   const navigate = useNavigate();
 
-  const userID = Number(localStorage.getItem("userid"));
+  // ✅ โหลด userID จาก JWT Cookie
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+        const uid = current?.id;
+        if (!uid) {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          navigate("/login");
+          return;
+        }
+        setUserID(uid);
+      } catch (error) {
+        console.error("Error loading user:", error);
+        message.error("โหลดข้อมูลผู้ใช้ล้มเหลว");
+      }
+    };
+    loadUser();
+  }, [navigate]);
 
-  // โหลดข้อมูล EV Charger
+  // ✅ โหลดข้อมูล EV Charger
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      const data = await ListEVCharging();
-      if (data && data.length > 0) {
-        setEvChargers(data.slice(0, 2)); // สมมติใช้ 2 ตัว
-        const init: { [id: number]: number } = {};
-        data.slice(0, 2).forEach((item, index) => {
-          init[item.ID] = index === 0 ? 100 : 0; // เริ่มต้น 100 / 0
-        });
-        setPercentMap(init);
+      try {
+        setLoading(true);
+        const data = await ListEVCharging();
+        if (data && data.length > 0) {
+          setEvChargers(data.slice(0, 2)); // สมมติใช้ 2 ตัว
+          const init: { [id: number]: number } = {};
+          data.slice(0, 2).forEach((item, index) => {
+            init[item.ID] = index === 0 ? 100 : 0; // เริ่มต้น 100 / 0
+          });
+          setPercentMap(init);
+        }
+      } catch (err) {
+        console.error("Error loading chargers:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchData();
   }, []);
 
-  // ปรับเปอร์เซ็นต์
+  // ✅ ปรับเปอร์เซ็นต์
   const setPercent = (id: number, value: number) => {
     if (evChargers.length !== 2) return;
     const other = evChargers.find((c) => c.ID !== id);
+    if (!other) return;
     const fixed = Math.min(100, Math.max(0, value));
     const otherValue = 100 - fixed;
     setPercentMap({
       [id]: fixed,
-      [other!.ID]: otherValue,
+      [other.ID]: otherValue,
     });
   };
 
-  // คำนวณ
+  // ✅ คำนวณเงินและพลังงาน
   const itemsWithCalc = useMemo(() => {
     return evChargers.map((charger) => {
       const percent = percentMap[charger.ID] || 0;
@@ -72,9 +100,15 @@ const Index = () => {
     [itemsWithCalc]
   );
 
-  // กด Next
+  // ✅ เมื่อกด Next
   const handleNext = async () => {
     try {
+      if (!userID) {
+        message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+        navigate("/login");
+        return;
+      }
+
       const cars: CarsInterface[] | null = await GetCarByUserID(userID);
       if (!cars || cars.length === 0) {
         setShowCarModal(true);
@@ -95,7 +129,6 @@ const Index = () => {
       console.log("📦 Data to send:", payload);
       console.log("💰 Total Amount:", totalAmount);
 
-      // ✅ ส่งข้อมูลไปหน้า /user/payment
       navigate("/user/payment", { state: { chargers: payload } });
     } catch (err) {
       console.error("Error checking user car:", err);
@@ -151,7 +184,7 @@ const Index = () => {
           />
         </div>
 
-        {/* สรุป */}
+        {/* สรุปยอดรวม */}
         <div className="mb-4 flex items-center justify-between rounded-2xl bg-blue-100 px-4 py-3">
           <span className="text-sm text-blue-900">ยอดรวมทั้งหมด</span>
           <span className="text-xl font-bold text-blue-700">
@@ -230,7 +263,9 @@ const Index = () => {
                         min={0}
                         max={100}
                         value={percent}
-                        onChange={(value) => setPercent(charger.ID, value as number)}
+                        onChange={(value) =>
+                          setPercent(charger.ID, value as number)
+                        }
                       />
                     </div>
                   </div>
@@ -253,10 +288,11 @@ const Index = () => {
           <button
             onClick={handleNext}
             disabled={loading || evChargers.length === 0}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-white transition ${loading || evChargers.length === 0
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-white transition ${
+              loading || evChargers.length === 0
                 ? "bg-blue-300"
                 : "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 shadow-md"
-              }`}
+            }`}
           >
             <BoltIcon className="h-5 w-5 text-white" />
             <span className="text-sm font-semibold">Next</span>

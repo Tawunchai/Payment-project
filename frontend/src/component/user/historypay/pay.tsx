@@ -7,7 +7,9 @@ import {
   ListPaymentsByUserID,
   ListPaymentCoinsByUserID,
 } from "../../../services";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import type { PaymentCoinInterface } from "../../../interface/IPaymentCoin";
+import { message } from "antd";
 
 interface TransactionItem {
   icon: JSX.Element;
@@ -29,15 +31,45 @@ interface UserType {
   Coin: number;
 }
 
-const HistoryPay = () => {
+const HistoryPay: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserType | null>(null);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [userid, setUserid] = useState<number>(
-    Number(localStorage.getItem("userid")) || 0
-  );
+  const [userID, setUserID] = useState<number | undefined>(undefined);
+
+  // ✅ โหลด user จาก JWT cookie
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+
+        const uid = current?.id;
+        if (!uid) {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          navigate("/login");
+          return;
+        }
+
+        setUserID(uid);
+        const res = await getUserByID(uid);
+        if (res) {
+          setUser({
+            FirstName: res.FirstName ?? "",
+            LastName: res.LastName ?? "",
+            Profile: res.Profile ?? "",
+            Coin: res.Coin ?? 0,
+          });
+        }
+      } catch (err) {
+        console.error("Error loading user:", err);
+        message.error("โหลดข้อมูลผู้ใช้ล้มเหลว");
+      }
+    };
+    fetchUser();
+  }, [navigate]);
 
   const fmt = (n: number) =>
     n.toLocaleString(undefined, {
@@ -77,32 +109,15 @@ const HistoryPay = () => {
     };
   };
 
-  // ดึงข้อมูลผู้ใช้
-  useEffect(() => {
-    const fetchUser = async () => {
-      const _uid = Number(localStorage.getItem("userid")) || userid || 0;
-      setUserid(_uid);
-      if (_uid === 0) return;
-      const res = await getUserByID(_uid);
-      setUser({
-        FirstName: res?.FirstName ?? "",
-        LastName: res?.LastName ?? "",
-        Profile: res?.Profile ?? "",
-        Coin: res?.Coin ?? 0,
-      });
-    };
-    fetchUser();
-  }, []);
-
-  // ดึงประวัติการชำระ + เติม Coin
+  // ✅ โหลดประวัติการชำระเงินและเติม Coin
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!userid) return;
+      if (!userID) return;
       setLoading(true);
       try {
         const [paymentList, coinList] = await Promise.all([
-          ListPaymentsByUserID(userid),
-          ListPaymentCoinsByUserID(userid),
+          ListPaymentsByUserID(userID),
+          ListPaymentCoinsByUserID(userID),
         ]);
 
         const payments = (paymentList ?? []).map((it: any) => {
@@ -153,12 +168,15 @@ const HistoryPay = () => {
         setTransactions(all);
         const sum = all.reduce((acc, cur) => acc + cur.amountNum, 0);
         setTotalAmount(sum);
+      } catch (err) {
+        console.error("Error fetching history:", err);
+        message.error("โหลดประวัติธุรกรรมล้มเหลว");
       } finally {
         setLoading(false);
       }
     };
     fetchHistory();
-  }, [userid]);
+  }, [userID]);
 
   const coinBalance = useMemo(() => user?.Coin ?? 0, [user]);
   const MAX_LIST_HEIGHT = 400;
@@ -278,7 +296,7 @@ const HistoryPay = () => {
                 </div>
               ) : (
                 <>
-                  {/* Header */}
+                  {/* Header (Desktop) */}
                   <div className="hidden md:grid grid-cols-[6fr_2fr_2fr_2.5fr] gap-3 px-5 py-3 text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-100">
                     <div>ประเภท / รายละเอียด</div>
                     <div>วันที่</div>

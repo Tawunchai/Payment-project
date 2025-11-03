@@ -4,11 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt, FaClock } from "react-icons/fa";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Modal, Button } from "antd";
+import { Modal, Button, message } from "antd";
 
-import { ListCabinetsEV, apiUrlPicture, GetCarByUserID } from "../../../services";
+import {
+  ListCabinetsEV,
+  apiUrlPicture,
+  GetCarByUserID,
+} from "../../../services";
 import type { EVCabinetInterface } from "../../../interface/IBooking";
 import type { CarsInterface } from "../../../interface/ICar";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 
 /* =========================
    EV Bolt Icon
@@ -70,7 +75,6 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
   );
 };
 
-
 /* =========================
    EV Marker Icon
    ========================= */
@@ -89,17 +93,39 @@ const createEVIcon = (selected: boolean) =>
   });
 
 /* =========================
-   EV Map (Desktop)
+   EV Map (Notebook)
    ========================= */
 const EVMapNotebook: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
   const [cabinets, setCabinets] = useState<EVCabinetInterface[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCarModal, setShowCarModal] = useState(false);
+  const [userID, setUserID] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
 
-  const userID = Number(localStorage.getItem("userid"));
+  // ✅ โหลด userID จาก JWT (cookie)
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
 
+        const uid = current?.id;
+        if (!uid) {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          return;
+        }
+
+        setUserID(uid);
+      } catch (error) {
+        console.error("load user error:", error);
+        message.error("ไม่สามารถดึงข้อมูลผู้ใช้ได้");
+      }
+    };
+    loadUser();
+  }, []);
+
+  // ✅ โหลดข้อมูลสถานีชาร์จ
   useEffect(() => {
     const fetchCabinets = async () => {
       try {
@@ -116,6 +142,11 @@ const EVMapNotebook: React.FC = () => {
 
   // ✅ ตรวจสอบว่าผู้ใช้มีรถไหม
   const handleBookingClick = async (cabinet: EVCabinetInterface) => {
+    if (!userID) {
+      message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+      return;
+    }
+
     try {
       const cars: CarsInterface[] | null = await GetCarByUserID(userID);
       if (!cars || cars.length === 0) {
@@ -187,6 +218,7 @@ const EVMapNotebook: React.FC = () => {
                     : "border-gray-100"
                 }`}
               >
+                {/* Image */}
                 <div className="relative w-full h-28 rounded-lg overflow-hidden">
                   <img
                     src={`${apiUrlPicture}${cabinet.Image}`}
@@ -202,6 +234,7 @@ const EVMapNotebook: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Info */}
                 <div className="mt-2 space-y-0.5">
                   <h2 className="font-semibold text-blue-800 text-[13px] truncate">
                     {cabinet.Name}

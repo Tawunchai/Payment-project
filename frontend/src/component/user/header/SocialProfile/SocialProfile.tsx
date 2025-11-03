@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs } from "antd";
 import Header from "./header";
 import { Contact } from "./Contact";
@@ -7,10 +7,28 @@ import SupportCard from "./support";
 import Cars from "./cars";
 import BookingHistory from "./bookinghistory";
 import Footer from "../../../../component/user/footer/footer";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin"; // ✅ import มาใช้
 
 const SocialProfile: React.FC = () => {
-  const userID = Number(localStorage.getItem("userid"));
+  const [userID, setUserID] = useState<number | null>(null);
   const [activeKey, setActiveKey] = useState("1");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile(); // ✅ ถ้าไม่มีใน memory ให้ดึงจาก server
+        if (current?.id) {
+          setUserID(current.id);
+        } else {
+          console.warn("⚠️ ไม่พบ userID ในข้อมูลผู้ใช้");
+        }
+      } catch (err) {
+        console.error("❌ Error fetching user profile:", err);
+      }
+    };
+    fetchUser();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -56,7 +74,15 @@ const SocialProfile: React.FC = () => {
 
                     {/* Cars (ขวา) */}
                     <div className="flex flex-col gap-4">
-                      <Cars userID={userID} /><br /><br />
+                      {userID ? (
+                        <Cars userID={userID} />
+                      ) : (
+                        <div className="text-gray-400 text-sm">
+                          กำลังโหลดข้อมูลผู้ใช้...
+                        </div>
+                      )}
+                      <br />
+                      <br />
                     </div>
                   </div>
                 ),

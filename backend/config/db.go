@@ -233,8 +233,8 @@ func SeedIfUsersEmpty(db *gorm.DB) {
 	}
 	admin2 := entity.User{
 		Username:    "admin2",
-		FirstName:   "JoJo",
-		LastName:    "Smoke",
+		FirstName:   "Tawunchai",
+		LastName:    "Burakhon",
 		Email:       "Smoke@gmail.com",
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",

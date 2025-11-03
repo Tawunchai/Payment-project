@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { AvatarWithInfo } from "./AvatarWithInfo";
 import { ProfileNavbar } from "./ProfileNavbar";
 import { GetUserByID } from "../../../../../services/httpLogin";
+import { getCurrentUser, initUserProfile } from "../../../../../services/httpLogin"; // ✅ เพิ่มมา
 import { UsersInterface } from "../../../../../interface/IUser";
 import { Spin } from "antd";
 import EVCAR from "../../../../../assets/solar-profile.png";
@@ -10,11 +11,17 @@ const ProfileBanner: React.FC = () => {
   const [userData, setUserData] = useState<UsersInterface | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 📦 ดึงข้อมูลผู้ใช้จาก localStorage + backend
+  // 📦 ดึงข้อมูลผู้ใช้จาก cookie / memory / backend
   const fetchUser = async () => {
     try {
-      const userID = Number(localStorage.getItem("userid"));
-      if (!userID) return;
+      let current = getCurrentUser(); // ✅ ดึงจาก memory ก่อน
+      if (!current) current = await initUserProfile(); // ✅ ถ้าไม่มี ให้ดึงจาก cookie (backend)
+
+      const userID = current?.id;
+      if (!userID) {
+        console.warn("⚠️ ไม่พบ userID ในข้อมูลผู้ใช้");
+        return;
+      }
 
       const data = await GetUserByID(userID);
       if (data) setUserData(data);

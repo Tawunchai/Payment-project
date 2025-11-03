@@ -9,6 +9,8 @@ const apiUrl = "https://payment-project-t4dj.onrender.com";
 //const apiUrl = "http://192.168.1.141:8000";
 //const apiUrl = "http://localhost:8000";
 
+axios.defaults.withCredentials = true; // ✅ ให้ cookie แนบอัตโนมัติ
+
 function getAuthHeaders() {
   const token = localStorage.getItem("token");
   const tokenType = localStorage.getItem("token_type");
@@ -18,9 +20,9 @@ function getAuthHeaders() {
   };
 }
 
-const requestOptions = {
+/*const requestOptions = {
   headers: getAuthHeaders(),
-};
+};*/
 
 const getHeaders = (): Record<string, string> => {
   const Authorization = localStorage.getItem("token");
@@ -90,12 +92,66 @@ export const resetPassword = async (
   }
 };
 
-async function AddLogin(data: LoginInterface) {
-  return await axios  
-    .post(`${apiUrl}/login`, data, requestOptions)
-    .then((res) => res) 
-    .catch((e) => e.response);
+
+export async function AddLogin(data: LoginInterface) {
+  return await axios.post(`${apiUrl}/login`, data);
 }
+
+export async function GetProfile() {
+  return await axios.get(`${apiUrl}/me`);
+}
+
+// -------------------- ✅ ฟังก์ชัน Logout --------------------
+export async function Logout() {
+  try {
+    const res = await axios.post(`${apiUrl}/logout`, {}, { withCredentials: true });
+    if (res.status === 200) {
+      localStorage.clear(); // เคลียร์ข้อมูลที่ frontend เก็บไว้
+      sessionStorage.clear();
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error("❌ Logout error:", err);
+    return false;
+  }
+}
+
+export interface CurrentUser {
+  id: number;
+  username: string;
+  firstname: string;
+  lastname: string;
+  role: string;
+  email: string;
+  profile?: string;
+  employee_id?: number | null; // ✅ เพิ่มฟิลด์นี้เท่านั้น
+}
+
+// เก็บข้อมูลผู้ใช้ปัจจุบันไว้ในตัวแปรเดียว
+let currentUser: CurrentUser | null = null;
+
+// ✅ ฟังก์ชันเรียกข้อมูล user ครั้งเดียว แล้ว cache ไว้
+export async function initUserProfile(): Promise<CurrentUser | null> {
+  try {
+    const res = await GetProfile();
+    currentUser = res.data;
+    return currentUser;
+  } catch (err) {
+    console.error("❌ Failed to init user profile:", err);
+    currentUser = null;
+    return null;
+  }
+}
+
+export function getCurrentUser(): CurrentUser | null {
+  return currentUser;
+}
+
+export function clearCachedUser() {
+  currentUser = null;
+}
+// ✅ ฟังก์ชันเอาไว้เรียกใช้งาน (โดยไม่ต้อง fetch ใหม่)
 
 export const GetEmployeeByUserID = async (
   id: number | string
@@ -187,6 +243,5 @@ export const VerifyOTP = async (email: string, otp: string) => {
 };
 
 export {
-  AddLogin,
   GetGender,
 };

@@ -2222,16 +2222,16 @@ export const DeleteModalByID = async (id: number): Promise<boolean> => {
 };
 
 // services/token.ts
-export const CreateChargingToken = async (paymentID: number): Promise<string | null> => {
+export const CreateChargingToken = async (
+  userID: number,
+  paymentID: number
+): Promise<string | null> => {
   try {
     const res = await axios.post(
       `${apiUrl}/token/payment-success`,
-      { payment_id: paymentID }, // ✅ ส่งค่า PaymentID มาที่ backend
+      { user_id: userID, payment_id: paymentID },
       {
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
+        headers: { "Content-Type": "application/json" },
       }
     );
 

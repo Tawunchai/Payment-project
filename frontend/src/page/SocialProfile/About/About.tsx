@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Card, theme, Typography, Button } from "antd";
+import { Card, theme, Typography, Button, message } from "antd";
 import { useTranslation } from "react-i18next";
-import { FaUserGraduate, FaBriefcase, FaFileAlt, FaDollarSign, FaEdit } from "react-icons/fa";
+import {
+  FaUserGraduate,
+  FaBriefcase,
+  FaFileAlt,
+  FaDollarSign,
+  FaEdit,
+} from "react-icons/fa";
 import { getEmployeeByID } from "../../../services";
 import { EmployeeInterface } from "../../../interface/IEmployee";
-import EditEmployeeModal from "../../../component/admin/profile"; // ใช้ modal เดิมของคุณ
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
+import EditEmployeeModal from "../../../component/admin/profile"; // ✅ ใช้ modal เดิมของคุณ
 
 const { Text } = Typography;
 const { useToken } = theme;
@@ -13,32 +20,65 @@ export const About: React.FC = () => {
   const { token } = useToken();
   const { t } = useTranslation();
 
-  const [employeeid, setEmployeeid] = useState<number>(Number(localStorage.getItem("employeeid")) || 0);
-  const [employeeData, setEmployeeData] = useState<EmployeeInterface | null>(null);
+  const [employeeData, setEmployeeData] = useState<EmployeeInterface | null>(
+    null
+  );
   const [openModal, setOpenModal] = useState(false);
 
+  // ✅ ดึงข้อมูลพนักงานจาก token (employee_id)
   const fetchEmployee = async () => {
-    if (!employeeid) return;
-    const data = await getEmployeeByID(employeeid);
-    if (data) setEmployeeData(data);
+    try {
+      await initUserProfile(); // เตรียม user profile จาก token
+      const currentUser = getCurrentUser();
+
+      if (!currentUser || !currentUser.employee_id) {
+        message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        return;
+      }
+
+      // ✅ ดึงข้อมูลพนักงานจาก backend โดยใช้ employee_id
+      const data = await getEmployeeByID(currentUser.employee_id);
+      if (data) {
+        setEmployeeData(data);
+      } else {
+        message.error("ไม่พบข้อมูลพนักงานในระบบ");
+      }
+    } catch (error) {
+      console.error("❌ Error fetching employee data:", error);
+      message.error("เกิดข้อผิดพลาดในการโหลดข้อมูลพนักงาน");
+    }
   };
 
   useEffect(() => {
-    setEmployeeid(Number(localStorage.getItem("employeeid")));
     fetchEmployee();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ สร้างข้อมูล About (education, experience, bio, salary)
   const aboutsData =
     employeeData
       ? [
-          { icon: FaUserGraduate, title: t("Education"), desc: employeeData.Education || "-" },
-          { icon: FaBriefcase, title: t("Experience"), desc: employeeData.Experience || "-" },
-          { icon: FaFileAlt, title: t("Bio"), desc: employeeData.Bio || "-" },
+          {
+            icon: FaUserGraduate,
+            title: t("Education"),
+            desc: employeeData.Education || "-",
+          },
+          {
+            icon: FaBriefcase,
+            title: t("Experience"),
+            desc: employeeData.Experience || "-",
+          },
+          {
+            icon: FaFileAlt,
+            title: t("Bio"),
+            desc: employeeData.Bio || "-",
+          },
           {
             icon: FaDollarSign,
             title: t("Salary"),
-            desc: (employeeData.Salary ?? 0).toLocaleString("en-US", { style: "currency", currency: "USD" }),
+            desc: (employeeData.Salary ?? 0).toLocaleString("en-US", {
+              style: "currency",
+              currency: "USD",
+            }),
           },
         ]
       : [];
@@ -78,7 +118,10 @@ export const About: React.FC = () => {
             aboutsData.map((item, idx) => {
               const Icon = item.icon;
               return (
-                <div className="col-span-12 sm:col-span-6 xl:col-span-4" key={idx}>
+                <div
+                  className="col-span-12 sm:col-span-6 xl:col-span-4"
+                  key={idx}
+                >
                   <div className="flex items-start gap-3">
                     <span className="text-blue-600">
                       <Icon className="text-[26px]" />
@@ -99,7 +142,7 @@ export const About: React.FC = () => {
         </div>
       </Card>
 
-      {/* Modal แก้ไข */}
+      {/* ✅ Modal แก้ไขข้อมูลพนักงาน */}
       {employeeData && (
         <EditEmployeeModal
           show={openModal}

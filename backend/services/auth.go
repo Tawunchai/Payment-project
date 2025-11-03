@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -14,30 +13,28 @@ type JwtWrapper struct {
 }
 
 type JwtClaim struct {
-	Email string
+	Username string `json:"username"`
+	UserID   uint   `json:"user_id"`
+	Role     string `json:"role"`
 	jwt.StandardClaims
 }
 
-func (j *JwtWrapper) GenerateToken(email string) (signedToken string, err error) {
+func (j *JwtWrapper) GenerateToken(username string, userID uint, role string) (string, error) {
 	claims := &JwtClaim{
-		Email: email,
+		Username: username,
+		UserID:   userID,
+		Role:     role,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(j.ExpirationHours)).Unix(),
+			ExpiresAt: time.Now().Add(time.Hour * time.Duration(j.ExpirationHours)).Unix(),
 			Issuer:    j.Issuer,
+			IssuedAt:  time.Now().Unix(),
 		},
 	}
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	signedToken, err = token.SignedString([]byte(j.SecretKey))
-	if err != nil {
-		return
-	}
-
-	return 
+	return token.SignedString([]byte(j.SecretKey))
 }
 
-func (j *JwtWrapper) ValidateToken(signedToken string) (claims *JwtClaim, err error) {
+func (j *JwtWrapper) ValidateToken(signedToken string) (*JwtClaim, error) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&JwtClaim{},
@@ -45,22 +42,12 @@ func (j *JwtWrapper) ValidateToken(signedToken string) (claims *JwtClaim, err er
 			return []byte(j.SecretKey), nil
 		},
 	)
-
 	if err != nil {
-		return
+		return nil, err
 	}
-
 	claims, ok := token.Claims.(*JwtClaim)
-	if !ok {
-		err = errors.New("Couldn't parse claims")
-		return
+	if !ok || !token.Valid {
+		return nil, err
 	}
-
-	if claims.ExpiresAt < time.Now().Local().Unix() {
-		err = errors.New("JWT is expired")
-		return
-	}
-
-	return
-
+	return claims, nil
 }
