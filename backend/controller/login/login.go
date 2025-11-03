@@ -48,7 +48,7 @@ func AddLogin(c *gin.Context) {
 		86400, // 1 วัน
 		"/",
 		"",     // domain เช่น "sut-ev.com" ถ้ามี
-		false,  // true ถ้าใช้ HTTPS
+		true,  // true ถ้าใช้ HTTPS
 		true,   // HttpOnly
 	)
 
@@ -62,7 +62,7 @@ func Logout(c *gin.Context) {
         -1,    // ลบออกทันที
         "/",
         "",
-        false, // ❗ ต้องตรงกับตอน login (ตอนนี้ login ใช้ false)
+        true, // ❗ ต้องตรงกับตอน login (ตอนนี้ login ใช้ false)
         true,  // httpOnly
     )
 
