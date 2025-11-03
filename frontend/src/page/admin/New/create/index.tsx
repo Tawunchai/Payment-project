@@ -1,20 +1,39 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { message, Upload } from "antd";
 import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
-import { CreateNews } from "../../../../services"; // ปรับ path ให้ตรงโปรเจกต์
+import { CreateNews } from "../../../../services";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 import { useNavigate } from "react-router-dom";
 
 const Index: React.FC = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [employeeid, setEmployeeid] = useState<number>(Number(localStorage.getItem("employeeid")) || 0);
+  const [employeeId, setEmployeeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // ✅ ดึง employee_id จาก token โดยตรง
   useEffect(() => {
-    setEmployeeid(Number(localStorage.getItem("employeeid")) || 0);
+    const loadEmployee = async () => {
+      try {
+        await initUserProfile();
+        const currentUser = getCurrentUser();
+
+        if (!currentUser || !currentUser.employee_id) {
+          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+          return;
+        }
+
+        setEmployeeId(currentUser.employee_id);
+      } catch (err) {
+        console.error("❌ Error loading employee ID:", err);
+        message.error("เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้");
+      }
+    };
+
+    loadEmployee();
   }, []);
 
   const onChange = ({ fileList: newFileList }: any) => setFileList(newFileList);
@@ -34,14 +53,17 @@ const Index: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!employeeId) return message.error("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
     if (fileList.length === 0) return message.error("กรุณาอัปโหลดรูปภาพ");
-    if (!title.trim() || !description.trim()) return message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
+    if (!title.trim() || !description.trim())
+      return message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
 
     const formData = new FormData();
     formData.append("picture", fileList[0].originFileObj);
     formData.append("title", title.trim());
     formData.append("description", description.trim());
-    formData.append("employeeID", String(employeeid));
+    formData.append("employeeID", String(employeeId)); // ✅ ใช้ employee_id จาก token
 
     try {
       setLoading(true);
@@ -57,14 +79,15 @@ const Index: React.FC = () => {
       } else {
         message.error("สร้างข่าวล้มเหลว");
       }
-    } catch {
+    } catch (err) {
+      console.error("❌ Error creating news:", err);
       message.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setLoading(false);
     }
   };
 
-  // สร้าง preview url แบบปลอดภัย เมื่อมีรูปใหม่
+  // ✅ สร้าง preview url แบบปลอดภัย
   const previewUrl = useMemo(() => {
     const f = fileList[0];
     if (!f) return "";
@@ -75,9 +98,11 @@ const Index: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      // cleanup object URL เมื่อ unmount หรือรูปเปลี่ยน
+      // cleanup object URL
       if (previewUrl?.startsWith("blob:")) {
-        try { URL.revokeObjectURL(previewUrl); } catch {}
+        try {
+          URL.revokeObjectURL(previewUrl);
+        } catch {}
       }
     };
   }, [previewUrl]);
@@ -90,7 +115,9 @@ const Index: React.FC = () => {
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
-          <h1 className="text-base md:text-lg font-semibold tracking-wide">Create News</h1>
+          <h1 className="text-base md:text-lg font-semibold tracking-wide">
+            Create News
+          </h1>
           <button
             onClick={() => navigate(-1)}
             className="h-9 px-3 rounded-lg bg-white/15 hover:bg-white/25 transition text-white text-sm font-medium"
@@ -102,23 +129,22 @@ const Index: React.FC = () => {
 
       {/* Content */}
       <main className="mx-auto max-w-5xl px-4 py-6">
-        <div
-          className="
-            grid gap-6
-            md:grid-cols-2
-          "
-        >
+        <div className="grid gap-6 md:grid-cols-2">
           {/* Left: Form Card */}
           <div className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
             <div className="mb-4">
               <p className="text-xs text-gray-500">News Management</p>
-              <h2 className="text-xl font-bold text-blue-700">EV Station • New Post</h2>
+              <h2 className="text-xl font-bold text-blue-700">
+                EV Station • New Post
+              </h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">รูปภาพข่าว</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  รูปภาพข่าว
+                </label>
                 <ImgCrop rotationSlider>
                   <Upload
                     fileList={fileList}
@@ -144,12 +170,16 @@ const Index: React.FC = () => {
                     )}
                   </Upload>
                 </ImgCrop>
-                <p className="mt-2 text-[12px] text-gray-500">รองรับไฟล์รูปภาพ .jpg .png .webp</p>
+                <p className="mt-2 text-[12px] text-gray-500">
+                  รองรับไฟล์รูปภาพ .jpg .png .webp
+                </p>
               </div>
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">หัวข้อข่าว</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  หัวข้อข่าว
+                </label>
                 <input
                   className="w-full rounded-xl border border-blue-100 bg-white px-3 py-3 text-sm outline-none ring-0 focus:border-blue-300 focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)] transition"
                   name="Title"
@@ -163,7 +193,9 @@ const Index: React.FC = () => {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  รายละเอียด
+                </label>
                 <textarea
                   name="Description"
                   className="w-full min-h-[160px] rounded-xl border border-blue-100 bg-white px-3 py-3 text-sm outline-none ring-0 focus:border-blue-300 focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)] transition"
@@ -172,7 +204,9 @@ const Index: React.FC = () => {
                   placeholder="รายละเอียดข่าว/กิจกรรมของคุณ…"
                   required
                 />
-                <div className="mt-1 text-[12px] text-gray-400">ผู้เขียน: admin@gmail.com</div>
+                <div className="mt-1 text-[12px] text-gray-400">
+                  ผู้เขียน: {employeeId ? `Employee ID ${employeeId}` : "กำลังโหลด..."}
+                </div>
               </div>
 
               {/* Actions */}
@@ -195,17 +229,23 @@ const Index: React.FC = () => {
             </form>
           </div>
 
-          {/* Right: Live Preview (เฉพาะ desktop/tablet แสดงข้างๆ) */}
+          {/* Right: Live Preview */}
           <div className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Live Preview</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Live Preview
+              </h3>
               <p className="text-xs text-gray-500">มุมมองตัวอย่างข่าวก่อนบันทึก</p>
             </div>
 
             <div className="space-y-4">
               <div className="w-full aspect-[16/9] bg-blue-50/60 border border-blue-100 rounded-xl overflow-hidden grid place-items-center">
                 {previewUrl ? (
-                  <img src={previewUrl} alt="preview" className="w-full h-full object-cover" />
+                  <img
+                    src={previewUrl}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="text-blue-400 text-sm">ยังไม่มีรูปภาพ</span>
                 )}

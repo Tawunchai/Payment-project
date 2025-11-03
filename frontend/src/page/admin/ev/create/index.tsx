@@ -4,6 +4,7 @@ import ImgCrop from "antd-img-crop";
 import { StatusInterface } from "../../../../interface/IStatus";
 import { TypeInterface } from "../../../../interface/IType";
 import { CreateEV } from "../../../../services/index";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 import {
   FaTimes,
   FaBolt,
@@ -37,6 +38,26 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
   const [fileList, setFileList] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
+  // ✅ ดึง employee_id จาก JWT token
+  const [employeeID, setEmployeeID] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      try {
+        await initUserProfile();
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.employee_id) {
+          setEmployeeID(currentUser.employee_id);
+        } else {
+          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        }
+      } catch {
+        message.error("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
+      }
+    };
+    fetchEmployee();
+  }, []);
+
   // ตรวจมือถือเพื่อกำหนดความสูงโมดัล (ให้เลื่อนใน body)
   const isMobile =
     typeof window !== "undefined" &&
@@ -68,7 +89,14 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
       formData.append("price", price);
       formData.append("statusID", String(statusID));
       formData.append("typeID", String(typeID));
-      formData.append("employeeID", "1"); // ปรับตามระบบจริง
+
+      // ✅ ผูก employee_id จาก JWT token
+      if (employeeID) {
+        formData.append("employeeID", String(employeeID));
+      } else {
+        message.warning("ไม่พบรหัสพนักงานในระบบ");
+      }
+
       formData.append("picture", fileList[0].originFileObj);
 
       const result = await CreateEV(formData);
@@ -102,7 +130,11 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -123,7 +155,9 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
           >
             <div className="flex items-center gap-2">
               <FaBolt className="opacity-90" />
-              <h2 className="text-base md:text-lg font-semibold">เพิ่มข้อมูล EV Charging</h2>
+              <h2 className="text-base md:text-lg font-semibold">
+                เพิ่มข้อมูล EV Charging
+              </h2>
             </div>
             <button
               onClick={onClose}
@@ -214,7 +248,10 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                   placeholder="เลือกสถานะ"
                   value={statusID}
                   onChange={(val) => setStatusID(val as number)}
-                  options={statusList.map((s) => ({ label: s.Status, value: s.ID }))}
+                  options={statusList.map((s) => ({
+                    label: s.Status,
+                    value: s.ID,
+                  }))}
                   allowClear
                   showSearch={false}
                   size="large"
@@ -232,7 +269,10 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                   placeholder="เลือกประเภท"
                   value={typeID}
                   onChange={(val) => setTypeID(val as number)}
-                  options={typeList.map((t) => ({ label: t.Type, value: t.ID }))}
+                  options={typeList.map((t) => ({
+                    label: t.Type,
+                    value: t.ID,
+                  }))}
                   allowClear
                   showSearch={false}
                   size="large"

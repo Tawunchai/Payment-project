@@ -20,6 +20,7 @@ import {
   ListBookingByEVCabinetIDandStartDate,
   CreateBooking,
 } from "../../../../services";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 import type { EVCabinetInterface } from "../../../../interface/IBooking";
 
 interface TimeSlot {
@@ -79,7 +80,6 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
   );
 };
 
-
 /* =========================
    BookingDate Component
    ========================= */
@@ -94,11 +94,33 @@ const BookingDate: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [alreadyBookedToday, setAlreadyBookedToday] = useState(false);
+  const [userID, setUserID] = useState<number | undefined>(undefined);
 
-  const userID = Number(localStorage.getItem("userid"));
+  // ✅ โหลด userID จาก JWT (cookie)
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+        const uid = current?.id;
+
+        if (!uid) {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          navigate("/login");
+          return;
+        }
+
+        setUserID(uid);
+      } catch (err) {
+        console.error("Error loading user:", err);
+        message.error("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
+      }
+    };
+    loadUser();
+  }, [navigate]);
 
   /* =========================
-     ช่วงเวลาหลักแบบคงที่ (Compact)
+     ช่วงเวลาหลักแบบคงที่
      ========================= */
   const staticSlots: TimeSlot[] = [
     { label: "06:00 - 09:00", start: "06:00", end: "09:00" },
@@ -143,7 +165,7 @@ const BookingDate: React.FC = () => {
   const handleDateChange = async (date: Dayjs | null) => {
     setSelectedDate(date);
     setSelectedSlot(null);
-    if (!date || !cabinet) return;
+    if (!date || !cabinet || !userID) return;
     setLoading(true);
     try {
       const res = await ListBookingByEVCabinetIDandStartDate(
@@ -165,6 +187,7 @@ const BookingDate: React.FC = () => {
 
   useEffect(() => {
     if (selectedDate) setAvailableSlots(computeAvailableSlots());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookings, selectedDate]);
 
   /* =========================
@@ -176,7 +199,7 @@ const BookingDate: React.FC = () => {
       return;
     }
 
-    if (!cabinet || !selectedDate || !selectedSlot) {
+    if (!cabinet || !selectedDate || !selectedSlot || !userID) {
       message.warning("กรุณาเลือกวันที่และช่วงเวลา");
       return;
     }
@@ -295,7 +318,7 @@ const BookingDate: React.FC = () => {
               )}
             </div>
 
-            {/* 🔹 แสดงช่วงเวลาคงที่แบบกระชับ */}
+            {/* 🔹 แสดงช่วงเวลาคงที่ */}
             {!alreadyBookedToday && selectedDate && (
               <>
                 {availableSlots.length > 0 ? (

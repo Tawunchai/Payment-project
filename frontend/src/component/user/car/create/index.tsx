@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Checkbox, message, Spin } from "antd";
 import { CreateCar, CarInterface, ListModals } from "../../../../services";
 import type { ModalInterface } from "../../../../interface/ICarCatalog";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 
 const EVHeader: React.FC<{ title?: string; onBack?: () => void }> = ({
   title = "เพิ่มพาหนะ",
@@ -121,8 +122,9 @@ const BottomSheet: React.FC<{
    PROVINCES
 --------------------------------------------------- */
 const TH_PROVINCES = [
-  "กรุงเทพมหานคร","นครราชสีมา","เชียงใหม่","ขอนแก่น","ชลบุรี","ภูเก็ต","สุราษฎร์ธานี","สงขลา",
-  "ระยอง","ลำปาง","ลพบุรี","สกลนคร","ศรีสะเกษ","สระบุรี","อุดรธานี","อุบลราชธานี","สุโขทัย","อยุธยา"
+  "กรุงเทพมหานคร","นครราชสีมา","เชียงใหม่","ขอนแก่น","ชลบุรี","ภูเก็ต",
+  "สุราษฎร์ธานี","สงขลา","ระยอง","ลำปาง","ลพบุรี","สกลนคร","ศรีสะเกษ",
+  "สระบุรี","อุดรธานี","อุบลราชธานี","สุโขทัย","อยุธยา"
 ];
 
 /* ---------------------------------------------------
@@ -131,7 +133,25 @@ const TH_PROVINCES = [
 const AddCarPage: React.FC = () => {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
-  const userID = Number(localStorage.getItem("userid"));
+
+  const [userID, setUserID] = useState<number | undefined>(undefined);
+
+  // ✅ โหลด userID จาก JWT
+  useEffect(() => {
+    const loadUser = async () => {
+      let current = getCurrentUser();
+      if (!current) current = await initUserProfile();
+
+      const uid = current?.id;
+      if (!uid) {
+        message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+        return;
+      }
+
+      setUserID(uid);
+    };
+    loadUser();
+  }, []);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
@@ -184,9 +204,19 @@ const AddCarPage: React.FC = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!brand || !model || !plate || !province) return;
+    if (!userID) {
+      messageApi.error("ไม่พบข้อมูลผู้ใช้");
+      return;
+    }
+
+    if (!brand || !model || !plate || !province) {
+      messageApi.warning("กรุณากรอกข้อมูลให้ครบ");
+      return;
+    }
+
     const finalBrand = brand === "อื่นๆ" ? otherBrand : brand;
     const finalModel = model === "อื่นๆ" ? otherModel : model;
+
     setSubmitting(true);
     try {
       const payload: CarInterface = {
@@ -194,13 +224,16 @@ const AddCarPage: React.FC = () => {
         model_car: finalModel,
         license_plate: plate,
         city: province,
-        user_id: userID,
+        user_id: userID, // ✅ ตอนนี้ type ถูกต้อง 100%
       };
+
       const res = await CreateCar(payload);
       if (res) {
         messageApi.success("เพิ่มข้อมูลรถสำเร็จ");
         setTimeout(() => navigate("/"), 1500);
-      } else messageApi.error("บันทึกไม่สำเร็จ");
+      } else {
+        messageApi.error("บันทึกไม่สำเร็จ");
+      }
     } catch {
       messageApi.error("เกิดข้อผิดพลาด");
     } finally {
@@ -215,7 +248,7 @@ const AddCarPage: React.FC = () => {
 
       <div className="flex-1 px-4 pt-4 pb-28 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* ยี่ห้อ */}
+          {/* ===== ยี่ห้อ ===== */}
           <div>
             <span className="text-sm text-gray-700">ยี่ห้อ *</span>
             {isMobile ? (
@@ -279,7 +312,7 @@ const AddCarPage: React.FC = () => {
             )}
           </div>
 
-          {/* รุ่น */}
+          {/* ===== รุ่น ===== */}
           <div>
             <span className="text-sm text-gray-700">รุ่น *</span>
             {isMobile ? (
@@ -333,13 +366,13 @@ const AddCarPage: React.FC = () => {
             )}
           </div>
 
-          {/* ✅ ปุ่มทะเบียนพิเศษ */}
+          {/* ===== ทะเบียนพิเศษ ===== */}
           <div className="flex items-center gap-2">
             <Checkbox checked={isSpecialReg} onChange={(e) => setIsSpecialReg(e.target.checked)} />
             <span>พาหนะของคุณเป็นทะเบียนพิเศษ</span>
           </div>
 
-          {/* ทะเบียน */}
+          {/* ===== ทะเบียน ===== */}
           <div>
             <span className="text-sm text-gray-700">ทะเบียน *</span>
             <input
@@ -350,7 +383,7 @@ const AddCarPage: React.FC = () => {
             />
           </div>
 
-          {/* จังหวัด */}
+          {/* ===== จังหวัด ===== */}
           <div>
             <span className="text-sm text-gray-700">จังหวัด *</span>
             {isMobile ? (

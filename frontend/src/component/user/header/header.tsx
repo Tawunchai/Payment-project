@@ -8,6 +8,12 @@ import { message } from "antd";
 import OutsideClickHandler from "react-outside-click-handler";
 import ReportModal from "./report/index";
 import { getUserByID, apiUrlPicture, GetReportByID } from "../../../services";
+import {
+  clearCachedUser,
+  getCurrentUser,
+  initUserProfile,
+  Logout,
+} from "../../../services/httpLogin";
 import { UsersInterface } from "../../../interface/IUser";
 import { ReportInterface } from "../../../interface/IReport";
 
@@ -30,32 +36,42 @@ const SUT_STATION = {
   lng: 102.017,
 };
 
-type HeaderProps = {
+// ✅ เพิ่มส่วนนี้
+interface HeaderProps {
   scrollToValue?: () => void;
   scrollToNew?: () => void;
-};
+}
 
-const Header: React.FC<HeaderProps> = ({ }) => {
+const Header: React.FC<HeaderProps> = ({}) => {
   const navigate = useNavigate();
   const [menuOpened, setMenuOpened] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [user, setUser] = useState<UsersInterface | null>(null);
-  const [messageApi, contextHolder] = message.useMessage();
-
   const [mapOpen, setMapOpen] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
   const mapWrapRef = useRef<HTMLDivElement | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<L.Map | null>(null);
 
+  // ✅ โหลดข้อมูลผู้ใช้จาก cookie (memory)
   useEffect(() => {
-    const uid = Number(localStorage.getItem("userid") || 0);
-    if (!uid) return;
-    getUserByID(uid)
-      .then((res) => res && setUser(res))
-      .catch(() => { });
+    const fetchUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+        const uid = current?.id;
+        if (!uid) return;
+
+        const res = await getUserByID(uid);
+        if (res) setUser(res);
+      } catch (err) {
+        console.error("❌ Error fetching user:", err);
+      }
+    };
+    fetchUser();
   }, []);
 
-  // close dropdown map
+  // ✅ ปิดแผนที่เมื่อคลิกนอก
   useEffect(() => {
     if (!mapOpen) return;
     const onClick = (e: MouseEvent) => {
@@ -70,6 +86,7 @@ const Header: React.FC<HeaderProps> = ({ }) => {
     };
   }, [mapOpen]);
 
+  // ✅ แสดงแผนที่
   useEffect(() => {
     if (!mapOpen || !mapElRef.current) return;
     if (!mapInstance.current) {
@@ -88,10 +105,13 @@ const Header: React.FC<HeaderProps> = ({ }) => {
     }
   }, [mapOpen]);
 
-  /** ✅ ตรวจสอบว่า user รายงานไปภายใน 7 วันหรือยัง */
+  // ✅ ตรวจสอบว่ารายงานภายใน 7 วันหรือยัง
   const handleOpenReport = async () => {
     try {
-      const uid = Number(localStorage.getItem("userid") || 0);
+      let current = getCurrentUser();
+      if (!current) current = await initUserProfile();
+      const uid = current?.id ?? 0;
+
       if (!uid) {
         messageApi.error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
         return;
@@ -107,7 +127,6 @@ const Header: React.FC<HeaderProps> = ({ }) => {
       const now = new Date();
       const lastReport = new Date(report.CreatedAt ?? "");
       const diffDays = (now.getTime() - lastReport.getTime()) / (1000 * 60 * 60 * 24);
-
       if (diffDays <= 7) {
         messageApi.warning("คุณได้รายงานไปแล้วภายในสัปดาห์นี้ กรุณาติดต่อฝ่ายจัดการ");
       } else {
@@ -119,10 +138,26 @@ const Header: React.FC<HeaderProps> = ({ }) => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    messageApi.success("ออกจากระบบแล้ว");
-    setTimeout(() => navigate("/login"), 1000);
+  // ✅ Logout (แก้ไขแล้ว)
+  const handleLogout = async () => {
+    try {
+      const ok = await Logout();
+      if (ok) {
+        messageApi.success("ออกจากระบบแล้ว");
+
+        // ✅ รอ 1 วิ เพื่อให้ข้อความขึ้นก่อน redirect
+        setTimeout(() => {
+          clearCachedUser();
+          localStorage.removeItem("role");
+          window.dispatchEvent(new Event("roleChange")); // ✅ แจ้ง ConfigRoutes ให้อัปเดตทันที
+          navigate("/login", { replace: true });
+        }, 1000);
+      } else {
+        messageApi.error("ไม่สามารถออกจากระบบได้");
+      }
+    } catch {
+      messageApi.error("เกิดข้อผิดพลาดระหว่าง Logout");
+    }
   };
 
   const openGmapsNavigate = () => {
@@ -145,11 +180,13 @@ const Header: React.FC<HeaderProps> = ({ }) => {
             EV Station
           </button>
 
-          {/* Desktop */}
+          {/* ✅ Desktop Menu */}
           <nav className="hidden md:flex items-center gap-3">
             <button onClick={handleOpenReport} className={btnEqual}>
               <MdOutlineReport className="text-blue-600" /> Report
             </button>
+
+            {/* Map */}
             <div className="relative" ref={mapWrapRef}>
               <button onClick={() => setMapOpen((s) => !s)} className={btnEqual}>
                 <MdMap className="text-blue-600" /> Map
@@ -182,15 +219,18 @@ const Header: React.FC<HeaderProps> = ({ }) => {
             <button onClick={() => navigate("/user/add-cars")} className={btnEqual}>
               <FaCarSide className="text-blue-600" /> ADD CAR
             </button>
+
             {user && (
               <button onClick={() => navigate("/user/my-coins")} className={btnEqual}>
                 <GiTwoCoins className="text-blue-600" />
                 My Coins: <b className="text-blue-700">{user.Coin}</b>
               </button>
             )}
+
             <button onClick={handleLogout} className={btnEqual}>
               Logout
             </button>
+
             <button onClick={() => navigate("/user/profile")} className="ml-2">
               <img
                 src={user?.Profile ? `${apiUrlPicture}${user.Profile}` : undefined}
@@ -200,7 +240,7 @@ const Header: React.FC<HeaderProps> = ({ }) => {
             </button>
           </nav>
 
-          {/* Mobile hamburger */}
+          {/* ✅ Mobile Hamburger */}
           <button
             className="md:hidden h-10 w-10 flex items-center justify-center rounded-xl hover:bg-white/10"
             onClick={() => setMenuOpened((s) => !s)}
@@ -210,7 +250,7 @@ const Header: React.FC<HeaderProps> = ({ }) => {
         </div>
       </header>
 
-      {/* Mobile sheet */}
+      {/* ✅ Mobile Menu */}
       <OutsideClickHandler onOutsideClick={() => setMenuOpened(false)}>
         {menuOpened && (
           <>
@@ -252,7 +292,7 @@ const Header: React.FC<HeaderProps> = ({ }) => {
                   </button>
                 )}
 
-                {/* ✅ โปรไฟล์ของฉันแบบเดิม */}
+                {/* ✅ โปรไฟล์ */}
                 <div className="mt-1 flex items-center justify-between rounded-xl border border-gray-100 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <img
@@ -304,6 +344,7 @@ const Header: React.FC<HeaderProps> = ({ }) => {
         )}
       </OutsideClickHandler>
 
+      {/* ✅ Modal Report */}
       <ReportModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   );

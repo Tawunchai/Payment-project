@@ -1,12 +1,14 @@
-import { lazy } from "react";
+import { lazy, useEffect, useState } from "react";
 import { useRoutes, RouteObject } from "react-router-dom";
 import Loadable from "../component/third-patry/Loadable";
+import { GetProfile } from "../services/httpLogin";
 
 const Login = Loadable(lazy(() => import("../page/LoginForm1/LoginForm1")));
 const SignUp = Loadable(lazy(() => import("../page/Signup1/Signup2Form")));
 const ForgotPassword = Loadable(lazy(() => import("../page/ForgotPasswordForm/ForgotPasswordForm")));
 const ResetPassword = Loadable(lazy(() => import("../page/ResetPassword/ResetPassword")));
 const Loader = Loadable(lazy(() => import("../component/third-patry/Loader")));
+
 // User Role
 const User = Loadable(lazy(() => import("../page/user/index")));
 const BookingEV = Loadable(lazy(() => import("../component/user/booking/index")));
@@ -24,7 +26,8 @@ const Map = Loadable(lazy(() => import("../component/user/map")));
 const AllNews = Loadable(lazy(() => import("../component/user/new/all")));
 const News = Loadable(lazy(() => import("../component/user/new/event")));
 const AfterPayment = Loadable(lazy(() => import("../component/user/payment/after")));
-// Admin Role 
+
+// Admin Role
 const Admin = Loadable(lazy(() => import("../page/admin/main/index")));
 const MainLayout = Loadable(lazy(() => import("../component/admin/MainLayout")));
 const EV = Loadable(lazy(() => import("../page/admin/ev/EV")));
@@ -38,148 +41,144 @@ const Payment = Loadable(lazy(() => import("../page/admin/pyment/Payment")));
 const New = Loadable(lazy(() => import("../page/admin/New/New")));
 const Create_New = Loadable(lazy(() => import("../page/admin/New/create")));
 const Edit_New = Loadable(lazy(() => import("../page/admin/New/edit")));
-const Line = Loadable(lazy(() => import("../page/SocialProfile/SocialProfile")));
+const ProfileAdmin = Loadable(lazy(() => import("../page/SocialProfile/SocialProfile")));
 const Car = Loadable(lazy(() => import("../page/admin/car/index")));
 const CarData = Loadable(lazy(() => import("../page/admin/car/car_data")));
 const ServiceManage = Loadable(lazy(() => import("../page/admin/servicess/index")));
-{/* Monitor  */ }
+
+// Monitor
 const Solar = Loadable(lazy(() => import("../page/admin/mornitor/solar")));
 const Battery = Loadable(lazy(() => import("../page/admin/mornitor/battery")));
 const EVCabinet = Loadable(lazy(() => import("../page/admin/mornitor/ev")));
-//
-{/* charts  */}
-const Area = Loadable(lazy(() => import("../page/admin/chart/Area")));
+
+// Charts
+/*const Area = Loadable(lazy(() => import("../page/admin/chart/Area")));
 const Bar = Loadable(lazy(() => import("../page/admin/chart/Bar")));
 const Financial = Loadable(lazy(() => import("../page/admin/chart/Financial")));
 const LineLinear = Loadable(lazy(() => import("../page/admin/chart/Line")));
 const ColorMapping = Loadable(lazy(() => import("../page/admin/chart/ColorMapping")));
 const Pie = Loadable(lazy(() => import("../page/admin/chart/Pie")));
 const Pyramid = Loadable(lazy(() => import("../page/admin/chart/Pyramid")));
-const Stacked = Loadable(lazy(() => import("../page/admin/chart/Stacked")));
+const Stacked = Loadable(lazy(() => import("../page/admin/chart/Stacked")));*/
 
 const UserRoutes = (): RouteObject[] => [
   {
-    path: "/", element: <User />,
+    path: "/",
+    element: <User />,
   },
   {
     path: "/user",
     children: [
-      { index: true, element: <User /> },
-      { path: "profile", element: <Profile /> }, //edit real
-      { path: "evs-selector", element: <EVInputUser /> }, // edit real
-      { path: "payment", element: <PaymentUser /> }, // edit real
-      { path: "payment-by-qrcode", element: <PaymentQr /> }, //edit real
-      { path: "charging", element: <ChargingEV/> },//edit real
-      { path: "my-coins", element: <MyCoins/> }, //edit real
-      { path: "add-coins", element: <PayCoins/> }, //edit real
-      { path: "intro-cars", element: <IntroCar/> }, //edit real
-      { path: "add-cars", element: <AddCar/> }, //edit real
-      { path: "map", element: <Map/> }, //edit real
-      { path: "all-news", element: <AllNews/> }, //edit real
-      { path: "one-news", element: <News/> }, //edit real
-      { path: "after-payment", element: <AfterPayment/> }, //edit real
-      { path: "booking-ev", element: <BookingEV/> }, //edit real
-      { path: "booking-date", element: <BookingDate/> }, //edit real
-      { path: "*", element: <User /> }, //edit 
+      { index: true, element: <User /> }, //ok
+      { path: "profile", element: <Profile /> }, //ok
+      { path: "evs-selector", element: <EVInputUser /> },//ok
+      { path: "payment", element: <PaymentUser /> }, //ok
+      { path: "payment-by-qrcode", element: <PaymentQr /> }, //ok
+      { path: "charging", element: <ChargingEV /> }, //ok
+      { path: "my-coins", element: <MyCoins /> },//ok
+      { path: "add-coins", element: <PayCoins /> },//ok
+      { path: "intro-cars", element: <IntroCar /> }, //ok
+      { path: "add-cars", element: <AddCar /> }, //ok
+      { path: "map", element: <Map /> },//ok
+      { path: "all-news", element: <AllNews /> }, //ok
+      { path: "one-news", element: <News /> }, //ok
+      { path: "after-payment", element: <AfterPayment /> }, //ok
+      { path: "booking-ev", element: <BookingEV /> }, //ok
+      { path: "booking-date", element: <BookingDate /> }, //ok
+      { path: "*", element: <User /> }, //ok
     ],
   },
 ];
 
 const AdminRoutes = (): RouteObject[] => [
   {
-    path: "/",
-    element: <MainLayout />,
-    children: [
-      { index: true, element: <Admin /> },
-    ],
-  },
-  {
     path: "/admin",
     element: <MainLayout />,
     children: [
-      { index: true, element: <Admin /> },
-      { path: "Dashboard", element: <Admin /> },
-      { path: "Payment", element: <Payment /> }, //edit
-      { path: "EV Charging", element: <EV /> }, //edit
-      { path: "Service", element: <ServiceManage /> }, //edit
-      { path: "Employees", element: <Employees /> },//edit
-      { path: "Customers", element: <Customers /> },//edit
-      { path: "Calendar", element: <Calendar /> },//edit
-      { path: "Guide", element: <Editor /> },//edit
-      { path: "create-editor", element: <Create_Editor /> },//edit
-      { path: "edit-editor", element: <Edit_Editor /> },//edit
-      { path: "New", element: <New /> }, //edit
-      { path: "create-new", element: <Create_New /> },//edit
-      { path: "edit-new", element: <Edit_New /> }, //edit
-      {/* Test  */ },
-      { path: "Solar", element: <Solar /> }, //edit
-      { path: "Battery", element: <Battery /> }, //edit
-      { path: "EV Cabinet", element: <EVCabinet /> }, //edit
-      { path: "profile", element: <Line /> }, //edit profile
-      { path: "Car", element: <Car /> }, //edit 
-      { path: "Car-data", element: <CarData /> }, //edit 
-      {/* charts  */},
-      { path: "Area", element: <Area /> },
-      { path: "Bar", element: <Bar /> },
-      { path: "Financial", element: <Financial /> },
-      { path: "LineLinear", element: <LineLinear /> },
-      { path: "ColorMapping", element: <ColorMapping /> },
-      { path: "Pie", element: <Pie /> },
-      { path: "Pyramid", element: <Pyramid /> },
-      { path: "Stacked", element: <Stacked /> },
-      { path: "*", element: <Admin /> }, //edit 
+      { index: true, element: <Admin /> }, //ok
+      { path: "Dashboard", element: <Admin /> }, //ok
+      { path: "Payment", element: <Payment /> },
+      { path: "EV Charging", element: <EV /> },//ok
+      { path: "Service", element: <ServiceManage /> },//ok
+      { path: "Employees", element: <Employees /> },//ok
+      { path: "Customers", element: <Customers /> },//ok
+      { path: "Calendar", element: <Calendar /> },//ok
+      { path: "Guide", element: <Editor /> },//ok
+      { path: "create-editor", element: <Create_Editor /> },//ok
+      { path: "edit-editor", element: <Edit_Editor /> },//ok
+      { path: "New", element: <New /> },//ok
+      { path: "create-new", element: <Create_New /> },//ok
+      { path: "edit-new", element: <Edit_New /> },//ok
+      { path: "Solar", element: <Solar /> },//ok
+      { path: "Battery", element: <Battery /> },//ok
+      { path: "EV Cabinet", element: <EVCabinet /> },//ok
+      { path: "profile", element: <ProfileAdmin /> }, //ok
+      { path: "Car", element: <Car /> },//ok
+      { path: "Car-data", element: <CarData /> },//ok
+      { path: "*", element: <Admin /> },//ok
     ],
   },
 ];
-
 
 const MainRoutes = (): RouteObject[] => [
   {
     path: "/",
     children: [
-      { index: true, element: <Login /> }, //edit
+      { index: true, element: <Login /> },
       { path: "/register", element: <SignUp /> },
       { path: "/loader", element: <Loader /> },
-      { path: "*", element: <Login /> }, //edit 
-      { path: "/register", element: <SignUp /> }, //edit
-      { path: "/forgot-password", element: <ForgotPassword /> }, //edit
-      { path: "/reset-password", element: <ResetPassword /> }, //edit
+      { path: "*", element: <Login /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/reset-password", element: <ResetPassword /> },
     ],
   },
 ];
 
-
 function ConfigRoutes() {
-  const isLoggedIn = localStorage.getItem('isLogin') === 'true';
-  const roleName = localStorage.getItem('roleName');
-  const employeeID = localStorage.getItem('employeeid');
-  const userid = localStorage.getItem('userid');
+  const [roleName, setRoleName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  console.log("isLoggedIn:", isLoggedIn);
-  console.log("roleName:", roleName);
-  console.log("employeeid:", employeeID);
-  console.log("userid:", userid);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await GetProfile();
+        setRoleName(res.data.role);
+      } catch {
+        setRoleName(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  let routes: RouteObject[] = [];
+    fetchProfile();
 
-  if (isLoggedIn) {
-    switch (roleName) {
-      case 'Admin':
-      case 'Employee':
-        routes = AdminRoutes();
-        break;
-      case 'User':
-        routes = UserRoutes();
-        break;
-      default:
-        routes = MainRoutes();
-        break;
-    }
+    // ✅ ฟัง event roleChange จาก login/logout
+    const handleRoleChange = () => {
+      const role = localStorage.getItem("role");
+      if (role) {
+        setRoleName(role);
+      } else {
+        setRoleName(null); // ✅ reset roleName ตอน logout
+      }
+    };
+
+    window.addEventListener("roleChange", handleRoleChange);
+    return () => window.removeEventListener("roleChange", handleRoleChange);
+  }, []);
+
+  if (loading) {
+    return <div className="text-center mt-20">Loading...</div>;
   }
-  else {
-    routes = MainRoutes();
+
+  let routes = MainRoutes(); // default = login routes
+
+  if (roleName === "Admin" || roleName === "Employee") {
+    routes = AdminRoutes();
+  } else if (roleName === "User") {
+    routes = UserRoutes();
   }
 
   return useRoutes(routes);
 }
+
 export default ConfigRoutes;

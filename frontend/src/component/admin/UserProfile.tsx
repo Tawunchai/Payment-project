@@ -1,12 +1,13 @@
-import { MdOutlineCancel } from 'react-icons/md';
-import { Button } from '.';
+import { MdOutlineCancel } from "react-icons/md";
+import { Button } from ".";
 import { message } from "antd";
 import { useNavigate } from "react-router-dom";
-import { userProfileData } from '../../assets/admin/dummy';
-import { useStateContext } from '../../contexts/ContextProvider';
-import { JSX, useEffect, useState } from 'react';
-import { getEmployeeByID, apiUrlPicture } from '../../services';
-import { EmployeeInterface } from '../../interface/IEmployee';
+import { userProfileData } from "../../assets/admin/dummy";
+import { useStateContext } from "../../contexts/ContextProvider";
+import { JSX, useEffect, useState } from "react";
+import { getEmployeeByID, apiUrlPicture } from "../../services";
+import { Logout, clearCachedUser, getCurrentUser, initUserProfile } from "../../services/httpLogin"; // ✅ เพิ่ม
+import { EmployeeInterface } from "../../interface/IEmployee";
 
 type UserProfileItem = {
   icon: JSX.Element;
@@ -14,32 +15,58 @@ type UserProfileItem = {
   desc: string;
   iconColor: string;
   iconBg: string;
-  link: string;               // ✅ ใช้ link จาก data
+  link: string;
 };
 
 const UserProfile = () => {
   const { currentColor } = useStateContext();
   const navigate = useNavigate();
-
   const [employee, setEmployee] = useState<EmployeeInterface | null>(null);
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
-    const employeeID = localStorage.getItem("employeeid");
-    if (!employeeID) return;
-    getEmployeeByID(Number(employeeID))
-      .then((res) => res && setEmployee(res))
-      .catch(() => {});
+    const loadEmployee = async () => {
+      let current = getCurrentUser();
+      if (!current) current = await initUserProfile();
+
+      const empID = current?.employee_id; // ✅ ดึง employee_id จาก current user
+      if (!empID) return;
+
+      try {
+        const empData = await getEmployeeByID(empID);
+        if (empData) setEmployee(empData);
+      } catch (err) {
+        console.error("❌ โหลดข้อมูลพนักงานล้มเหลว:", err);
+      }
+    };
+
+    loadEmployee();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    message.success("ออกจากระบบ");
-    setTimeout(() => navigate("/login"), 1200);
+  // ✅ Logout ปลอดภัย 100%
+  const handleLogout = async () => {
+    try {
+      const ok = await Logout();
+      if (ok) {
+        messageApi.success("ออกจากระบบแล้ว");
+        setTimeout(() => {
+          clearCachedUser();
+          localStorage.clear();
+          window.dispatchEvent(new Event("roleChange"));
+          navigate("/login", { replace: true });
+        }, 1000);
+      } else {
+        messageApi.error("ไม่สามารถออกจากระบบได้");
+      }
+    } catch {
+      messageApi.error("เกิดข้อผิดพลาดระหว่าง Logout");
+    }
   };
 
-  const profileSrc = employee?.User?.Profile
-    ? `${apiUrlPicture}${employee.User.Profile}`
-    : "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%233b82f6' font-family='Arial, Helvetica, sans-serif'>EV</text></svg>";
+  const profileSrc =
+    employee?.User?.Profile
+      ? `${apiUrlPicture}${employee.User.Profile}`
+      : "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%233b82f6' font-family='Arial, Helvetica, sans-serif'>EV</text></svg>";
 
   return (
     <div
@@ -53,7 +80,9 @@ const UserProfile = () => {
       "
       style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
     >
-      {/* Header: EV blue gradient */}
+      {contextHolder}
+
+      {/* Header */}
       <div className="relative">
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 h-12" />
         <div className="absolute inset-0 flex items-center justify-between px-3">
@@ -64,12 +93,11 @@ const UserProfile = () => {
             bgHoverColor="rgba(255,255,255,0.15)"
             size="2xl"
             borderRadius="50%"
-            // onClick={...} // ถ้าต้องการปิดจาก parent
           />
         </div>
       </div>
 
-      {/* Header card (avatar + name) */}
+      {/* Header Card */}
       <div className="px-4 pt-4 pb-3 bg-white">
         <div className="flex gap-4 items-center">
           <img
@@ -95,17 +123,14 @@ const UserProfile = () => {
         </div>
       </div>
 
-      {/* Actions list */}
+      {/* Actions */}
       <div className="px-2 pb-1 bg-white">
         <div className="rounded-xl overflow-hidden border border-gray-100 bg-white">
           {userProfileData.map((item: UserProfileItem, idx: number) => (
             <button
               key={idx}
-              onClick={() => navigate(item.link)}   // ✅ ไปตามลิงก์ที่กำหนดใน data
-              className="
-                w-full flex items-center gap-3 px-3 py-3
-                hover:bg-blue-50 transition-colors
-              "
+              onClick={() => navigate(item.link)}
+              className="w-full flex items-center gap-3 px-3 py-3 hover:bg-blue-50 transition-colors"
             >
               <span
                 className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-xl"
@@ -117,9 +142,7 @@ const UserProfile = () => {
                 <p className="text-sm font-semibold text-gray-900 truncate">
                   {item.title}
                 </p>
-                <p className="text-[12px] text-gray-500 truncate">
-                  {item.desc}
-                </p>
+                <p className="text-[12px] text-gray-500 truncate">{item.desc}</p>
               </div>
             </button>
           ))}

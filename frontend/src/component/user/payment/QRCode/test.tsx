@@ -8,8 +8,9 @@ import {
   CreatePayment,
   CreateEVChargingPayment,
   ListBank,
-  CreateChargingToken, // ✅ เพิ่มฟังก์ชันนี้
+  CreateChargingToken,
 } from "../../../../services/index";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 import { FileImageOutlined } from "@ant-design/icons";
 import LoadingAnimation from "../../../../component/user/money/LoadingAnimation";
 
@@ -19,15 +20,36 @@ const PayPalCard: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const location = useLocation();
-  const { totalAmount, userID, chargers, MethodID } = location.state || {};
+  const { totalAmount, chargers, MethodID } = location.state || {};
   const amountNumber = Number(totalAmount) || 0;
 
+  const [userID, setUserID] = useState<number | null>(null);
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
 
-  // โหลดเบอร์ PromptPay จากธนาคาร
+  // ✅ โหลด userID จาก JWT cookie หรือ localStorage
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+        if (current?.id) {
+          setUserID(current.id);
+        } else {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          navigate("/login");
+        }
+      } catch (err) {
+        console.error("โหลดข้อมูลผู้ใช้ล้มเหลว:", err);
+        message.error("เกิดข้อผิดพลาดในการโหลดผู้ใช้");
+        navigate("/login");
+      }
+    };
+    fetchUser();
+  }, [navigate]);
+
+  // ✅ โหลดเบอร์ PromptPay จากธนาคาร
   useEffect(() => {
     const fetchBankData = async () => {
       try {
@@ -45,7 +67,7 @@ const PayPalCard: React.FC = () => {
     fetchBankData();
   }, []);
 
-  // สร้าง Payload QR
+  // ✅ สร้าง Payload QR
   useEffect(() => {
     if (amountNumber > 0 && phoneNumber) {
       const payload = generatePayload(phoneNumber, { amount: amountNumber });
@@ -55,16 +77,14 @@ const PayPalCard: React.FC = () => {
     }
   }, [amountNumber, phoneNumber]);
 
-  // อัปโหลดไฟล์
+  // ✅ อัปโหลดไฟล์
   const handleUploadClick = () => fileInputRef.current?.click();
-
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       setUploadedFile(file);
     }
   };
-
   const handleRemoveFile = () => {
     setUploadedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -76,8 +96,12 @@ const PayPalCard: React.FC = () => {
       message.warning("กรุณาอัปโหลดสลิปก่อนส่ง");
       return;
     }
-    setLoading(true);
+    if (!userID) {
+      message.error("ไม่พบข้อมูลผู้ใช้");
+      return;
+    }
 
+    setLoading(true);
     try {
       const result = await uploadSlipOK(uploadedFile);
       if (!result) {
@@ -89,7 +113,7 @@ const PayPalCard: React.FC = () => {
       message.success("ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว");
 
       const paymentData = {
-        date: new Date().toISOString().split("T")[0], // "YYYY-MM-DD"
+        date: new Date().toISOString().split("T")[0],
         amount: Number(totalAmount),
         user_id: userID,
         method_id: MethodID,
@@ -100,6 +124,7 @@ const PayPalCard: React.FC = () => {
       const paymentResult = await CreatePayment(paymentData);
 
       if (paymentResult && paymentResult.ID) {
+        // ✅ สร้าง EVChargingPayment สำหรับแต่ละ charger
         if (Array.isArray(chargers)) {
           for (const charger of chargers) {
             const evChargingPaymentData = {
@@ -118,8 +143,10 @@ const PayPalCard: React.FC = () => {
           message.error("ไม่มีข้อมูล chargers ที่ถูกต้อง");
         }
 
-        // ✅ สร้าง Token หลังชำระสำเร็จ
-        const token = await CreateChargingToken(paymentResult.ID);
+        console.log("✅ Payment ID:", paymentResult.ID);
+
+        // ✅ สร้าง Token หลังชำระสำเร็จ (ส่ง userID + paymentID)
+        const token = await CreateChargingToken(userID, paymentResult.ID);
         if (!token) {
           message.error("ไม่สามารถสร้าง session การชาร์จได้");
           setLoading(false);
@@ -127,6 +154,7 @@ const PayPalCard: React.FC = () => {
         }
 
         localStorage.setItem("charging_token", token);
+        message.success("สร้าง session การชาร์จสำเร็จ");
 
         setTimeout(() => {
           navigate("/user/after-payment");
@@ -143,7 +171,7 @@ const PayPalCard: React.FC = () => {
     }
   };
 
-  // Drag & Drop
+  // ✅ Drag & Drop
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {

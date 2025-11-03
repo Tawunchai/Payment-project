@@ -19,6 +19,7 @@ import {
 } from "../../../../../services";
 import { UsersInterface } from "../../../../../interface/IUser";
 import { GendersInterface } from "../../../../../interface/IGender";
+import { getCurrentUser, initUserProfile } from "../../../../../services/httpLogin"; // ✅ เพิ่มบรรทัดนี้
 
 const { Option } = Select;
 
@@ -101,7 +102,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       formData.append("profile", fileList[0].originFileObj);
     }
 
-    const userID = localStorage.getItem("userid");
+    let current = getCurrentUser();
+    if (!current) current = await initUserProfile();
+
+    const userID = current?.id;
     if (!userID) {
       message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
       setLoading(false);

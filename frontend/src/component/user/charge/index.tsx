@@ -3,6 +3,7 @@ import { FaBolt } from "react-icons/fa";
 import { message } from "antd";
 import ModalCreate from "../review/create";
 import { GetReviewByUserID, VerifyChargingToken } from "../../../services";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import { useNavigate } from "react-router-dom";
 
 const ChargingEV = () => {
@@ -11,9 +12,32 @@ const ChargingEV = () => {
   const [time, setTime] = useState(0);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
-  const [tokenValid, setTokenValid] = useState(false); // ✅ เพิ่ม state
+  const [tokenValid, setTokenValid] = useState(false);
+  const [userID, setUserID] = useState<number | null>(null);
+
   const navigate = useNavigate();
-  const userID = Number(localStorage.getItem("userid"));
+
+  // ✅ โหลด userID จาก JWT cookie หรือ localStorage
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+
+        if (current?.id) {
+          setUserID(current.id);
+        } else {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          navigate("/login");
+        }
+      } catch (err) {
+        console.error("โหลดข้อมูลผู้ใช้ล้มเหลว:", err);
+        message.error("เกิดข้อผิดพลาดในการโหลดผู้ใช้");
+        navigate("/login");
+      }
+    };
+    fetchUser();
+  }, [navigate]);
 
   // ✅ ตรวจสอบ token ครั้งเดียวตอนเปิดหน้า
   useEffect(() => {
@@ -43,7 +67,7 @@ const ChargingEV = () => {
     checkToken();
   }, [navigate]);
 
-  // ✅ Loading UI ชั่วคราว (ไม่ return กลาง hook)
+  // ✅ Loading UI ชั่วคราว (ระหว่างตรวจสอบ token)
   const LoadingScreen = (
     <div className="flex h-screen items-center justify-center text-gray-600">
       กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...
@@ -52,7 +76,7 @@ const ChargingEV = () => {
 
   // ===== การจำลองการชาร์จ =====
   useEffect(() => {
-    if (!tokenValid) return; // รอให้ token ตรวจเสร็จก่อน
+    if (!tokenValid) return; // ✅ ต้องรอ token ผ่านก่อน
 
     let interval: ReturnType<typeof setInterval> | undefined;
     if (charging) {
@@ -79,6 +103,7 @@ const ChargingEV = () => {
     };
   }, [charging, tokenValid]);
 
+  // ✅ แปลงเวลา
   const formatTime = (sec: number) => {
     const h = String(Math.floor(sec / 3600)).padStart(2, "0");
     const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
@@ -102,6 +127,7 @@ const ChargingEV = () => {
     { from: "#34d399", to: "#22c55e", border: "#16a34a" },
   ];
 
+  // ✅ จำลองค่ากำลังไฟ (kW)
   const estKW = useMemo(() => {
     const base = 7.2;
     const step = energy / 100;
@@ -109,7 +135,14 @@ const ChargingEV = () => {
     return value.toFixed(1);
   }, [energy]);
 
+  // ✅ เมื่อการชาร์จเสร็จสิ้น
   const handleComplete = async () => {
+    if (!userID) {
+      message.error("ไม่พบผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+      navigate("/login");
+      return;
+    }
+
     try {
       const reviews = await GetReviewByUserID(userID);
       if (reviews && reviews.length > 0) {
@@ -123,7 +156,7 @@ const ChargingEV = () => {
     }
   };
 
-  // ✅ ถ้ายังไม่ตรวจสอบ token เสร็จ → render LoadingScreen เท่านั้น
+  // ✅ ถ้ายังตรวจสอบ token ไม่เสร็จ หรือไม่ valid
   if (isVerifying || !tokenValid) return LoadingScreen;
 
   // ✅ Render UI หลัก
@@ -132,8 +165,8 @@ const ChargingEV = () => {
       <ModalCreate
         open={showReviewModal}
         onClose={() => setShowReviewModal(false)}
-        UserID={userID}
-        onReviewCreated={(id: number) => console.log("Review ID:", id)}
+        UserID={userID!}
+        onReviewCreated={(id) => console.log("Review ID:", id)}
       />
 
       <div className="min-h-screen bg-white">
@@ -154,11 +187,7 @@ const ChargingEV = () => {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path
-                  d="M15 18l-6-6 6-6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
 
@@ -178,10 +207,11 @@ const ChargingEV = () => {
                 <FaBolt className="text-blue-600" /> กำลังชาร์จ EV
               </h2>
               <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${charging
+                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                  charging
                     ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-200"
                     : "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-200"
-                  }`}
+                }`}
               >
                 {charging ? "CHARGING" : "IDLE"}
               </span>
@@ -236,7 +266,11 @@ const ChargingEV = () => {
                   onClick={() => setCharging(true)}
                   disabled={charging}
                   className={`rounded-xl px-3 py-2 text-xs font-semibold text-white shadow-sm transition
-                    ${charging ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"}`}
+                    ${
+                      charging
+                        ? "bg-blue-300 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+                    }`}
                 >
                   เริ่ม
                 </button>
@@ -261,9 +295,10 @@ const ChargingEV = () => {
                   disabled={!canComplete}
                   onClick={handleComplete}
                   className={`rounded-xl px-3 py-2 text-xs font-semibold shadow-sm transition
-                    ${canComplete
-                      ? "bg-green-600 text-white hover:bg-green-700"
-                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    ${
+                      canComplete
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
                     }`}
                 >
                   เสร็จสิ้น

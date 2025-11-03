@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "./modal";
 import { CreateReport } from "../../../../services";
 import { message, Upload } from "antd";
@@ -6,6 +6,7 @@ import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
 import { AiOutlineFileText, AiOutlineUpload } from "react-icons/ai";
 import { FaBolt } from "react-icons/fa";
+import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 
 type Props = {
   open: boolean;
@@ -16,11 +17,32 @@ const ReportModal = ({ open, onClose }: Props) => {
   const [description, setDescription] = useState("");
   const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userID, setUserID] = useState<number | undefined>(undefined);
 
-  const userID = localStorage.getItem("userID") || "1";
+  // ✅ โหลด userID จาก JWT (cookie)
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+
+        const uid = current?.id;
+        if (!uid) {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          return;
+        }
+
+        setUserID(uid);
+      } catch (error) {
+        console.error("load user error:", error);
+        message.error("ไม่สามารถดึงข้อมูลผู้ใช้ได้");
+      }
+    };
+    loadUser();
+  }, []);
 
   const onChange = ({ fileList: newFileList }: any) => {
-    setFileList(newFileList.slice(-1)); // จำกัด 1 ไฟล์เสมอ
+    setFileList(newFileList.slice(-1)); // จำกัดอัปโหลดได้ 1 ไฟล์เสมอ
   };
 
   const onPreview = async (file: any) => {
@@ -38,6 +60,12 @@ const ReportModal = ({ open, onClose }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!userID) {
+      message.error("ไม่พบข้อมูลผู้ใช้");
+      return;
+    }
+
     if (!description.trim()) {
       message.error("กรุณากรอกคำอธิบาย");
       return;
@@ -47,7 +75,8 @@ const ReportModal = ({ open, onClose }: Props) => {
     try {
       const formData = new FormData();
       formData.append("description", description.trim());
-      formData.append("userID", userID);
+      formData.append("userID", String(userID));
+
       if (fileList[0]?.originFileObj) {
         formData.append("picture", fileList[0].originFileObj);
       }
@@ -61,6 +90,9 @@ const ReportModal = ({ open, onClose }: Props) => {
       } else {
         message.error("เกิดข้อผิดพลาดในการส่งรายงาน");
       }
+    } catch (error) {
+      console.error("submit error:", error);
+      message.error("เกิดข้อผิดพลาดในการส่งรายงาน");
     } finally {
       setLoading(false);
     }
@@ -73,7 +105,9 @@ const ReportModal = ({ open, onClose }: Props) => {
         <div className="flex items-center justify-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 ring-1 ring-inset ring-blue-100">
             <FaBolt className="text-blue-600" />
-            <span className="text-sm font-semibold text-blue-700">รายงานสถานี/การใช้งาน</span>
+            <span className="text-sm font-semibold text-blue-700">
+              รายงานสถานี/การใช้งาน
+            </span>
           </span>
         </div>
 
@@ -145,7 +179,11 @@ const ReportModal = ({ open, onClose }: Props) => {
             type="submit"
             disabled={loading}
             className={`flex-1 h-11 rounded-xl text-sm font-semibold text-white shadow-sm transition
-              ${loading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"}`}
+              ${
+                loading
+                  ? "bg-blue-300 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+              }`}
           >
             {loading ? "กำลังส่ง..." : "ส่งรายงาน"}
           </button>

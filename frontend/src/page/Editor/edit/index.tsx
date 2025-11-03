@@ -1,16 +1,16 @@
-// src/pages/getting-started/edit/index.tsx
 import { useEffect, useMemo, useState } from "react";
 import { message, Upload } from "antd";
 import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
-import { UpdateGettingStartedByID, apiUrlPicture } from "../../../services"; // ปรับ path ให้ตรงโปรเจกต์
+import { UpdateGettingStartedByID, apiUrlPicture } from "../../../services";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 
 const EditGettingStarted: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // รับค่าเริ่มต้นจากหน้าเดิม (รวมรูปเดิมด้วย)
+  // ✅ รับค่าเริ่มต้นจากหน้าเดิม
   const {
     id,
     initialTitle = "",
@@ -20,10 +20,10 @@ const EditGettingStarted: React.FC = () => {
     id?: number;
     initialTitle?: string;
     initialDescription?: string;
-    initialPicture?: string; // ตัวอย่างเช่น "uploads/getting_started/173....jpg"
+    initialPicture?: string;
   };
 
-  // ถ้าไม่มี id ให้เด้งกลับกันเข้าตรง
+  // ✅ ถ้าไม่มี id ให้เด้งกลับ
   useEffect(() => {
     if (!id) {
       message.warning("ไม่พบข้อมูลที่จะอัปเดต");
@@ -33,9 +33,7 @@ const EditGettingStarted: React.FC = () => {
 
   const [title, setTitle] = useState<string>(initialTitle);
   const [description, setDescription] = useState<string>(initialDescription);
-  const [employeeID, setEmployeeID] = useState<number>(
-    Number(localStorage.getItem("employeeid")) || 0
-  );
+  const [employeeID, setEmployeeID] = useState<number | null>(null);
   const [fileList, setFileList] = useState<any[]>(
     initialPicture
       ? [
@@ -43,15 +41,30 @@ const EditGettingStarted: React.FC = () => {
             uid: "-1",
             name: "current.jpg",
             status: "done",
-            url: `${apiUrlPicture}${initialPicture}`, // เสิร์ฟจาก r.Static("/uploads", "./uploads")
+            url: `${apiUrlPicture}${initialPicture}`,
           },
         ]
       : []
   );
   const [loading, setLoading] = useState(false);
 
+  // ✅ ดึง employee_id จาก token (JWT)
   useEffect(() => {
-    setEmployeeID(Number(localStorage.getItem("employeeid")) || 0);
+    const fetchEmployee = async () => {
+      try {
+        await initUserProfile();
+        const currentUser = getCurrentUser();
+        if (!currentUser || !currentUser.employee_id) {
+          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+          return;
+        }
+        setEmployeeID(currentUser.employee_id);
+      } catch (err) {
+        console.error("❌ Error loading employee_id:", err);
+        message.error("เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้");
+      }
+    };
+    fetchEmployee();
   }, []);
 
   const onChange = ({ fileList: newFileList }: any) => setFileList(newFileList);
@@ -66,12 +79,18 @@ const EditGettingStarted: React.FC = () => {
       });
     }
     const imgWindow = window.open(src);
-    imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
+    imgWindow?.document.write(`<img src="${src}" style="max-width:100%;" />`);
   };
 
+  // ✅ ฟังก์ชันบันทึกข้อมูล
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
+
+    if (!employeeID) {
+      message.error("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+      return;
+    }
 
     if (!title.trim() || !description.trim()) {
       message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
@@ -81,14 +100,10 @@ const EditGettingStarted: React.FC = () => {
     const formData = new FormData();
     formData.append("title", title.trim());
     formData.append("description", description.trim());
-    // backend รองรับ pointer *uint — ส่งเฉพาะเมื่อมีค่า
-    if (employeeID) formData.append("employeeID", String(employeeID));
+    formData.append("employeeID", String(employeeID)); // ✅ ใช้ employee_id จาก token
 
-    // แนบรูปเฉพาะกรณีมีการเลือกไฟล์ใหม่ (originFileObj)
     const hasNewImage = fileList.length > 0 && fileList[0].originFileObj;
-    if (hasNewImage) {
-      formData.append("picture", fileList[0].originFileObj);
-    }
+    if (hasNewImage) formData.append("picture", fileList[0].originFileObj);
 
     try {
       setLoading(true);
@@ -99,14 +114,15 @@ const EditGettingStarted: React.FC = () => {
       } else {
         message.error("อัปเดตข้อมูลล้มเหลว");
       }
-    } catch {
+    } catch (err) {
+      console.error("❌ Error updating getting-started:", err);
       message.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setLoading(false);
     }
   };
 
-  // สร้าง preview URL รองรับทั้งรูปเดิมและรูปใหม่
+  // ✅ สร้าง preview URL
   const previewUrl = useMemo(() => {
     const f = fileList[0];
     if (!f) return "";
@@ -170,13 +186,12 @@ const EditGettingStarted: React.FC = () => {
                     onPreview={onPreview}
                     accept="image/png,image/jpeg,image/gif"
                     beforeUpload={(file) => {
-                      // ให้สอดคล้องกับ allow-list ฝั่ง Go: jpeg/png/gif
                       const allow = ["image/jpeg", "image/png", "image/gif"];
                       if (!allow.includes(file.type)) {
                         message.error("อนุญาตเฉพาะ .jpg .png .gif");
                         return Upload.LIST_IGNORE;
                       }
-                      return false; // ไม่อัปโหลดอัตโนมัติ
+                      return false;
                     }}
                     maxCount={1}
                     multiple={false}
@@ -225,7 +240,7 @@ const EditGettingStarted: React.FC = () => {
                   required
                 />
                 <div className="mt-1 text-[12px] text-gray-400">
-                  ผู้แก้ไข: admin@gmail.com
+                  ผู้แก้ไข: {employeeID ? `Employee ID ${employeeID}` : "กำลังโหลด..."}
                 </div>
               </div>
 
@@ -249,7 +264,7 @@ const EditGettingStarted: React.FC = () => {
             </form>
           </div>
 
-          {/* Right: Live Preview */}
+          {/* Right: Preview */}
           <div className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Live Preview</h3>

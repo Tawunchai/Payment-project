@@ -4,11 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt, FaClock } from "react-icons/fa";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Modal, Button } from "antd";
+import { Modal, Button, message } from "antd";
 
-import { ListCabinetsEV, apiUrlPicture, GetCarByUserID } from "../../../services";
+import {
+  ListCabinetsEV,
+  apiUrlPicture,
+  GetCarByUserID,
+} from "../../../services";
 import type { EVCabinetInterface } from "../../../interface/IBooking";
 import type { CarsInterface } from "../../../interface/ICar";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 
 /* =========================
    EV Bolt Icon (minimal)
@@ -95,10 +100,32 @@ const EVMapMobile: React.FC = () => {
   const [cabinets, setCabinets] = useState<EVCabinetInterface[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCarModal, setShowCarModal] = useState(false);
+  const [userID, setUserID] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
-  const userID = Number(localStorage.getItem("userid"));
 
-  // โหลดข้อมูลจาก Backend
+  // ✅ โหลด userID จาก JWT (cookie)
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+
+        const uid = current?.id;
+        if (!uid) {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          return;
+        }
+
+        setUserID(uid);
+      } catch (error) {
+        console.error("load user error:", error);
+        message.error("ไม่สามารถดึงข้อมูลผู้ใช้ได้");
+      }
+    };
+    loadUser();
+  }, []);
+
+  // โหลดข้อมูลสถานีจาก backend
   useEffect(() => {
     const fetchCabinets = async () => {
       try {
@@ -115,6 +142,11 @@ const EVMapMobile: React.FC = () => {
 
   // ✅ ตรวจสอบว่าผู้ใช้มีรถไหม ก่อนกดจอง
   const handleBookingClick = async (cabinet: EVCabinetInterface) => {
+    if (!userID) {
+      message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+      return;
+    }
+
     try {
       const cars: CarsInterface[] | null = await GetCarByUserID(userID);
       if (!cars || cars.length === 0) {

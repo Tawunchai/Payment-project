@@ -53,6 +53,8 @@ func main() {
 	r.Use(CORSMiddleware())
 
 	r.POST("/login", login.AddLogin)
+	r.GET("/me", login.GetProfile)
+	r.POST("/logout", login.Logout)
 
 	// ✅ 2. เพิ่ม Cron Job หลัง DB setup และก่อนรันเซิร์ฟเวอร์
 	c := cron.New()
@@ -221,7 +223,7 @@ func main() {
 		public.DELETE("/delete-modal/:id", modal.DeleteModalByID)
 
 		// ✅ สร้าง token หลังชำระเงินสำเร็จ
-		public.POST("/token/payment-success", middlewares.JwtAuth(), tokening.PaymentSuccess)
+		public.POST("/token/payment-success", tokening.PaymentSuccess)
 
 		// ✅ ตรวจสอบ token
 		public.GET("/token/verify", tokening.VerifyChargingSession)
@@ -241,16 +243,14 @@ func main() {
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://10.0.14.228:5173") // frontend origin
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
-
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		c.Next()
 	}
 }

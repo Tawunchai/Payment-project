@@ -1,23 +1,36 @@
-// src/pages/getting-started/create/index.tsx
 import { useEffect, useMemo, useState } from "react";
 import { message, Upload } from "antd";
 import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
-import { CreateGettingStarted } from "../../../services"; // ปรับ path ให้ตรงโปรเจกต์
+import { CreateGettingStarted } from "../../../services";
 import { useNavigate } from "react-router-dom";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 
 const Index: React.FC = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [employeeid, setEmployeeid] = useState<number>(
-    Number(localStorage.getItem("employeeid")) || 0
-  );
+  const [employeeID, setEmployeeID] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // ✅ ดึง employee_id จาก JWT token (แทน localStorage)
   useEffect(() => {
-    setEmployeeid(Number(localStorage.getItem("employeeid")) || 0);
+    const fetchEmployee = async () => {
+      try {
+        await initUserProfile();
+        const currentUser = getCurrentUser();
+        if (!currentUser || !currentUser.employee_id) {
+          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+          return;
+        }
+        setEmployeeID(currentUser.employee_id);
+      } catch (err) {
+        console.error("❌ Error fetching employee_id:", err);
+        message.error("เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้");
+      }
+    };
+    fetchEmployee();
   }, []);
 
   const onChange = ({ fileList: newFileList }: any) => setFileList(newFileList);
@@ -32,23 +45,27 @@ const Index: React.FC = () => {
       });
     }
     const imgWindow = window.open(src);
-    imgWindow?.document.write(`<img src="${src}" style="max-width: 100%;" />`);
+    imgWindow?.document.write(`<img src="${src}" style="max-width:100%;" />`);
   };
 
+  // ✅ บันทึกข้อมูลใหม่
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!employeeID) {
+      message.error("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+      return;
+    }
 
     if (fileList.length === 0) return message.error("กรุณาอัปโหลดรูปภาพ");
     if (!title.trim() || !description.trim())
       return message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
 
-    // เตรียม FormData ให้ตรงกับ backend: picture, title, description, employeeID
     const formData = new FormData();
     formData.append("picture", fileList[0].originFileObj);
     formData.append("title", title.trim());
     formData.append("description", description.trim());
-    // ส่ง employeeID เฉพาะกรณีที่มีค่า (backend รองรับ pointer *uint)
-    if (employeeid) formData.append("employeeID", String(employeeid));
+    formData.append("employeeID", String(employeeID)); // ✅ ใช้ employee_id จาก token
 
     try {
       setLoading(true);
@@ -59,20 +76,20 @@ const Index: React.FC = () => {
           setFileList([]);
           setTitle("");
           setDescription("");
-          // ปรับเส้นทางตามที่คุณต้องการกลับไป (เดิมคุณใช้ /admin/editor)
           navigate("/admin/Guide");
         }, 800);
       } else {
         message.error("สร้างข้อมูลล้มเหลว");
       }
-    } catch {
+    } catch (err) {
+      console.error("❌ Error creating getting-started:", err);
       message.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setLoading(false);
     }
   };
 
-  // Preview URL ของรูปที่เลือก (ปลอดภัย/รวดเร็ว)
+  // ✅ แสดง preview ของรูป
   const previewUrl = useMemo(() => {
     const f = fileList[0];
     if (!f) return "";
@@ -83,7 +100,6 @@ const Index: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      // cleanup object URL เมื่อ unmount หรือรูปเปลี่ยน
       if (previewUrl?.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(previewUrl);
@@ -94,7 +110,7 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-[linear-gradient(180deg,#eaf2ff_0%,#f5f8ff_50%,#ffffff_100%)]">
-      {/* Header — EV Blue */}
+      {/* Header */}
       <header
         className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm w-full"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -115,7 +131,7 @@ const Index: React.FC = () => {
       {/* Content */}
       <main className="mx-auto max-w-5xl px-4 py-6">
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Left: Form Card */}
+          {/* Left: Form */}
           <div className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
             <div className="mb-4">
               <p className="text-xs text-gray-500">Docs Management</p>
@@ -137,13 +153,12 @@ const Index: React.FC = () => {
                     onPreview={onPreview}
                     accept="image/png,image/jpeg,image/gif"
                     beforeUpload={(file) => {
-                      // ให้สอดคล้องกับ backend: jpeg/png/gif
                       const allow = ["image/jpeg", "image/png", "image/gif"];
                       if (!allow.includes(file.type)) {
                         message.error("อนุญาตเฉพาะ .jpg .png .gif");
                         return Upload.LIST_IGNORE;
                       }
-                      return false; // ไม่อัปโหลดอัตโนมัติ ให้เราส่งตอน submit
+                      return false;
                     }}
                     maxCount={1}
                     multiple={false}
@@ -192,7 +207,7 @@ const Index: React.FC = () => {
                   required
                 />
                 <div className="mt-1 text-[12px] text-gray-400">
-                  ผู้เขียน: admin@gmail.com
+                  ผู้เขียน: {employeeID ? `Employee ID ${employeeID}` : "กำลังโหลด..."}
                 </div>
               </div>
 
@@ -216,7 +231,7 @@ const Index: React.FC = () => {
             </form>
           </div>
 
-          {/* Right: Live Preview */}
+          {/* Right: Preview */}
           <div className="rounded-2xl bg-white border border-blue-100 shadow-sm p-4 sm:p-6">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Live Preview</h3>
@@ -255,9 +270,8 @@ const Index: React.FC = () => {
           </div>
         </div>
 
-        {/* Helper note */}
         <p className="text-[12px] text-gray-500 text-center mt-6">
-          พื้นหลังโทนฟ้า • สไตล์มินิมอล • รองรับจอมือถือ • แบ่ง 2 คอลัมน์บน Desktop
+          พื้นหลังโทนฟ้า • มินิมอล • รองรับมือถือ • Desktop 2 คอลัมน์พร้อมพรีวิว
         </p>
       </main>
     </div>
