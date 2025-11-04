@@ -3,7 +3,7 @@ import Footer from "../../../component/user/footer/footer";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// FIX ไอคอนของ Leaflet สำหรับ Vite/CRA
+// (ยังคง merge ไอคอนเริ่มต้นไว้ แต่เราจะใช้ divIcon แบบ custom แทนสำหรับสถานี SUT)
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
@@ -69,6 +69,14 @@ const Index: React.FC = () => {
   const mapInstance = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
 
+  // ---------- สร้าง divIcon สไตล์ EV bolt ----------
+  const makeEVIcon = (active: boolean) =>
+    L.divIcon({
+      html: `<div class="ev-pin ${active ? "active" : ""}">⚡</div>`,
+      className: "", // ไม่ใช้ class ของ Leaflet เอง
+      iconSize: [36, 36],
+    });
+
   // init map
   useEffect(() => {
     if (!mapEl.current || mapInstance.current) return;
@@ -85,11 +93,23 @@ const Index: React.FC = () => {
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
-    const mk = L.marker([SUT_STATION.lat, SUT_STATION.lng]).addTo(map);
+    // ใช้ EV icon แบบ custom
+    const mk = L.marker([SUT_STATION.lat, SUT_STATION.lng], {
+      icon: makeEVIcon(false),
+    }).addTo(map);
+
     mk.bindPopup(`<b>${SUT_STATION.name}</b><br/>${SUT_STATION.address}`, {
       closeButton: true,
     });
-    mk.on("click", () => setInfoOpen(true));
+    mk.on("click", () => {
+      mk.setIcon(makeEVIcon(true));
+      setInfoOpen(true);
+      mk.openPopup();
+    });
+    mk.on("popupclose", () => {
+      mk.setIcon(makeEVIcon(false));
+    });
+
     markerRef.current = mk;
 
     return () => {
@@ -134,9 +154,14 @@ const Index: React.FC = () => {
   // action: โฟกัส marker + เปิด popup + เปิดการ์ดข้อมูล
   const focusStationOnMap = () => {
     if (mapInstance.current) {
-      mapInstance.current.setView([SUT_STATION.lat, SUT_STATION.lng], 17, { animate: true });
+      mapInstance.current.setView([SUT_STATION.lat, SUT_STATION.lng], 17, {
+        animate: true,
+      });
     }
-    markerRef.current?.openPopup();
+    if (markerRef.current) {
+      markerRef.current.setIcon(makeEVIcon(true));
+      markerRef.current.openPopup();
+    }
     setInfoOpen(true);
   };
 
@@ -144,11 +169,9 @@ const Index: React.FC = () => {
   const openGoogleMaps = () => {
     const { lat, lng, name } = SUT_STATION;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=&travelmode=driving&dir_action=navigate`;
-    // บางเครื่องชอบ query ชื่อด้วย
     const withQuery = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
       name
     )}&destination_place_id=&travelmode=driving&dir_action=navigate`;
-    // ลองเปิดพิกัดก่อน ถ้า popup block ก็ยังเปิดด้วยชื่อได้
     window.open(url, "_blank");
     setTimeout(() => window.open(withQuery, "_blank"), 200);
   };
@@ -161,7 +184,13 @@ const Index: React.FC = () => {
       <div className="absolute left-0 right-0 top-3 z-[35] mx-auto max-w-screen-sm px-3">
         <div className="flex items-center gap-2">
           <div className="flex-1 rounded-2xl bg-white shadow-md ring-1 ring-black/5 px-3 py-2.5 flex items-center gap-2">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.3-4.3" />
             </svg>
@@ -205,7 +234,13 @@ const Index: React.FC = () => {
                 onClick={() => setInfoOpen(false)}
                 className="ml-2 inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-gray-100"
               >
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M6 6l12 12M6 18L18 6" strokeLinecap="round" />
                 </svg>
               </button>
@@ -219,7 +254,9 @@ const Index: React.FC = () => {
                 <h3 className="text-[16px] font-semibold text-gray-900">
                   {SUT_STATION.name}
                 </h3>
-                <p className="text-[13px] text-gray-500">{SUT_STATION.address}</p>
+                <p className="text-[13px] text-gray-500">
+                  {SUT_STATION.address}
+                </p>
               </div>
             </div>
 
@@ -227,14 +264,21 @@ const Index: React.FC = () => {
               <button className="rounded-2xl border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700">
                 กดเพื่ออัปเดตข้อมูล
               </button>
-              <span className="text-[12px] text-gray-400">ข้อมูลล่าสุด ณ {formatNow()}</span>
+              <span className="text-[12px] text-gray-400">
+                ข้อมูลล่าสุด ณ {formatNow()}
+              </span>
             </div>
 
             <div className="mt-3 text-sm">
               {SUT_STATION.open24h && (
-                <span className="text-gray-900">เปิด <b>24 ชั่วโมง</b></span>
+                <span className="text-gray-900">
+                  เปิด <b>24 ชั่วโมง</b>
+                </span>
               )}
-              <span className="text-gray-500"> | ≈ {SUT_STATION.distanceKm} กม. ({SUT_STATION.etaMin} นาที)</span>
+              <span className="text-gray-500">
+                {" "}
+                | ≈ {SUT_STATION.distanceKm} กม. ({SUT_STATION.etaMin} นาที)
+              </span>
             </div>
 
             {/* ชิปประเภทหัวชาร์จ (ตัวอย่าง) */}
@@ -247,7 +291,7 @@ const Index: React.FC = () => {
               </span>
             </div>
 
-            {/* ปุ่มแอคชัน: เหลือเฉพาะ “นำทาง” ตามที่ขอ */}
+            {/* ปุ่มแอคชัน: เหลือเฉพาะ “นำทาง” */}
             <div className="mt-4 flex gap-3">
               <button
                 onClick={openGoogleMaps}
@@ -272,8 +316,13 @@ const Index: React.FC = () => {
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between py-2">
             <div className="text-gray-900">
-              รายชื่อ <span className="text-gray-500">ค้นเจอ <b className="text-blue-600">1</b> สถานี</span>
-              <div className="text-[12px] text-gray-400">ข้อมูลล่าสุด ณ {formatNow()}</div>
+              รายชื่อ{" "}
+              <span className="text-gray-500">
+                ค้นเจอ <b className="text-blue-600">1</b> สถานี
+              </span>
+              <div className="text-[12px] text-gray-400">
+                ข้อมูลล่าสุด ณ {formatNow()}
+              </div>
             </div>
 
             <button
@@ -283,7 +332,9 @@ const Index: React.FC = () => {
             >
               <svg
                 viewBox="0 0 24 24"
-                className={`h-5 w-5 transition-transform duration-200 ${sheetOpen === "half" ? "rotate-180" : ""}`}
+                className={`h-5 w-5 transition-transform duration-200 ${
+                  sheetOpen === "half" ? "rotate-180" : ""
+                }`}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -307,7 +358,9 @@ const Index: React.FC = () => {
                 <h3 className="truncate text-[15px] font-semibold text-gray-900">
                   {SUT_STATION.name}
                 </h3>
-                <p className="truncate text-[12px] text-gray-500">{SUT_STATION.address}</p>
+                <p className="truncate text-[12px] text-gray-500">
+                  {SUT_STATION.address}
+                </p>
 
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   {SUT_STATION.open24h && (
@@ -323,6 +376,33 @@ const Index: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* CSS สำหรับ EV pin icon */}
+      <style>{`
+        .ev-pin {
+          width: 36px;
+          height: 36px;
+          border-radius: 9999px;
+          background: #3b82f6;            /* blue-500 */
+          color: white;
+          display: grid;
+          place-items: center;
+          font-size: 18px;
+          border: 2px solid #ffffff;
+          box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+          transform: translate(-50%, -50%) scale(1);
+          transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+        .ev-pin:hover {
+          transform: translate(-50%, -50%) scale(1.08);
+          box-shadow: 0 8px 22px rgba(37, 99, 235, 0.45);
+        }
+        .ev-pin.active {
+          background: #2563eb;            /* blue-600 */
+          transform: translate(-50%, -50%) scale(1.12);
+          box-shadow: 0 10px 26px rgba(37, 99, 235, 0.55);
+        }
+      `}</style>
 
       <Footer />
     </div>

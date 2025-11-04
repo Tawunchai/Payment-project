@@ -5,13 +5,21 @@ import "slick-carousel/slick/slick-theme.css";
 import { ListGetStarted, apiUrlPicture } from "../../../../services";
 import { Button, Spin } from "antd";
 import { useNavigate } from "react-router-dom";
-import {GetstartedInterface} from "../../../../interface/IGetstarted"
+import { GetstartedInterface } from "../../../../interface/IGetstarted";
 
-const GettingStarted = () => {
+/* ⚡ EV Icon */
+const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+    <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
+  </svg>
+);
+
+const GettingStarted: React.FC = () => {
   const [data, setData] = useState<GetstartedInterface[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  /* ✅ โหลดข้อมูลจาก API */
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -28,6 +36,7 @@ const GettingStarted = () => {
 
   const hasData = data.length > 0;
 
+  /* ✅ ตั้งค่า Slider */
   const settings: Settings = useMemo(() => {
     const n = data.length;
     const baseShow = Math.min(3, n || 1);
@@ -58,6 +67,7 @@ const GettingStarted = () => {
     };
   }, [data.length]);
 
+  /* ✅ แสดงตอนโหลด */
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -66,6 +76,7 @@ const GettingStarted = () => {
     );
   }
 
+  /* ✅ ไม่มีข้อมูล */
   if (!hasData) {
     return (
       <div className="flex h-[60vh] items-center justify-center text-gray-500">
@@ -75,86 +86,112 @@ const GettingStarted = () => {
   }
 
   return (
-    <section className="relative w-full bg-white py-10">
-      <div className="mx-auto max-w-screen-lg px-4">
-        {/* Header Title */}
-        <div className="mx-auto mb-8 text-center">
-          <h2 className="text-[22px] font-bold text-blue-800">
-            คู่มือการใช้งานสถานีชาร์จ EV
-          </h2>
-        </div>
-
-        {/* Slider */}
-        <Slider {...settings}>
-          {data.map((item, idx) => {
-            const imageSrc = item.Picture
-              ? `${apiUrlPicture}${item.Picture}`
-              : "https://via.placeholder.com/600x400?text=EV+Guide";
-
-            return (
-              <div key={item.ID ?? idx} className="px-3">
-                <article
-                  className="
-                    group relative flex flex-col justify-between
-                    overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md
-                    transition-transform hover:-translate-y-1 hover:shadow-lg
-                    min-h-[500px]
-                  "
-                >
-                  {/* รูปขนาดเท่ากันทุก card */}
-                  <div className="w-full h-72 md:h-72 overflow-hidden">
-                    <img
-                      src={imageSrc}
-                      alt={item.Title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-
-                  {/* ข้อความด้านล่าง */}
-                  <div className="p-5 text-center flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-blue-700 mb-2">
-                        {item.Title}
-                      </h3>
-                      <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-                        {item.Description}
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              </div>
-            );
-          })}
-        </Slider>
-
-        {/* ปุ่ม Skip - ขวาล่างพอดี */}
-        <div className="fixed right-8 bottom-8 z-50">
-          <Button
-            type="primary"
-            shape="round"
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-4 text-base"
-            onClick={() => navigate("/user/charging")}
+    <div className="min-h-screen bg-white">
+      {/* ✅ HEADER */}
+      <header className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md">
+        <div className="w-full px-4 py-3 flex items-center gap-2">
+          <button
+            onClick={() => navigate("/user")}
+            className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15"
           >
-            ข้าม
-          </Button>
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                d="M15 18l-6-6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <div className="flex items-center gap-2">
+            <BoltIcon className="h-5 w-5 text-white" />
+            <span className="text-base font-semibold tracking-wide">
+              คู่มือการใช้งานสถานีชาร์จ EV
+            </span>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Custom Dots */}
-      <style>{`
-        .slick-dots { bottom: -28px; }
-        .slick-dots li { margin: 0 5px; }
-        .slick-dots li button:before {
-          font-size: 8px;
-          color: #cbd5e1;
-          opacity: 1;
-        }
-        .slick-dots li.slick-active button:before {
-          color: #2563eb;
-          opacity: 1;
-        }
-      `}</style>
-    </section>
+      {/* ✅ CONTENT */}
+      <section className="relative w-full bg-white py-10">
+        <div className="mx-auto max-w-screen-lg px-4">
+          {/* Slider */}
+          <Slider {...settings}>
+            {data.map((item, idx) => {
+              const imageSrc = item.Picture
+                ? `${apiUrlPicture}${item.Picture}`
+                : "https://via.placeholder.com/600x400?text=EV+Guide";
+
+              return (
+                <div key={item.ID ?? idx} className="px-3">
+                  <article
+                    className="
+                      group relative flex flex-col justify-between
+                      overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md
+                      transition-transform hover:-translate-y-1 hover:shadow-lg
+                      min-h-[500px]
+                    "
+                  >
+                    {/* รูปภาพ */}
+                    <div className="w-full h-72 md:h-72 overflow-hidden">
+                      <img
+                        src={imageSrc}
+                        alt={item.Title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+
+                    {/* ข้อความด้านล่าง */}
+                    <div className="p-5 text-center flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                          {item.Title}
+                        </h3>
+                        <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                          {item.Description}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              );
+            })}
+          </Slider>
+
+          {/* ปุ่ม Skip - มุมขวาล่าง */}
+          <div className="fixed right-8 bottom-8 z-50">
+            <Button
+              type="primary"
+              shape="round"
+              className="bg-blue-600 hover:bg-blue-700 px-6 py-4 text-base"
+              onClick={() => navigate("/user/charging")}
+            >
+              NEXT
+            </Button>
+          </div>
+        </div>
+
+        {/* Custom Dots */}
+        <style>{`
+          .slick-dots { bottom: -28px; }
+          .slick-dots li { margin: 0 5px; }
+          .slick-dots li button:before {
+            font-size: 8px;
+            color: #cbd5e1;
+            opacity: 1;
+          }
+          .slick-dots li.slick-active button:before {
+            color: #2563eb;
+            opacity: 1;
+          }
+        `}</style>
+      </section>
+    </div>
   );
 };
 

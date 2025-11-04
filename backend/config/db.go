@@ -251,7 +251,7 @@ func SeedIfUsersEmpty(db *gorm.DB) {
 		Email:       "Kanyapron@gmail.com",
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar4.jpg",
-		PhoneNumber: "0981183502",
+		PhoneNumber: "0981183501",
 		Coin:        0,
 		GenderID:    1,
 		UserRoleID:  1,
@@ -275,7 +275,7 @@ func SeedIfUsersEmpty(db *gorm.DB) {
 		Email:       "employee1@example.com",
 		Password:    hashedPassword,
 		Profile:     "uploads/user/avatar1.jpg",
-		PhoneNumber: "0981183502",
+		PhoneNumber: "0981183503",
 		Coin:        0,
 		GenderID:    2,
 		UserRoleID:  2,
@@ -302,9 +302,9 @@ func SeedIfUsersEmpty(db *gorm.DB) {
 	}
 
 	// Cars (ตัวอย่าง many-to-many: ตรวจโครงสร้าง struct ของคุณให้สอดคล้อง)
-	car1 := entity.Car{Brand: "Tesla", ModelCar: "Model 3", LicensePlate: "EV-001", SpecialNumber: true, City: "Bangkok", User: []entity.User{user1}}
-	car2 := entity.Car{Brand: "BYD", ModelCar: "Atto 3", LicensePlate: "EV-002", SpecialNumber: false, City: "Chiang Mai", User: []entity.User{user2}}
-	car3 := entity.Car{Brand: "MG", ModelCar: "ZS EV", LicensePlate: "EV-003", SpecialNumber: false, City: "Khon Kaen", User: []entity.User{user2}}
+	car1 := entity.Car{Brand: "Tesla", ModelCar: "Model 3", LicensePlate: "กข 0001", SpecialNumber: true, City: "Bangkok", User: []entity.User{user1}}
+	car2 := entity.Car{Brand: "BYD", ModelCar: "Atto 3", LicensePlate: "กข 0002", SpecialNumber: false, City: "Chiang Mai", User: []entity.User{user2}}
+	car3 := entity.Car{Brand: "MG", ModelCar: "ZS EV", LicensePlate: "กข 0003", SpecialNumber: false, City: "Khon Kaen", User: []entity.User{user2}}
 	db.FirstOrCreate(&car1, entity.Car{LicensePlate: car1.LicensePlate})
 	db.FirstOrCreate(&car2, entity.Car{LicensePlate: car2.LicensePlate})
 	db.FirstOrCreate(&car3, entity.Car{LicensePlate: car3.LicensePlate})

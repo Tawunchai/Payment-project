@@ -47,8 +47,8 @@ const LoginForm1: React.FC = () => {
         messageApi.error("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
       }
     } catch (error: any) {
-      messageApi.error(
-        error?.response?.data?.error || "เกิดข้อผิดพลาดในการเชื่อมต่อ โปรดลองอีกครั้ง"
+      messageApi.warning(
+        "ข้อมูลเข้าสู่ระบบไม่ถูกต้อง"
       );
     } finally {
       setLoading(false);
@@ -176,7 +176,7 @@ const LoginForm1: React.FC = () => {
                 </Form.Item>
               </Form>
 
-              <p className="mt-8 text-center text-xs text-gray-500">© EV Station 2025</p>
+              <p className="mt-8 text-center text-xs text-gray-500">© SUT EV Station 2025</p>
             </div>
           </div>
         </div>

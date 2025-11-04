@@ -1,34 +1,40 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { message, Select, Checkbox } from "antd";
-import { FaCarSide, FaCity, FaHashtag, FaTimes, FaEdit } from "react-icons/fa";
-import { UpdateCarByID } from "../../../../services";
+import { Select, Checkbox, Input, message } from "antd";
+import { FaCarSide, FaCity, FaTags, FaBolt, FaTimes } from "react-icons/fa";
+import { UpdateCarByID, ListCars } from "../../../../services";
+import type { CarsInterface } from "../../../../interface/ICar";
 
 const { Option } = Select;
 
 interface ModalEditCarProps {
   open: boolean;
   onClose: () => void;
-  car: any;
-  allPlates: string[];
-  onUpdated: () => void;
+  car?: CarsInterface | null;
+  onUpdated: (updated: CarsInterface) => void;
+}
+
+// type guard
+function isCarsArray(arr: unknown): arr is CarsInterface[] {
+  return Array.isArray(arr);
 }
 
 const ModalEditCar: React.FC<ModalEditCarProps> = ({
   open,
   onClose,
   car,
-  allPlates,
   onUpdated,
 }) => {
-  const [brand, setBrand] = useState<string>("");
-  const [model, setModel] = useState<string>("");
-  const [plate, setPlate] = useState<string>("");
-  const [province, setProvince] = useState<string>("");
-  const [special, setSpecial] = useState<boolean>(false);
-  const [loading, setLoading] = useState(false);
-  const [plateError, setPlateError] = useState<string>("");
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
+  const [plate, setPlate] = useState("");
+  const [province, setProvince] = useState("");
+  const [isSpecialReg, setIsSpecialReg] = useState(false);
 
-  // 🧠 ตัวเลือก
+  const [submitting, setSubmitting] = useState(false);
+  const [plateError, setPlateError] = useState<string | null>(null);
+  const [allCars, setAllCars] = useState<CarsInterface[]>([]);
+
+  // === ตัวเลือก (ตัวอย่าง / fallback) ===
   const brandOptions = ["Toyota", "Honda", "Mazda", "Nissan", "BYD", "Tesla"];
   const modelOptionsByBrand: Record<string, string[]> = {
     Toyota: ["Corolla Cross", "Yaris Ativ", "bZ4X"],
@@ -39,81 +45,126 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
     Tesla: ["Model 3", "Model Y"],
   };
   const provinces = [
-    "กรุงเทพมหานคร",
-    "เชียงใหม่",
-    "ขอนแก่น",
-    "ภูเก็ต",
-    "นครราชสีมา",
-    "ชลบุรี",
-    "สงขลา",
-    "สุราษฎร์ธานี",
+    "กรุงเทพมหานคร","เชียงใหม่","ขอนแก่น","ภูเก็ต","นครราชสีมา","ชลบุรี","สงขลา","สุราษฎร์ธานี",
   ];
 
   const modelOptions = useMemo(() => modelOptionsByBrand[brand] ?? [], [brand]);
-  const canSubmit = Boolean(brand && model && plate && province && !plateError);
 
-  // ✅ รายชื่อเจ้าของ (เอาชื่อ-นามสกุล, ถ้ามีหลายคนคั่นด้วย , )
+  // ✅ ชื่อเจ้าของ (หลายคนคั่นด้วย , )
   const ownerNames = useMemo(() => {
-    const users = car?.User ?? [];
+    const users = (car as any)?.User ?? [];
     if (!Array.isArray(users) || users.length === 0) return "-";
     return users
-      .map((u: any) => `${u?.FirstName ?? ""} ${u?.LastName ?? ""}`.trim())
-      .filter((s: string) => s.length > 0)
+      .map((u) => `${u?.FirstName ?? ""} ${u?.LastName ?? ""}`.trim())
+      .filter(Boolean)
       .join(", ");
   }, [car]);
 
-  // โหลดข้อมูลรถ
+  // โหลดรถทั้งหมดเพื่อเช็คทะเบียนซ้ำ (โหลดเมื่อ modal เปิด)
+  useEffect(() => {
+    const fetchCars = async () => {
+      if (!open) return;
+      try {
+        const res = await ListCars();
+        if (isCarsArray(res)) {
+          setAllCars(res);
+        } else {
+          setAllCars([]);
+        }
+      } catch {
+        setAllCars([]);
+      }
+    };
+    fetchCars();
+  }, [open]);
+
+  // ตั้งค่าจากรถที่กำลังแก้ไข
   useEffect(() => {
     if (car) {
-      setBrand(car.Brand || "");
-      setModel(car.ModelCar || "");
-      setPlate(car.LicensePlate || "");
-      setProvince(car.City || "");
-      setSpecial(car.SpecialNumber || false);
-      setPlateError("");
+      setBrand((car as any).Brand ?? "");
+      setModel((car as any).ModelCar ?? "");
+      setPlate((car as any).LicensePlate ?? "");
+      setProvince((car as any).City ?? "");
+      setIsSpecialReg(!!(car as any).SpecialNumber);
+      setPlateError(null);
     }
   }, [car]);
 
-  // ✅ ตรวจสอบเลขทะเบียนซ้ำแบบ realtime
-  useEffect(() => {
-    if (!plate.trim()) {
-      setPlateError("");
+  // ===== ตรวจรูปแบบ/ซ้ำของทะเบียน =====
+  const plateRegex = /^[A-Za-zก-ฮ]{2}\s?\d{4}$/;
+  const normalizePlate = (s: string) => s.replace(/\s+/g, "").toUpperCase();
+
+  const validatePlate = (raw: string) => {
+    const v = raw.trim();
+    if (!v) {
+      setPlateError(null);
       return;
     }
-    const duplicate = allPlates
-      .filter((p) => p !== car.LicensePlate)
-      .some((p) => p.trim().toLowerCase() === plate.trim().toLowerCase());
-    setPlateError(duplicate ? "เลขทะเบียนนี้มีอยู่ในระบบแล้ว" : "");
-  }, [plate, allPlates, car.LicensePlate]);
+    if (!plateRegex.test(v)) {
+      setPlateError("รูปแบบทะเบียนไม่ถูกต้อง (เช่น กข 1234 หรือ AB 1234)");
+      return;
+    }
+    const norm = normalizePlate(v);
+    const isDup = allCars.some((c) => {
+      if (car?.ID !== undefined && c.ID === car.ID) return false;
+      const other = normalizePlate(String((c as any).LicensePlate ?? ""));
+      return other === norm;
+    });
+    setPlateError(isDup ? "ทะเบียนนี้มีอยู่ในระบบแล้ว" : null);
+  };
 
-  if (!open) return null;
+  useEffect(() => {
+    validatePlate(plate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plate, allCars, car?.ID]);
+
+  const canSubmit =
+    Boolean(brand && model && plate && province && !plateError) &&
+    car?.ID !== undefined;
 
   const handleSubmit = async () => {
-    if (!canSubmit) {
-      message.warning("กรุณากรอกข้อมูลให้ครบทุกช่องและตรวจสอบข้อผิดพลาด");
+    if (!car || car.ID === undefined || submitting || !canSubmit) return;
+
+    // กันกรณี state lag: ตรวจอีกครั้งก่อนส่ง
+    validatePlate(plate);
+    if (plateError) {
+      message.error("กรุณาแก้ไขทะเบียนให้ถูกต้องก่อนบันทึก");
       return;
     }
-    setLoading(true);
+
+    setSubmitting(true);
     try {
       const payload = {
         Brand: brand,
         ModelCar: model,
-        LicensePlate: plate,
+        LicensePlate: plate.trim(),
         City: province,
-        SpecialNumber: special,
+        SpecialNumber: isSpecialReg,
       };
       const ok = await UpdateCarByID(car.ID, payload);
+
       if (ok) {
-        message.success("อัปเดตข้อมูลรถสำเร็จ");
-        onUpdated();
+        // ✅ ให้ข้อความโชว์ก่อน แล้วค่อยปิด (global message ไม่หายแม้ modal unmount)
+        await message.open({
+          type: "success",
+          content: "อัปเดตข้อมูลรถสำเร็จ",
+          duration: 1.2,
+        });
+
+        onUpdated({ ...car, ...payload });
         onClose();
       } else {
         message.error("เกิดข้อผิดพลาดในการอัปเดต");
       }
+    } catch (err) {
+      console.error(err);
+      message.error("เกิดข้อผิดพลาดในการอัปเดตรถ");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  if (!open) return null;
 
   return (
     <div
@@ -123,50 +174,49 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
       {/* Dialog */}
-      <div className="relative w-full max-w-[500px] mx-4 md:mx-auto mt-24 md:mt-0 mb-8 md:mb-0">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100 max-h-[85vh] flex flex-col">
+      <div className="relative w-full max-w-[520px] mx-4 mt-24 md:mt-0 mb-8 md:mb-0">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100 flex flex-col max-h-[85vh]">
           {/* Header */}
-          <div className="px-5 pt-3 pb-4 bg-blue-600 text-white flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <FaEdit className="opacity-90" />
-              <h2 className="text-base md:text-lg font-semibold">แก้ไขข้อมูลรถยนต์</h2>
+          <div className="px-5 pt-3 pb-4 md:pt-4 md:pb-4 bg-blue-600 text-white">
+            <div className="mx-auto w-10 h-1.5 md:hidden rounded-full bg-white/60 mb-3" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FaBolt className="opacity-90" />
+                <h2 className="text-base md:text-lg font-semibold">แก้ไขข้อมูลพาหนะ</h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 -m-2 rounded-lg hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                aria-label="ปิดหน้าต่าง"
+              >
+                <FaTimes />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 -m-2 rounded-lg hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            >
-              <FaTimes />
-            </button>
           </div>
 
-          {/* Body (scroll) */}
+          {/* Body */}
           <div className="px-5 py-5 bg-blue-50/40 overflow-y-auto">
-            <div className="space-y-4">
-              {/* Brand */}
-              <label className="block">
+            <div className="grid grid-cols-1 gap-4">
+              {/* BRAND */}
+              <label className="flex flex-col gap-1">
                 <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaCarSide className="text-blue-500" /> ยี่ห้อ (Brand)
+                  <FaCarSide className="text-blue-500" /> ยี่ห้อรถ
                 </span>
                 <Select
-                  className="ev-select mt-1 w-full"
-                  popupClassName="ev-select-dropdown"
-                  size="large"
-                  allowClear
+                  className="ev-select w-full"
                   placeholder="เลือกยี่ห้อ"
+                  size="large"
                   value={brand || undefined}
+                  allowClear
+                  showSearch
+                  optionFilterProp="children"
                   onChange={(val) => {
                     setBrand(val || "");
                     setModel("");
                   }}
-                  showSearch
-                  optionFilterProp="children"
                 >
                   {brandOptions.map((b) => (
                     <Option key={b} value={b}>
@@ -176,20 +226,21 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
                 </Select>
               </label>
 
-              {/* Model */}
-              <label className="block">
-                <span className="text-xs text-slate-600">รุ่น (Model)</span>
+              {/* MODEL */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaTags className="text-blue-500" /> รุ่นรถ
+                </span>
                 <Select
-                  className="ev-select mt-1 w-full"
-                  popupClassName="ev-select-dropdown"
-                  size="large"
-                  allowClear
+                  className="ev-select w-full"
                   placeholder={brand ? "เลือกรุ่น" : "กรุณาเลือกยี่ห้อก่อน"}
-                  value={model || undefined}
-                  onChange={(val) => setModel(val || "")}
+                  size="large"
                   disabled={!brand}
+                  value={model || undefined}
+                  allowClear
                   showSearch
                   optionFilterProp="children"
+                  onChange={(val) => setModel(val || "")}
                 >
                   {modelOptions.map((m) => (
                     <Option key={m} value={m}>
@@ -199,37 +250,38 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
                 </Select>
               </label>
 
-              {/* License Plate */}
-              <label className="block">
+              {/* LICENSE PLATE */}
+              <label className="flex flex-col gap-1">
                 <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaHashtag className="text-blue-500" /> ทะเบียนรถ (License Plate)
+                  <FaTags className="text-blue-500" /> ทะเบียนรถ
                 </span>
-                <input
+                <Input
+                  className={`mt-1 rounded-xl border p-2.5 outline-none ${
+                    plateError
+                      ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200"
+                      : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  }`}
+                  placeholder="เช่น กข 1234 หรือ AB 1234"
                   value={plate}
                   onChange={(e) => setPlate(e.target.value)}
-                  placeholder="เช่น 1กก 1234"
-                  className={`mt-1 w-full px-3 py-2.5 rounded-xl bg-white border ${
-                    plateError ? "border-red-500 focus:ring-red-500/50" : "border-slate-300 focus:ring-blue-500/50"
-                  } focus:outline-none focus:ring-2`}
                 />
-                {plateError && <p className="text-red-500 text-xs mt-1">{plateError}</p>}
+                {plateError && <p className="text-xs text-red-500 mt-1">{plateError}</p>}
               </label>
 
-              {/* Province */}
-              <label className="block">
+              {/* PROVINCE */}
+              <label className="flex flex-col gap-1">
                 <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaCity className="text-blue-500" /> จังหวัด (City)
+                  <FaCity className="text-blue-500" /> จังหวัด
                 </span>
                 <Select
-                  className="ev-select mt-1 w-full"
-                  popupClassName="ev-select-dropdown"
+                  className="ev-select w-full"
+                  placeholder="เลือกจังหวัด"
                   size="large"
                   allowClear
-                  placeholder="เลือกจังหวัด"
-                  value={province || undefined}
-                  onChange={(val) => setProvince(val || "")}
                   showSearch
                   optionFilterProp="children"
+                  value={province || undefined}
+                  onChange={(val) => setProvince(val || "")}
                 >
                   {provinces.map((p) => (
                     <Option key={p} value={p}>
@@ -239,17 +291,15 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
                 </Select>
               </label>
 
-              {/* Special Number */}
-              <div className="flex items-center gap-2 mt-3">
-                <Checkbox checked={special} onChange={(e) => setSpecial(e.target.checked)} />
-                <span className="text-sm text-slate-700">ทะเบียนพิเศษ (Special Number)</span>
+              {/* SPECIAL NUMBER */}
+              <div className="flex items-center gap-2 mt-2">
+                <Checkbox checked={isSpecialReg} onChange={(e) => setIsSpecialReg(e.target.checked)} />
+                <span className="text-sm text-gray-700">ทะเบียนพิเศษ (Special Number)</span>
               </div>
 
-              {/* ✅ Owner info (bottom, grey text) */}
-              <div className="pt-3">
-                <p className="text-xs text-slate-500 text-center">
-                  เจ้าของ: {ownerNames}
-                </p>
+              {/* OWNER */}
+              <div className="pt-2">
+                <p className="text-xs text-slate-500 text-center">เจ้าของ: {ownerNames}</p>
               </div>
             </div>
           </div>
@@ -264,14 +314,17 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || !canSubmit}
+              disabled={!canSubmit || submitting}
               className={`px-4 h-10 rounded-xl text-white text-sm font-semibold shadow-sm ${
-                canSubmit && !loading ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-300 cursor-not-allowed"
+                canSubmit && !submitting ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-300 cursor-not-allowed"
               }`}
             >
-              {loading ? "กำลังบันทึก..." : "บันทึก"}
+              {submitting ? "กำลังบันทึก..." : "บันทึก"}
             </button>
           </div>
+
+          {/* Safe Area (iOS) */}
+          <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
 
@@ -281,7 +334,6 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
           border-radius: 0.75rem !important;
           border-color: #e2e8f0 !important;
           height: 44px !important;
-          padding: 0 12px !important;
           display: flex;
           align-items: center;
           background-color: #ffffff !important;
@@ -290,19 +342,13 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
           border-color: #cbd5e1 !important;
         }
         .ev-scope .ev-select.ant-select-focused .ant-select-selector,
-        .ev-scope .ev-select .ant-select-selector:focus,
-        .ev-scope .ev-select .ant-select-selector:active {
+        .ev-scope .ev-select .ant-select-selector:focus {
           border-color: #2563eb !important;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
         }
         .ev-scope .ev-select .ant-select-selection-item,
         .ev-scope .ev-select .ant-select-selection-placeholder {
           line-height: 42px !important;
-        }
-        .ev-scope .ev-select .ant-select-clear,
-        .ev-scope .ev-select .ant-select-arrow {
-          top: 50%;
-          transform: translateY(-50%);
         }
         .ev-scope .ev-select-dropdown {
           border-radius: 0.75rem !important;

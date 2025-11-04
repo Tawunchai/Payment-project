@@ -8,25 +8,27 @@ import { useNavigate } from "react-router-dom";
 
 const ChargingEV = () => {
   const [charging, setCharging] = useState(false);
-  const [energy, setEnergy] = useState(0);
-  const [time, setTime] = useState(0);
+  const [energy, setEnergy] = useState(0);   // 0–100 %
+  const [time, setTime] = useState(0);       // seconds
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
   const [userID, setUserID] = useState<number | null>(null);
 
+  // 🚦 สถานะควบคุมปุ่ม
+  const [hasStarted, setHasStarted] = useState(false); // เริ่มแล้วครั้งแรกหรือยัง (เริ่มได้ครั้งเดียว)
+  const [isComplete, setIsComplete] = useState(false); // ครบ 100% แล้วหรือยัง
+
   const navigate = useNavigate();
 
-  // ✅ โหลด userID จาก JWT cookie หรือ localStorage
+  // 1) โหลด user จาก JWT cookie
   useEffect(() => {
     const fetchUser = async () => {
       try {
         let current = getCurrentUser();
         if (!current) current = await initUserProfile();
-
-        if (current?.id) {
-          setUserID(current.id);
-        } else {
+        if (current?.id) setUserID(current.id);
+        else {
           message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
           navigate("/login");
         }
@@ -39,7 +41,7 @@ const ChargingEV = () => {
     fetchUser();
   }, [navigate]);
 
-  // ✅ ตรวจสอบ token ครั้งเดียวตอนเปิดหน้า
+  // 2) ตรวจสอบ token
   useEffect(() => {
     const checkToken = async () => {
       const urlToken = new URLSearchParams(window.location.search).get("token");
@@ -63,47 +65,44 @@ const ChargingEV = () => {
       setTokenValid(true);
       setIsVerifying(false);
     };
-
     checkToken();
   }, [navigate]);
 
-  // ✅ Loading UI ชั่วคราว (ระหว่างตรวจสอบ token)
-  const LoadingScreen = (
-    <div className="flex h-screen items-center justify-center text-gray-600">
-      กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...
-    </div>
-  );
-
-  // ===== การจำลองการชาร์จ =====
+  // 3) จำลองการชาร์จ (เพิ่มทีละ 1% ทุก 1 วินาที)
   useEffect(() => {
-    if (!tokenValid) return; // ✅ ต้องรอ token ผ่านก่อน
+    if (!tokenValid) return;
 
-    let interval: ReturnType<typeof setInterval> | undefined;
+    let intervalId: number | undefined;
+
     if (charging) {
+      // เริ่มรอบใหม่ของการชาร์จ
       setEnergy(0);
       setTime(0);
+      setIsComplete(false);
       let seconds = 0;
 
-      interval = setInterval(() => {
+      intervalId = window.setInterval(() => {
         seconds += 1;
         setTime(seconds);
         setEnergy((prev) => {
-          const next = Math.min(prev + 20, 100);
+          const next = Math.min(prev + 1, 100);
           if (next >= 100) {
-            message.success("การชาร์จเสร็จเรียบร้อย!");
+            // ถึง 100% แล้ว -> หยุดนับ + เซ็ตสถานะเสร็จ
+            setIsComplete(true);
             setCharging(false);
-            localStorage.removeItem("charging_token"); // ✅ ลบ token เมื่อจบ
+            if (intervalId !== undefined) window.clearInterval(intervalId);
           }
           return next;
         });
       }, 1000);
     }
+
     return () => {
-      if (interval) clearInterval(interval);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
     };
   }, [charging, tokenValid]);
 
-  // ✅ แปลงเวลา
+  // helpers
   const formatTime = (sec: number) => {
     const h = String(Math.floor(sec / 3600)).padStart(2, "0");
     const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
@@ -111,23 +110,6 @@ const ChargingEV = () => {
     return `${h}:${m}:${s}`;
   };
 
-  const canComplete = energy >= 100;
-  const segmentCount = 5;
-
-  const segments = useMemo(() => {
-    const filledCount = Math.round((energy / 100) * segmentCount);
-    return Array.from({ length: segmentCount }, (_, i) => i < filledCount);
-  }, [energy]);
-
-  const segmentColors = [
-    { from: "#f87171", to: "#ef4444", border: "#dc2626" },
-    { from: "#fb923c", to: "#f97316", border: "#ea580c" },
-    { from: "#fbbf24", to: "#f59e0b", border: "#d97706" },
-    { from: "#a3e635", to: "#84cc16", border: "#65a30d" },
-    { from: "#34d399", to: "#22c55e", border: "#16a34a" },
-  ];
-
-  // ✅ จำลองค่ากำลังไฟ (kW)
   const estKW = useMemo(() => {
     const base = 7.2;
     const step = energy / 100;
@@ -135,14 +117,20 @@ const ChargingEV = () => {
     return value.toFixed(1);
   }, [energy]);
 
-  // ✅ เมื่อการชาร์จเสร็จสิ้น
+  const batteryGradient = useMemo(() => {
+    if (energy < 20) return "linear-gradient(180deg, #f87171, #ef4444)";
+    if (energy < 40) return "linear-gradient(180deg, #fb923c, #f97316)";
+    if (energy < 60) return "linear-gradient(180deg, #fbbf24, #f59e0b)";
+    if (energy < 80) return "linear-gradient(180deg, #a3e635, #84cc16)";
+    return "linear-gradient(180deg, #34d399, #22c55e)";
+  }, [energy]);
+
   const handleComplete = async () => {
     if (!userID) {
       message.error("ไม่พบผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
       navigate("/login");
       return;
     }
-
     try {
       const reviews = await GetReviewByUserID(userID);
       if (reviews && reviews.length > 0) {
@@ -156,10 +144,20 @@ const ChargingEV = () => {
     }
   };
 
-  // ✅ ถ้ายังตรวจสอบ token ไม่เสร็จ หรือไม่ valid
-  if (isVerifying || !tokenValid) return LoadingScreen;
+  // ✅ หลังจากประกาศ Hook "ทั้งหมด" แล้ว ค่อยตัดสินใจ render
+  if (isVerifying || !tokenValid) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-gray-600 text-sm">
+        กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...
+      </div>
+    );
+  }
 
-  // ✅ Render UI หลัก
+  // สถานะปุ่มตามเงื่อนไขที่ขอ
+  const startDisabled = hasStarted || charging || isComplete; // เริ่มได้ครั้งเดียว + ห้ามซ้ำ
+  const cancelDisabled = !hasStarted || isComplete;          // เริ่มแล้วถึงจะยกเลิกได้ และห้ามยกเลิกเมื่อ 100%
+  const completeDisabled = !isComplete;                       // เสร็จสิ้นได้เฉพาะเมื่อ 100%
+
   return (
     <>
       <ModalCreate
@@ -169,39 +167,30 @@ const ChargingEV = () => {
         onReviewCreated={(id) => console.log("Review ID:", id)}
       />
 
-      <div className="min-h-screen bg-white">
-        <header
-          className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
-          style={{ paddingTop: "env(safe-area-inset-top)" }}
-        >
+      <div className="min-h-screen bg-white w-full">
+        {/* HEADER */}
+        <header className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden">
           <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
             <button
               onClick={() => window.history.back()}
               aria-label="ย้อนกลับ"
               className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
             >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
 
             <div className="flex items-center gap-2">
               <FaBolt className="h-5 w-5 text-white" />
-              <span className="text-sm md:text-base font-semibold tracking-wide">
-                EV Charging
-              </span>
+              <span className="text-sm md:text-base font-semibold tracking-wide">EV Charging</span>
             </div>
           </div>
         </header>
 
-        <main className="mx-auto max-w-screen-sm px-4 pt-5 pb-8">
-          <div className="rounded-2xl border border-gray-100 bg-white/90 p-5 shadow-sm backdrop-blur">
+        {/* MAIN CONTENT – เต็มจอมือถือ */}
+        <main className="px-4 pt-5 pb-10">
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-md w-full">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-base font-semibold text-blue-900">
                 <FaBolt className="text-blue-600" /> กำลังชาร์จ EV
@@ -213,92 +202,99 @@ const ChargingEV = () => {
                     : "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-200"
                 }`}
               >
-                {charging ? "CHARGING" : "IDLE"}
+                {charging ? "CHARGING" : isComplete ? "COMPLETE" : "IDLE"}
               </span>
             </div>
 
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-center">
-                <div className="mx-auto mb-1 h-2 w-10 rounded-sm bg-gray-300" />
-                <div className="relative h-48 w-20 rounded-2xl border-2 border-gray-300 p-2">
-                  <div className="flex h-full flex-col-reverse justify-start gap-1">
-                    {segments.map((isOn, i) => {
-                      const palette = segmentColors[i];
-                      const onStyle = {
-                        background: `linear-gradient(180deg, ${palette.from}, ${palette.to})`,
-                        borderColor: palette.border,
-                      };
-                      return (
-                        <div
-                          key={i}
-                          className={[
-                            "h-full rounded-md border transition-all duration-300",
-                            isOn ? "shadow-sm" : "bg-gray-100 border-gray-200",
-                            charging && isOn ? "animate-evGlow" : "",
-                          ].join(" ")}
-                          style={isOn ? onStyle : undefined}
-                        />
-                      );
-                    })}
-                  </div>
+            {/* 🔋 ซ้าย = Battery / ขวา = ข้อมูล */}
+            <div className="w-full flex items-start justify-center gap-5">
+              {/* Battery */}
+              <div className="flex flex-col items-center">
+                <div className="mx-auto mb-1 h-2 w-12 rounded-sm bg-gray-300" />
+                <div className="relative h-[320px] w-[150px] rounded-2xl border-2 border-gray-300 p-2 bg-white overflow-hidden">
+                  <div className="absolute inset-2 rounded-xl bg-gray-100 border border-gray-200" />
+                  <div
+                    className="absolute left-2 right-2 bottom-2 rounded-b-xl transition-all duration-500 ease-out"
+                    style={{
+                      height: `calc(${energy}% - 0px)`,
+                      background: batteryGradient,
+                      boxShadow: "inset 0 0 10px rgba(0,0,0,0.08)",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-2 rounded-xl pointer-events-none"
+                    style={{ boxShadow: "inset 0 10px 14px rgba(0,0,0,0.05)" }}
+                  />
                 </div>
               </div>
 
-              <div className="flex flex-col items-start gap-3">
-                <div className="rounded-xl bg-blue-50 px-3 py-2">
+              {/* Info */}
+              <div className="flex-1 flex flex-col items-stretch gap-3 min-w-[160px]">
+                <div className="rounded-xl bg-blue-50 px-4 py-3">
                   <div className="text-[11px] text-blue-900/70">เปอร์เซ็นต์</div>
                   <div className="text-3xl font-extrabold tracking-tight text-blue-700">{energy}%</div>
                 </div>
-                <div className="rounded-xl bg-gray-50 px-3 py-2">
+                <div className="rounded-xl bg-gray-50 px-4 py-3">
                   <div className="text-[11px] text-gray-500">เวลา</div>
                   <div className="font-semibold text-gray-800">{formatTime(time)}</div>
                 </div>
-                <div className="rounded-xl bg-gray-50 px-3 py-2">
+                <div className="rounded-xl bg-gray-50 px-4 py-3">
                   <div className="text-[11px] text-gray-500">กำลังชาร์จ (kW)</div>
                   <div className="font-semibold text-gray-800">{estKW}</div>
                 </div>
               </div>
             </div>
 
+            {/* Controls: 3 ปุ่ม เต็มพื้นที่ */}
             <div className="mt-6 border-t border-gray-100 pt-4">
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
-                  onClick={() => setCharging(true)}
-                  disabled={charging}
-                  className={`rounded-xl px-3 py-2 text-xs font-semibold text-white shadow-sm transition
+                  onClick={() => {
+                    if (!hasStarted && !isComplete) {
+                      setHasStarted(true);
+                      setCharging(true);
+                    }
+                  }}
+                  disabled={startDisabled}
+                  className={`w-full rounded-xl px-3 py-3 text-sm font-semibold text-white shadow-sm transition
                     ${
-                      charging
+                      startDisabled
                         ? "bg-blue-300 cursor-not-allowed"
                         : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
                     }`}
                 >
                   เริ่ม
                 </button>
-                <button
-                  onClick={() => setCharging(false)}
-                  className="rounded-xl bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-200"
-                >
-                  ปลด
-                </button>
+
                 <button
                   onClick={() => {
-                    setCharging(false);
-                    setEnergy(0);
-                    setTime(0);
-                    localStorage.removeItem("charging_token");
+                    // ยกเลิก: ใช้ได้เฉพาะเมื่อเริ่มแล้ว และยังไม่ครบ 100%
+                    if (!cancelDisabled) {
+                      setCharging(false);
+                      setEnergy(0);
+                      setTime(0);
+                      localStorage.removeItem("charging_token");
+                    }
                   }}
-                  className="rounded-xl bg-red-500 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-red-600"
+                  disabled={cancelDisabled}
+                  className={`w-full rounded-xl px-3 py-3 text-sm font-semibold shadow-sm transition
+                    ${
+                      cancelDisabled
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-red-500 text-white hover:bg-red-600"
+                    }`}
                 >
                   ยกเลิก
                 </button>
+
                 <button
-                  disabled={!canComplete}
+                  disabled={completeDisabled}
                   onClick={handleComplete}
-                  className={`rounded-xl px-3 py-2 text-xs font-semibold shadow-sm transition
+                  className={`w-full rounded-xl px-3 py-3 text-sm font-semibold shadow-sm transition
                     ${
-                      canComplete
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      completeDisabled
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-green-600 text-white hover:bg-green-700"
                     }`}
                 >
                   เสร็จสิ้น
@@ -308,15 +304,6 @@ const ChargingEV = () => {
           </div>
         </main>
       </div>
-
-      <style>{`
-        @keyframes evGlow {
-          0% { box-shadow: 0 0 0px rgba(37,99,235,0); }
-          50% { box-shadow: 0 0 14px rgba(37,99,235,0.45); }
-          100% { box-shadow: 0 0 0px rgba(37,99,235,0); }
-        }
-        .animate-evGlow { animation: evGlow 1.8s ease-in-out infinite; }
-      `}</style>
     </>
   );
 };

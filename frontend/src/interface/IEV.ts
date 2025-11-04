@@ -2,6 +2,22 @@ import { EmployeeInterface } from "./IEmployee";
 import { StatusInterface } from "./IStatus";
 import { TypeInterface } from "./IType";
 
+export interface EVCabinetInterface {
+  ID?: number;
+  CreatedAt?: string;
+  UpdatedAt?: string;
+  DeletedAt?: string | null;
+
+  Name: string; 
+  Description?: string; 
+  Location?: string; 
+  Status?: string; 
+
+  Latitude?: number; 
+  Longitude?: number; 
+  Image?: string; 
+}
+
 export interface EVchargingInterface {
   ID: number;
   Name: string;
@@ -11,10 +27,12 @@ export interface EVchargingInterface {
   Employee?: EmployeeInterface;
   Status?: StatusInterface;
   Type?: TypeInterface;
-
+//
   EmployeeID?: number;
   StatusID?: number;
   TypeID?: number;
+  EVCabinetID:number;
+  EVCabinet:EVCabinetInterface;
 }
 
 export interface CreateEVInput {
