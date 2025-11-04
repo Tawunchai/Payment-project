@@ -13,7 +13,6 @@ const ForgotPasswordForm: React.FC = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
   // สำหรับ OTP modal
@@ -21,32 +20,31 @@ const ForgotPasswordForm: React.FC = () => {
   const [pendingEmail, setPendingEmail] = useState<string>("");
 
   const onFinish = async (values: { email: string }) => {
-    setEmailError(null);
     setLoading(true);
     try {
-      // 1) ตรวจว่ามีอีเมลในระบบไหม
+      // ✅ ตรวจสอบว่าอีเมลมีในระบบไหม
       const chk = await checkEmailExists(values.email);
       if (!chk?.exists) {
-        setEmailError("ไม่พบอีเมลในระบบ กรุณาลองใหม่");
+        messageApi.warning("ไม่พบอีเมลที่ลงทะเบียนในระบบ");
         return;
       }
 
-      // 2) ส่ง OTP ไปยังอีเมลนั้น
+      // ✅ ส่ง OTP ไปยังอีเมลนั้น
       await SendOTP(values.email);
 
-      // 3) เปิด OTP Modal
+      // ✅ เปิด OTP Modal
       setPendingEmail(values.email);
       setOtpOpen(true);
 
-      messageApi.info("เราได้ส่งรหัส OTP ไปยังอีเมลของคุณแล้ว");
+      messageApi.success("ส่งรหัส OTP ไปยังอีเมลของคุณเรียบร้อยแล้ว");
     } catch (err) {
-      setEmailError("เกิดข้อผิดพลาดในการส่ง OTP");
+      messageApi.error("เกิดข้อผิดพลาดในการส่งรหัส OTP กรุณาลองใหม่อีกครั้ง");
     } finally {
       setLoading(false);
     }
   };
 
-  // เรียกเมื่อ OTP ตรวจสอบผ่าน
+  // ✅ เรียกเมื่อ OTP ตรวจสอบผ่าน
   const handleOtpSuccess = () => {
     messageApi.success("ยืนยัน OTP สำเร็จ กำลังไปหน้ารีเซ็ตรหัสผ่าน...");
     navigate(`/reset-password?email=${encodeURIComponent(pendingEmail)}`);
@@ -56,7 +54,7 @@ const ForgotPasswordForm: React.FC = () => {
     <>
       {contextHolder}
 
-      {/* BG + Overlay + Grid + Blobs */}
+      {/* BG + Overlay */}
       <div className="relative min-h-dvh flex items-center justify-center px-4 py-10 overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <img
@@ -68,31 +66,6 @@ const ForgotPasswordForm: React.FC = () => {
           />
         </div>
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-900/60 via-slate-900/35 to-blue-950/60" />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "linear-gradient(#0b12261a 1px, transparent 1px), linear-gradient(90deg, #0b12261a 1px, transparent 1px)",
-            backgroundSize: "36px 36px, 36px 36px",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-16 -right-16 w-80 h-80 rounded-full blur-3xl opacity-30 -z-10"
-          style={{
-            background:
-              "radial-gradient(circle at 40% 40%, rgba(59,130,246,0.35), rgba(59,130,246,0.0) 60%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-16 -left-16 w-72 h-72 rounded-full blur-3xl opacity-25 -z-10"
-          style={{
-            background:
-              "radial-gradient(circle at 60% 60%, rgba(14,165,233,0.30), rgba(14,165,233,0.0) 60%)",
-          }}
-        />
 
         {/* Card */}
         <div className="relative w-full max-w-xl">
@@ -104,7 +77,7 @@ const ForgotPasswordForm: React.FC = () => {
             }}
           >
             <div className="rounded-[26px] bg-white border border-gray-200 shadow-[0_20px_60px_rgba(2,6,23,0.18)] p-8 md:p-10">
-              {/* Brand */}
+              {/* Logo */}
               <div className="flex items-center gap-3 mb-6 justify-center">
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow">
                   <FaBolt className="text-xl" />
@@ -153,8 +126,6 @@ const ForgotPasswordForm: React.FC = () => {
                 <Form.Item
                   name="email"
                   label={<span className="text-sm text-gray-700 font-medium">อีเมล</span>}
-                  validateStatus={emailError ? "error" : ""}
-                  help={emailError || ""}
                   rules={[
                     { required: true, message: "กรุณากรอกอีเมล" },
                     { type: "email", message: "กรุณากรอกอีเมลให้ถูกต้อง" },

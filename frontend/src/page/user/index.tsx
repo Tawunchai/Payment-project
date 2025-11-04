@@ -55,8 +55,6 @@ const Index = () => {
 
       <Review />
       <br />
-      <br />
-      <br />
 
       {/* ✅ เงื่อนไขการแสดงผล Footer */}
       {isMobile ? <FooterMobile /> : <FooterDesktop />}

@@ -4,9 +4,9 @@ import ImgCrop from "antd-img-crop";
 import { PlusOutlined } from "@ant-design/icons";
 import { FaBolt } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import { ListGenders, CreateUser } from "../../services";
-import { SendOTP } from "../../services/httpLogin"; 
-import OTPModal from "./otp/index"; 
+import { ListGenders, CreateUser, ListUsers } from "../../services";
+import { SendOTP } from "../../services/httpLogin";
+import OTPModal from "./otp/index";
 import { currentYear } from "./data";
 import Background from "../../assets/woman-charging-electro-car-by-her-house.jpg";
 
@@ -14,24 +14,31 @@ const Signup2Form: React.FC = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [genderOptions, setGenderOptions] = useState<{ ID: number; Name: string }[]>([]);
+  const [users, setUsers] = useState<any[]>([]); // ✅ เก็บข้อมูล user ทั้งหมด
   const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
-  // โหลดข้อมูลเพศ
+  // ========================= โหลดข้อมูลเพศและผู้ใช้ทั้งหมด =========================
   useEffect(() => {
-    const fetchGenders = async () => {
-      const res = await ListGenders();
-      if (res) {
-        const mapped = res.map((g: any) => ({ ID: g.ID ?? 0, Name: g.Gender ?? "" }));
+    const fetchData = async () => {
+      const genderRes = await ListGenders();
+      if (genderRes) {
+        const mapped = genderRes.map((g: any) => ({ ID: g.ID ?? 0, Name: g.Gender ?? "" }));
         setGenderOptions(mapped);
       }
+
+      const usersRes = await ListUsers();
+      if (usersRes) {
+        setUsers(usersRes);
+      }
     };
-    fetchGenders();
+    fetchData();
   }, []);
 
+  // ========================= Upload =========================
   const onChange = ({ fileList: newFileList }: any) => setFileList(newFileList);
 
   const onPreview = async (file: any) => {
@@ -47,10 +54,32 @@ const Signup2Form: React.FC = () => {
     imgWindow?.document.write(`<img src="${src}" style="max-width:100%;" />`);
   };
 
+  // ========================= ตรวจสอบค่าซ้ำ =========================
+  const isDuplicate = (field: string, value: string) => {
+    if (!value) return false;
+    return users.some((user) => user[field]?.toLowerCase() === value.toLowerCase());
+  };
+
   // ========================= ส่ง OTP ก่อนสมัคร =========================
   const onFinish = async (values: any) => {
     if (fileList.length === 0) {
       messageApi.error("กรุณาอัปโหลดรูปภาพก่อนสมัคร");
+      return;
+    }
+
+    // ✅ ตรวจสอบซ้ำก่อนส่ง OTP
+    const duplicateErrors: any = {};
+    if (isDuplicate("Username", values.username)) duplicateErrors.username = "ชื่อผู้ใช้นี้ถูกใช้แล้ว";
+    if (isDuplicate("Email", values.email)) duplicateErrors.email = "อีเมลนี้ถูกใช้แล้ว";
+    if (isDuplicate("PhoneNumber", values.phone)) duplicateErrors.phone = "เบอร์โทรนี้ถูกใช้แล้ว";
+
+    if (Object.keys(duplicateErrors).length > 0) {
+      form.setFields(
+        Object.entries(duplicateErrors).map(([name, error]) => ({
+          name,
+          errors: [error as string],
+        }))
+      );
       return;
     }
 
@@ -179,8 +208,6 @@ const Signup2Form: React.FC = () => {
                     <Form.Item
                       label={<span className="text-sm text-gray-700">Profile Picture</span>}
                       name="profile"
-                      valuePropName="fileList"
-                      getValueFromEvent={({ fileList }: any) => fileList}
                       className="mb-2 ml-24"
                       rules={[
                         {
@@ -242,6 +269,7 @@ const Signup2Form: React.FC = () => {
                   {/* RIGHT */}
                   <div className="md:col-span-8">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                      {/* Username */}
                       <Form.Item
                         name="username"
                         label={<span className="text-sm text-gray-700">Username</span>}
@@ -251,6 +279,7 @@ const Signup2Form: React.FC = () => {
                         <Input placeholder="Username" size="middle" className="rounded-xl" />
                       </Form.Item>
 
+                      {/* Email */}
                       <Form.Item
                         name="email"
                         label={<span className="text-sm text-gray-700">Email</span>}
@@ -263,6 +292,7 @@ const Signup2Form: React.FC = () => {
                         <Input placeholder="Email" size="middle" className="rounded-xl" />
                       </Form.Item>
 
+                      {/* Password */}
                       <Form.Item
                         name="password"
                         label={<span className="text-sm text-gray-700">Password</span>}
@@ -272,6 +302,7 @@ const Signup2Form: React.FC = () => {
                         <Input.Password placeholder="Password" size="middle" className="rounded-xl" />
                       </Form.Item>
 
+                      {/* Phone */}
                       <Form.Item
                         name="phone"
                         label={<span className="text-sm text-gray-700">Phone</span>}
@@ -284,6 +315,7 @@ const Signup2Form: React.FC = () => {
                         <Input placeholder="0XXXXXXXXX" size="middle" className="rounded-xl" />
                       </Form.Item>
 
+                      {/* Firstname */}
                       <Form.Item
                         name="firstname"
                         label={<span className="text-sm text-gray-700">First Name</span>}
@@ -293,6 +325,7 @@ const Signup2Form: React.FC = () => {
                         <Input placeholder="First Name" size="middle" className="rounded-xl" />
                       </Form.Item>
 
+                      {/* Lastname */}
                       <Form.Item
                         name="lastname"
                         label={<span className="text-sm text-gray-700">Last Name</span>}

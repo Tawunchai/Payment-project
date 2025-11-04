@@ -22,6 +22,7 @@ func ListEVData(c *gin.Context) {
 		Preload("Employee").      
 		Preload("Status").
 		Preload("Type").
+		Preload("EVCabinet").
 		Find(&evs)
 
 	if results.Error != nil {

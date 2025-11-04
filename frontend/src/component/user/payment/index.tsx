@@ -192,7 +192,6 @@ const Index: React.FC = () => {
       // ✅ สร้าง Token สำหรับ session การชาร์จ (ส่ง user.ID ด้วย)
       const token = await CreateChargingToken(user.ID!, paymentResult.ID);
       if (!token) {
-        message.error("ไม่สามารถสร้าง session การชาร์จได้");
         setIsProcessing(false);
         return;
       }

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import React, { useEffect, useMemo, useState } from "react";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt, FaClock } from "react-icons/fa";
 import L from "leaflet";
@@ -50,20 +50,12 @@ const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <path
-              d="M15 18l-6-6 6-6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
 
         <div className="flex items-center gap-2">
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            className="h-5 w-5 text-white"
-          >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 text-white">
             <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
           </svg>
           <span className="text-sm md:text-base font-semibold tracking-wide">
@@ -93,6 +85,20 @@ const createEVIcon = (selected: boolean) =>
   });
 
 /* =========================
+   Recenter helper (สำคัญ!)
+   ========================= */
+const RecenterOnChange: React.FC<{ center: [number, number]; zoom?: number }> = ({
+  center,
+  zoom = 15,
+}) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [center, zoom, map]);
+  return null;
+};
+
+/* =========================
    EVMapMobile Component
    ========================= */
 const EVMapMobile: React.FC = () => {
@@ -102,6 +108,9 @@ const EVMapMobile: React.FC = () => {
   const [showCarModal, setShowCarModal] = useState(false);
   const [userID, setUserID] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
+
+  // ✅ พิกัดเริ่มต้น = มทส.
+  const SUT_CENTER: [number, number] = [14.8820, 102.0170];
 
   // ✅ โหลด userID จาก JWT (cookie)
   useEffect(() => {
@@ -140,6 +149,20 @@ const EVMapMobile: React.FC = () => {
     fetchCabinets();
   }, []);
 
+  // ✅ เลือก center: ถ้ามีสถานี ลองจับสถานีที่เป็นใน/ใกล้ มทส.; ถ้าไม่พบ ใช้ตัวแรก; ถ้าไม่มีเลย ใช้ SUT
+  const center: [number, number] = useMemo(() => {
+    if (!cabinets || cabinets.length === 0) return SUT_CENTER;
+
+    const sutCab =
+      cabinets.find(
+        (c) =>
+          (c.Name && /sut|สุรนารี|สถาบันเทคโนโลยีสุรนารี/i.test(c.Name)) ||
+          (c.Location && /sut|สุรนารี|สถาบันเทคโนโลยีสุรนารี/i.test(c.Location))
+      ) || cabinets[0];
+
+    return [sutCab.Latitude, sutCab.Longitude];
+  }, [cabinets]);
+
   // ✅ ตรวจสอบว่าผู้ใช้มีรถไหม ก่อนกดจอง
   const handleBookingClick = async (cabinet: EVCabinetInterface) => {
     if (!userID) {
@@ -160,21 +183,17 @@ const EVMapMobile: React.FC = () => {
     }
   };
 
-  // หากกำลังโหลด
-  if (loading) {
+  // ✅ แสดง “ไม่พบข้อมูล” เฉพาะเมื่อโหลดเสร็จแล้วและไม่มีข้อมูล
+  if (!loading && !cabinets.length) {
     return (
-      <div className="flex items-center justify-center h-screen text-blue-700 font-semibold">
-        กำลังโหลดข้อมูลสถานีชาร์จ...
-      </div>
-    );
-  }
-
-  // หากไม่มีข้อมูล
-  if (!cabinets.length) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen text-gray-500">
-        <BoltIcon className="h-6 w-6 text-blue-500 mb-2" />
-        <p>ไม่พบข้อมูลสถานีชาร์จไฟฟ้า</p>
+      <div className="relative w-full h-screen bg-gradient-to-b from-blue-50 to-blue-100 overflow-hidden flex flex-col">
+        <HeaderBar title="แผนที่สถานีชาร์จไฟฟ้า" onBack={() => navigate(-1)} />
+        <div className="flex flex-1 items-center justify-center text-gray-500">
+          <div className="text-center">
+            <BoltIcon className="h-6 w-6 text-blue-500 mb-2" />
+            <p>ไม่พบข้อมูลสถานีชาร์จไฟฟ้า</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -187,11 +206,14 @@ const EVMapMobile: React.FC = () => {
       {/* Map */}
       <div className="flex-1 relative">
         <MapContainer
-          center={[cabinets[0].Latitude, cabinets[0].Longitude]}
+          center={SUT_CENTER}   /* เริ่มต้นโฟกัสที่ มทส. */
           zoom={15}
           style={{ height: "100%", width: "100%" }}
           className="z-10"
         >
+          {/* เมื่อ center คำนวณใหม่ -> setView */}
+          <RecenterOnChange center={center} zoom={15} />
+
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
           {cabinets.map((cabinet) => (
@@ -206,62 +228,64 @@ const EVMapMobile: React.FC = () => {
           ))}
         </MapContainer>
 
-        {/* Floating Card Section */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 px-3 pb-3 bg-gradient-to-t from-blue-100/95 to-transparent">
-          <div className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2">
-            {cabinets.map((cabinet) => (
-              <div
-                key={cabinet.ID}
-                onClick={() => setSelected(cabinet.ID)}
-                className={`snap-center min-w-[210px] bg-white rounded-xl p-2 shadow-md border flex-shrink-0 transition-all duration-300 ${
-                  selected === cabinet.ID
-                    ? "border-blue-500 shadow-blue-300 scale-105"
-                    : "border-gray-100"
-                }`}
-              >
-                {/* Image */}
-                <div className="relative w-full h-24 rounded-lg overflow-hidden">
-                  <img
-                    src={`${apiUrlPicture}${cabinet.Image}`}
-                    alt={cabinet.Name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://via.placeholder.com/200x120.png?text=EV";
-                    }}
-                  />
-                  <div className="absolute top-1 right-1 bg-white/90 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full">
-                    {cabinet.Status}
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="mt-2 space-y-0.5">
-                  <h2 className="font-semibold text-blue-800 text-[13px] truncate">
-                    {cabinet.Name}
-                  </h2>
-                  <p className="text-gray-600 text-[11px] flex items-center gap-1 truncate">
-                    <FaMapMarkerAlt className="text-blue-500 text-xs" />
-                    {cabinet.Location}
-                  </p>
-                  <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                    <FaClock className="text-blue-400 text-xs" />{" "}
-                    {cabinet.Employee
-                      ? `ดูแลโดย ${cabinet.Employee.User?.FirstName || ""}`
-                      : "ไม่มีผู้ดูแล"}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => handleBookingClick(cabinet)}
-                  className="mt-2 w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] rounded-lg shadow-sm transition-all"
+        {/* Floating Card Section: แสดงก็ต่อเมื่อมีข้อมูล */}
+        {cabinets.length > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 px-3 pb-3 bg-gradient-to-t from-blue-100/95 to-transparent">
+            <div className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2">
+              {cabinets.map((cabinet) => (
+                <div
+                  key={cabinet.ID}
+                  onClick={() => setSelected(cabinet.ID)}
+                  className={`snap-center min-w-[210px] bg-white rounded-xl p-2 shadow-md border flex-shrink-0 transition-all duration-300 ${
+                    selected === cabinet.ID
+                      ? "border-blue-500 shadow-blue-300 scale-105"
+                      : "border-gray-100"
+                  }`}
                 >
-                  จองจุดชาร์จนี้
-                </button>
-              </div>
-            ))}
+                  {/* Image */}
+                  <div className="relative w-full h-24 rounded-lg overflow-hidden">
+                    <img
+                      src={`${apiUrlPicture}${cabinet.Image}`}
+                      alt={cabinet.Name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://via.placeholder.com/200x120.png?text=EV";
+                      }}
+                    />
+                    <div className="absolute top-1 right-1 bg-white/90 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full">
+                      {cabinet.Status}
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="mt-2 space-y-0.5">
+                    <h2 className="font-semibold text-blue-800 text-[13px] truncate">
+                      {cabinet.Name}
+                    </h2>
+                    <p className="text-gray-600 text-[11px] flex items-center gap-1 truncate">
+                      <FaMapMarkerAlt className="text-blue-500 text-xs" />
+                      {cabinet.Location}
+                    </p>
+                    <p className="text-[11px] text-gray-400 flex items-center gap-1">
+                      <FaClock className="text-blue-400 text-xs" />{" "}
+                      {cabinet.Employee
+                        ? `ดูแลโดย ${cabinet.Employee.User?.FirstName || ""}`
+                        : "ไม่มีผู้ดูแล"}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handleBookingClick(cabinet)}
+                    className="mt-2 w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] rounded-lg shadow-sm transition-all"
+                  >
+                    จองจุดชาร์จนี้
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Footer */}

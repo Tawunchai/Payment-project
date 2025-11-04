@@ -5,11 +5,16 @@ import { RiNewspaperLine } from "react-icons/ri";
 import { ListNews, apiUrlPicture } from "../../../../services";
 import { NewsInterface } from "../../../../interface/INews";
 import Footer from "../../../../component/user/footer/footer";
+
 const NewsListMobile: React.FC = () => {
   const navigate = useNavigate();
+
   const [items, setItems] = useState<NewsInterface[]>([]);
-  const [loading, setLoading] = useState(true);
-  //
+  const [loading, setLoading] = useState(true);        // โหลดข้อมูลจาก API
+  const [imgsReady, setImgsReady] = useState(false);   // โหลดรูปครบหรือยัง (หรือหมดเวลา)
+  const [preloadStarted, setPreloadStarted] = useState(false);
+
+  // โหลดข่าว
   useEffect(() => {
     (async () => {
       try {
@@ -20,6 +25,43 @@ const NewsListMobile: React.FC = () => {
       }
     })();
   }, []);
+
+  // พรีโหลดรูปทั้งหมด หลังจากมี items แล้ว
+  useEffect(() => {
+    if (loading || preloadStarted) return;
+
+    setPreloadStarted(true);
+
+    const urls = items
+      .map((n) => (n?.Picture ? `${apiUrlPicture}${n.Picture}` : ""))
+      .filter(Boolean);
+
+    // ถ้าไม่มีรูปให้โหลด ถือว่า ready ทันที
+    if (urls.length === 0) {
+      setImgsReady(true);
+      return;
+    }
+
+    // helper: โหลดรูป 1 ใบเป็น Promise
+    const loadImage = (src: string) =>
+      new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve();
+        img.onerror = () => resolve(); // error ก็ resolve เพื่อไม่ให้ค้าง
+        img.src = src;
+      });
+
+    const allImages = Promise.allSettled(urls.map(loadImage));
+
+    // กันหน้าค้าง ถ้ารูปช้าเกิน 3 วิ ก็ปล่อยให้แสดงหน้าไปก่อน
+    const timeout = new Promise<void>((resolve) =>
+      setTimeout(() => resolve(), 3000)
+    );
+
+    Promise.race([allImages, timeout]).finally(() => setImgsReady(true));
+  }, [loading, items, preloadStarted]);
+
+  const showSkeleton = loading || !imgsReady;
 
   return (
     <div className="min-h-screen bg-white">
@@ -42,11 +84,7 @@ const NewsListMobile: React.FC = () => {
               stroke="currentColor"
               strokeWidth="2"
             >
-              <path
-                d="M15 18l-6-6 6-6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
@@ -64,7 +102,8 @@ const NewsListMobile: React.FC = () => {
 
       {/* Content */}
       <main className="mx-auto max-w-screen-sm px-4 py-3">
-        {loading ? (
+        {showSkeleton ? (
+          // สเกเลตันแบบ list
           <ul className="divide-y divide-gray-100">
             {Array.from({ length: 6 }).map((_, i) => (
               <li key={i} className="flex gap-3 py-4">
@@ -77,7 +116,9 @@ const NewsListMobile: React.FC = () => {
             ))}
           </ul>
         ) : items.length === 0 ? (
-          <div className="py-16 text-center text-gray-500">ไม่พบข่าวสารและกิจกรรม</div>
+          <div className="py-16 text-center text-gray-500">
+            ไม่พบข่าวสารและกิจกรรม
+          </div>
         ) : (
           <ul className="divide-y divide-gray-100">
             {items.map((n) => {
@@ -99,14 +140,21 @@ const NewsListMobile: React.FC = () => {
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).style.display = "none";
                           }}
+                          // ไม่ต้องรอรูป ณ จุดนี้แล้ว เพราะเรา preload มาแล้ว/หรือหมดเวลา
+                          loading="eager"
+                          decoding="async"
                         />
                       ) : null}
                     </div>
 
                     {/* Texts */}
                     <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-2 text-[15px] font-semibold text-gray-900">{n.Title}</h3>
-                      <p className="mt-1 line-clamp-2 text-[13px] text-gray-500">{n.Description}</p>
+                      <h3 className="line-clamp-2 text-[15px] font-semibold text-gray-900">
+                        {n.Title}
+                      </h3>
+                      <p className="mt-1 line-clamp-2 text-[13px] text-gray-500">
+                        {n.Description}
+                      </p>
                     </div>
                   </button>
                 </li>
@@ -115,6 +163,7 @@ const NewsListMobile: React.FC = () => {
           </ul>
         )}
       </main>
+
       <Footer />
     </div>
   );

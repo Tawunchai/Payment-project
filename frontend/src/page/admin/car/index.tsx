@@ -308,8 +308,6 @@ const CarList: React.FC = () => {
     },
   ];
 
-  const allPlates = cars.map((c) => c.LicensePlate);
-
   return (
     <div className="min-h-screen w-full bg-white mt-14 sm:mt-0">
       <div className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm">
@@ -375,7 +373,6 @@ const CarList: React.FC = () => {
         <ModalEditCar
           open={!!editCar}
           car={editCar}
-          allPlates={allPlates}
           onClose={() => setEditCar(null)}
           onUpdated={fetchCars}
         />

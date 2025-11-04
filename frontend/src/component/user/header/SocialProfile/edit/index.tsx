@@ -11,15 +11,19 @@ import {
   Col,
 } from "antd";
 import ImgCrop from "antd-img-crop";
-import { EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { EditOutlined, PlusOutlined, CloseOutlined } from "@ant-design/icons";
 import {
   UpdateUserProfileByID,
   apiUrlPicture,
   ListGenders,
+  ListUsers,
 } from "../../../../../services";
 import { UsersInterface } from "../../../../../interface/IUser";
 import { GendersInterface } from "../../../../../interface/IGender";
-import { getCurrentUser, initUserProfile } from "../../../../../services/httpLogin"; // ✅ เพิ่มบรรทัดนี้
+import {
+  getCurrentUser,
+  initUserProfile,
+} from "../../../../../services/httpLogin";
 
 const { Option } = Select;
 
@@ -40,23 +44,31 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
   const [genders, setGenders] = useState<GendersInterface[]>([]);
+  const [users, setUsers] = useState<UsersInterface[]>([]);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
-  // ตรวจจับขนาดหน้าจอมือถือ
+  // ตรวจจับหน้าจอมือถือ
   const isMobile = useMemo(
     () => window.matchMedia("(max-width: 768px)").matches,
     []
   );
 
-  // โหลดรายการเพศ
+  // โหลดข้อมูลเพศ + ผู้ใช้ทั้งหมด
   useEffect(() => {
-    const fetchGenders = async () => {
-      const res = await ListGenders();
-      if (res) setGenders(res);
+    const fetchData = async () => {
+      const [gendersRes, usersRes] = await Promise.all([
+        ListGenders(),
+        ListUsers(),
+      ]);
+      if (gendersRes) setGenders(gendersRes);
+      if (usersRes) setUsers(usersRes);
     };
-    fetchGenders();
+    fetchData();
   }, []);
 
-  // ✅ ตั้งค่าข้อมูลเริ่มต้นจาก initialData
+  // ตั้งค่าเริ่มต้น
   useEffect(() => {
     if (!show || !initialData) return;
 
@@ -81,15 +93,46 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     } else {
       setFileList([]);
     }
+
+    setUsernameError(null);
+    setEmailError(null);
+    setPhoneError(null);
   }, [show, initialData, form]);
 
-  // อัปโหลดรูป
   const onChangeUpload = ({ fileList: newList }: any) => setFileList(newList);
+
+  // ✅ ตรวจสอบซ้ำ (ไม่รวม ID ของตัวเอง)
+  const validateUnique = (field: "username" | "email" | "phone", value: string) => {
+    if (!value) return;
+
+    const currentID = initialData?.ID;
+    const duplicate = users.find(
+      (u) =>
+        u.ID !== currentID &&
+        ((field === "username" && u.Username === value) ||
+          (field === "email" && u.Email === value) ||
+          (field === "phone" && u.PhoneNumber === value))
+    );
+
+    if (duplicate) {
+      if (field === "username") setUsernameError("ชื่อผู้ใช้นี้ถูกใช้แล้ว");
+      if (field === "email") setEmailError("อีเมลนี้ถูกใช้แล้ว");
+      if (field === "phone") setPhoneError("เบอร์โทรนี้ถูกใช้แล้ว");
+    } else {
+      if (field === "username") setUsernameError(null);
+      if (field === "email") setEmailError(null);
+      if (field === "phone") setPhoneError(null);
+    }
+  };
 
   // ✅ เมื่อบันทึก
   const onFinish = async (values: any) => {
-    setLoading(true);
+    if (usernameError || emailError || phoneError) {
+      message.warning("กรุณาแก้ไขข้อมูลที่ซ้ำก่อนบันทึก");
+      return;
+    }
 
+    setLoading(true);
     const formData = new FormData();
     formData.append("username", values.username || "");
     formData.append("email", values.email || "");
@@ -104,7 +147,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
     let current = getCurrentUser();
     if (!current) current = await initUserProfile();
-
     const userID = current?.id;
     if (!userID) {
       message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
@@ -132,15 +174,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       onCancel={onClose}
       footer={null}
       centered={!isMobile}
+      destroyOnClose
+      closable={false}
+      width={600}
+      className="max-w-full md:max-w-[600px]"
       style={
         isMobile
           ? { top: 24, paddingBottom: "env(safe-area-inset-bottom)" }
           : {}
       }
-      destroyOnClose
-      closable={false}
-      width={600}
-      className="max-w-full md:max-w-[600px]"
       styles={{
         content: {
           borderRadius: 16,
@@ -148,18 +190,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           overflow: "hidden",
           marginTop: isMobile ? 60 : undefined,
         },
-        body: {
-          padding: 0,
-        },
+        body: { padding: 0 },
       }}
     >
-      {/* Header EV blue gradient */}
+      {/* Header */}
       <div
-        className="flex items-center justify-center gap-2 text-white"
+        className="relative flex items-center justify-center gap-2 text-white"
         style={{
           background:
             "linear-gradient(135deg, rgba(37,99,235,1) 0%, rgba(29,78,216,1) 100%)",
-          paddingTop: "calc(env(safe-area-inset-top) + 8px)",
           height: 56,
         }}
       >
@@ -167,9 +206,22 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         <span style={{ fontWeight: 700, fontSize: 16 }}>
           แก้ไขโปรไฟล์ผู้ใช้
         </span>
+
+        {/* ปุ่มกากบาท */}
+        <button
+          onClick={onClose}
+          aria-label="close"
+          className="
+            absolute right-3 top-1/2 -translate-y-1/2
+            text-white hover:text-gray-200 transition
+            rounded-full p-1 hover:bg-white/20
+          "
+        >
+          <CloseOutlined style={{ fontSize: 18 }} />
+        </button>
       </div>
 
-      {/* ฟอร์มหลัก */}
+      {/* Form */}
       <Form
         layout="vertical"
         form={form}
@@ -219,21 +271,34 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         {/* Fields */}
         <Row gutter={[12, 8]}>
           <Col xs={24} md={12}>
-            <Form.Item label="ชื่อผู้ใช้ (Username)" name="username">
+            <Form.Item
+              label="ชื่อผู้ใช้ (Username)"
+              name="username"
+              validateStatus={usernameError ? "error" : ""}
+              help={usernameError || ""}
+            >
               <Input
                 placeholder="กรอกชื่อผู้ใช้"
                 size="large"
                 className="rounded-lg"
+                onChange={(e) => validateUnique("username", e.target.value)}
               />
             </Form.Item>
           </Col>
+
           <Col xs={24} md={12}>
-            <Form.Item label="อีเมล (Email)" name="email">
+            <Form.Item
+              label="อีเมล (Email)"
+              name="email"
+              validateStatus={emailError ? "error" : ""}
+              help={emailError || ""}
+            >
               <Input
                 type="email"
                 placeholder="กรอกอีเมล"
                 size="large"
                 className="rounded-lg"
+                onChange={(e) => validateUnique("email", e.target.value)}
               />
             </Form.Item>
           </Col>
@@ -249,6 +314,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               />
             </Form.Item>
           </Col>
+
           <Col xs={24} md={12}>
             <Form.Item label="นามสกุล (Lastname)" name="lastname">
               <Input
@@ -262,21 +328,24 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
         <Row gutter={[12, 8]}>
           <Col xs={24} md={12}>
-            <Form.Item label="เบอร์โทรศัพท์ (Phone)" name="phone">
+            <Form.Item
+              label="เบอร์โทรศัพท์ (Phone)"
+              name="phone"
+              validateStatus={phoneError ? "error" : ""}
+              help={phoneError || ""}
+            >
               <Input
                 placeholder="กรอกเบอร์โทรศัพท์"
                 size="large"
                 className="rounded-lg"
+                onChange={(e) => validateUnique("phone", e.target.value)}
               />
             </Form.Item>
           </Col>
+
           <Col xs={24} md={12}>
             <Form.Item label="เพศ (Gender)" name="gender">
-              <Select
-                placeholder="เลือกเพศ"
-                size="large"
-                className="rounded-lg"
-              >
+              <Select placeholder="เลือกเพศ" size="large" className="rounded-lg">
                 {genders.map((g) => (
                   <Option key={g.ID} value={g.ID}>
                     {g.Gender}
@@ -302,6 +371,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           >
             ยกเลิก
           </Button>
+
           <Button
             type="primary"
             htmlType="submit"

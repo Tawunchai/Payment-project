@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Checkbox, message, Spin } from "antd";
-import { CreateCar, CarInterface, ListModals } from "../../../../services";
+import { CreateCar, CarInterface, ListModals, ListCars } from "../../../../services";
 import type { ModalInterface } from "../../../../interface/ICarCatalog";
 import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 
@@ -130,6 +130,8 @@ const TH_PROVINCES = [
 /* ---------------------------------------------------
    MAIN COMPONENT
 --------------------------------------------------- */
+type CarRowForCheck = { LicensePlate?: string | null }; // <-- ใช้แค่ field ที่ต้องการเช็กซ้ำ
+
 const AddCarPage: React.FC = () => {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
@@ -168,6 +170,7 @@ const AddCarPage: React.FC = () => {
   const [otherModel, setOtherModel] = useState("");
   const [isSpecialReg, setIsSpecialReg] = useState(false);
   const [plate, setPlate] = useState("");
+  const [plateError, setPlateError] = useState<string | null>(null); // <-- error message
   const [province, setProvince] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -175,6 +178,7 @@ const AddCarPage: React.FC = () => {
   const [modelSheetOpen, setModelSheetOpen] = useState(false);
   const [provinceSheetOpen, setProvinceSheetOpen] = useState(false);
 
+  // 📥 โหลดยี่ห้อ/รุ่น
   useEffect(() => {
     const load = async () => {
       setLoadingMods(true);
@@ -183,6 +187,23 @@ const AddCarPage: React.FC = () => {
       setLoadingMods(false);
     };
     load();
+  }, []);
+
+  // 📥 โหลดรถทั้งหมดเพื่อตรวจทะเบียนซ้ำ
+  const [allCars, setAllCars] = useState<CarRowForCheck[]>([]);
+  useEffect(() => {
+    const fetchCars = async () => {
+      try {
+        const res = await ListCars();
+        if (res && Array.isArray(res)) {
+          // เก็บเฉพาะ field ที่ต้องใช้
+          setAllCars(res.map((r: any) => ({ LicensePlate: r?.LicensePlate ?? null })));
+        }
+      } catch (e) {
+        // เงียบ ๆ ก็ได้ ไม่บล็อคการใช้งาน
+      }
+    };
+    fetchCars();
   }, []);
 
   const brandOptions = useMemo(() => {
@@ -202,6 +223,32 @@ const AddCarPage: React.FC = () => {
     return [...new Set(list), "อื่นๆ"];
   }, [brand, modals]);
 
+  // ================== Validation ทะเบียน ==================
+  // รูปแบบ: ตัวอักษรไทยหรืออังกฤษ 2 ตัว + เว้นวรรค (มี/ไม่มีได้) + ตัวเลข 4 ตัว
+  const plateRegex = /^[A-Za-zก-ฮ]{2}\s?\d{4}$/;
+
+  const normalizePlate = (s: string) => s.replace(/\s+/g, "").toUpperCase();
+
+  const checkPlate = (value: string) => {
+    const v = value.trim();
+    if (!v) {
+      setPlateError(null);
+      return;
+    }
+    if (!plateRegex.test(v)) {
+      setPlateError("รูปแบบทะเบียนไม่ถูกต้อง (เช่น กข 1234 หรือ AB 1234)");
+      return;
+    }
+    const norm = normalizePlate(v);
+    const duplicated = allCars.some((c) => normalizePlate(String(c.LicensePlate ?? "")) === norm);
+    if (duplicated) {
+      setPlateError("ทะเบียนนี้มีอยู่ในระบบแล้ว");
+    } else {
+      setPlateError(null);
+    }
+  };
+
+  // ================== Submit ==================
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userID) {
@@ -214,6 +261,13 @@ const AddCarPage: React.FC = () => {
       return;
     }
 
+    // ตรวจอีกรอบก่อนส่ง
+    checkPlate(plate);
+    if (plateError) {
+      messageApi.error("กรุณาแก้ไขข้อมูลทะเบียนก่อนบันทึก");
+      return;
+    }
+
     const finalBrand = brand === "อื่นๆ" ? otherBrand : brand;
     const finalModel = model === "อื่นๆ" ? otherModel : model;
 
@@ -222,9 +276,9 @@ const AddCarPage: React.FC = () => {
       const payload: CarInterface = {
         brand: finalBrand,
         model_car: finalModel,
-        license_plate: plate,
+        license_plate: plate.trim(),
         city: province,
-        user_id: userID, // ✅ ตอนนี้ type ถูกต้อง 100%
+        user_id: userID,
       };
 
       const res = await CreateCar(payload);
@@ -376,11 +430,18 @@ const AddCarPage: React.FC = () => {
           <div>
             <span className="text-sm text-gray-700">ทะเบียน *</span>
             <input
-              className="mt-2 w-full rounded-xl border border-slate-300 p-3 bg-white outline-none"
-              placeholder="เช่น 1กก 1234"
+              className={`mt-2 w-full rounded-xl border p-3 bg-white outline-none ${
+                plateError ? "border-red-400" : "border-slate-300"
+              }`}
+              placeholder="เช่น กข 1234 หรือ AB 1234"
               value={plate}
-              onChange={(e) => setPlate(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setPlate(v);
+                checkPlate(v);
+              }}
             />
+            {plateError && <p className="text-xs text-red-500 mt-1">{plateError}</p>}
           </div>
 
           {/* ===== จังหวัด ===== */}

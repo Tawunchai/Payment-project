@@ -148,13 +148,11 @@ const PayPalCard: React.FC = () => {
         // ✅ สร้าง Token หลังชำระสำเร็จ (ส่ง userID + paymentID)
         const token = await CreateChargingToken(userID, paymentResult.ID);
         if (!token) {
-          message.error("ไม่สามารถสร้าง session การชาร์จได้");
           setLoading(false);
           return;
         }
 
         localStorage.setItem("charging_token", token);
-        message.success("สร้าง session การชาร์จสำเร็จ");
 
         setTimeout(() => {
           navigate("/user/after-payment");

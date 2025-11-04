@@ -270,13 +270,6 @@ const Header: React.FC<HeaderProps> = ({}) => {
                   รายงานปัญหา (Report)
                 </button>
 
-                <button
-                  onClick={openGmapsNavigate}
-                  className="w-full rounded-xl px-4 py-3 text-left text-gray-800 hover:bg-gray-50"
-                >
-                  แผนที่ (Map)
-                </button>
-
                 {user && (
                   <button
                     onClick={() => {

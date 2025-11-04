@@ -29,6 +29,9 @@ import {
   apiUrlPicture,
 } from "../../../services";
 
+// ✅ ดึงข้อมูลผู้ใช้ปัจจุบัน (JWT cookie) เพื่อนำไปหา EmployeeID ของตัวเอง
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
+
 import EditAdminModal from "./edit";
 import CreateAdminModal from "./create";
 
@@ -90,6 +93,9 @@ const Employees: React.FC = () => {
     { Username: string; Email: string; PhoneNumber: string }[]
   >([]);
 
+  // ✅ เก็บ EmployeeID ของผู้ใช้ปัจจุบัน (เพื่อไม่ให้ลบตัวเอง)
+  const [currentEmployeeID, setCurrentEmployeeID] = useState<number | null>(null);
+
   // ✅ Responsive scrollX
   const [scrollX, setScrollX] = useState(950);
 
@@ -112,6 +118,26 @@ const Employees: React.FC = () => {
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const selectedEmployeeRef = useRef<RowType | null>(null);
+
+  // ------- Load current user's EmployeeID -------
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        let me = getCurrentUser();
+        if (!me) me = await initUserProfile();
+        const uid = me?.id;
+        if (!uid) return;
+
+        const emp = await GetEmployeeByUserID(uid);
+        const eid = Number(emp?.ID ?? 0);
+        setCurrentEmployeeID(eid > 0 ? eid : null);
+      } catch {
+        // เงียบ ๆ พอ ไม่ขวางการใช้งาน
+        setCurrentEmployeeID(null);
+      }
+    };
+    loadMe();
+  }, []);
 
   // ------- Fetch All Users -------
   const fetchAllUsers = async (): Promise<void> => {
@@ -173,6 +199,13 @@ const Employees: React.FC = () => {
         });
       }
       setTableData(rows);
+
+      // กันเคสเลือกไว้ก่อนหน้า แล้วดึงข้อมูลใหม่ — ตัด row ของตัวเองออกจาก selection
+      if (currentEmployeeID) {
+        setSelectedRowKeys((prev) =>
+          prev.filter((k) => Number(k) !== currentEmployeeID)
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -188,6 +221,7 @@ const Employees: React.FC = () => {
     fetchAdmins();
     fetchUserRoles();
     fetchAllUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ------- Search -------
@@ -206,6 +240,11 @@ const Employees: React.FC = () => {
 
   // ------- Delete (Single) -------
   const openDeleteModal = (record: RowType): void => {
+    // ❌ ไม่ให้ลบตัวเอง
+    if (currentEmployeeID && record.EmployeeID === currentEmployeeID) {
+      message.warning("ไม่สามารถลบตัวเองได้");
+      return;
+    }
     selectedEmployeeRef.current = record;
     setOpenConfirmModal(true);
   };
@@ -216,6 +255,15 @@ const Employees: React.FC = () => {
   };
   const confirmDelete = async (): Promise<void> => {
     if (!selectedEmployeeRef.current) return;
+    // double check อีกชั้น
+    if (
+      currentEmployeeID &&
+      selectedEmployeeRef.current.EmployeeID === currentEmployeeID
+    ) {
+      message.warning("ไม่สามารถลบตัวเองได้");
+      cancelDelete();
+      return;
+    }
     setConfirmLoading(true);
     const ok = await DeleteAdmin(selectedEmployeeRef.current.EmployeeID);
     if (ok) {
@@ -231,16 +279,31 @@ const Employees: React.FC = () => {
   // ------- Bulk Delete -------
   const handleBulkDelete = (): void => {
     if (selectedRowKeys.length === 0) return;
+
+    // ตัด EmployeeID ของตัวเองออกจากลิสต์ที่จะลบ
+    const keysToDelete = selectedRowKeys
+      .map((k) => Number(k))
+      .filter((k) => (currentEmployeeID ? k !== currentEmployeeID : true));
+
+    if (keysToDelete.length === 0) {
+      message.info("ไม่สามารถลบตัวเองได้");
+      // เคลียร์ selection ถ้าเหลือแต่ตัวเอง
+      setSelectedRowKeys((prev) =>
+        prev.filter((k) => Number(k) !== currentEmployeeID)
+      );
+      return;
+    }
+
     Modal.confirm({
       title: "ยืนยันการลบ",
       icon: <ExclamationCircleOutlined />,
-      content: `ลบ ${selectedRowKeys.length} รายการออกจากระบบหรือไม่?`,
+      content: `ลบ ${keysToDelete.length} รายการออกจากระบบหรือไม่?`,
       okText: "ลบ",
       cancelText: "ยกเลิก",
       okButtonProps: { danger: true },
       async onOk() {
         const results = await Promise.all(
-          selectedRowKeys.map((empId) => DeleteAdmin(Number(empId)))
+          keysToDelete.map((empId) => DeleteAdmin(Number(empId)))
         );
         const failed = results.some((r) => !r);
         if (!failed) {
@@ -250,6 +313,8 @@ const Employees: React.FC = () => {
           fetchAllUsers();
         } else {
           message.error("ลบบางรายการไม่สำเร็จ");
+          fetchAdmins();
+          fetchAllUsers();
         }
       },
     });
@@ -346,31 +411,54 @@ const Employees: React.FC = () => {
     {
       title: "Action",
       key: "action",
-      width: 140,
-      render: (_, record) => (
-        <Space>
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            className="border-blue-200 text-blue-700"
-            onClick={() => openEdit(record)}
-          >
-            Edit
-          </Button>
-          <Button
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => openDeleteModal(record)}
-          />
-        </Space>
-      ),
+      width: 160,
+      render: (_, record) => {
+        const isSelf =
+          currentEmployeeID !== null &&
+          record.EmployeeID === currentEmployeeID;
+
+        return (
+          <Space>
+            <Button
+              size="small"
+              icon={<EditOutlined />}
+              className="border-blue-2 00 text-blue-700"
+              onClick={() => openEdit(record)}
+            >
+              Edit
+            </Button>
+
+            {/* ❌ ไม่แสดงปุ่มลบถ้าเป็นตัวเอง */}
+            {!isSelf && (
+              <Button
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => openDeleteModal(record)}
+              />
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
+  // ------- Row selection (กันเลือกตัวเอง) -------
   const rowSelection: TableProps<RowType>["rowSelection"] = {
     selectedRowKeys,
-    onChange: (keys) => setSelectedRowKeys(keys),
+    onChange: (keys) => {
+      // ตัด employeeID ของตัวเองออกจาก selection ทุกครั้ง
+      const filtered = keys.filter(
+        (k) => (currentEmployeeID ? Number(k) !== currentEmployeeID : true)
+      );
+      setSelectedRowKeys(filtered);
+    },
+    getCheckboxProps: (record) => ({
+      // ❌ disable checkbox แถวของตัวเอง
+      disabled:
+        currentEmployeeID !== null &&
+        record.EmployeeID === currentEmployeeID,
+    }),
   };
 
   return (

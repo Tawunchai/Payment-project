@@ -5,6 +5,7 @@ import Hero_Image from "../../../assets/picture/car_charging.jpg";
 import { ListEVCharging, ListUsers } from "../../../services";
 import { EVchargingInterface } from "../../../interface/IEV";
 import { UsersInterface } from "../../../interface/IUser";
+import { FaBolt, FaCalendarCheck, FaUsers, FaChargingStation } from "react-icons/fa";
 
 type HeaderProps = {
   scrollToValue: () => void;
@@ -59,16 +60,21 @@ const Hero = ({}: HeaderProps) => {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              {/* เริ่มชาร์จไฟฟ้า */}
               <button
-                className="inline-flex items-center justify-center rounded-xl px-5 py-3 font-semibold bg-blue-600 text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] transition"
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold bg-blue-600 text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] transition"
                 onClick={() => navigate("/user/evs-selector")}
               >
+                <FaBolt className="text-lg" />
                 เริ่มชาร์จไฟฟ้า
               </button>
+
+              {/* จองเข้าชาร์จไฟฟ้า */}
               <button
-                className="inline-flex items-center justify-center rounded-xl px-5 py-3 font-semibold bg-white text-blue-700 ring-1 ring-inset ring-blue-200 hover:bg-blue-50 active:scale-[0.99] transition"
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold bg-white text-blue-700 ring-1 ring-inset ring-blue-200 hover:bg-blue-50 active:scale-[0.99] transition"
                 onClick={() => navigate("/user/booking-ev")}
               >
+                <FaCalendarCheck className="text-lg text-blue-600" />
                 จองเข้าชาร์จไฟฟ้า
               </button>
             </div>
@@ -80,26 +86,36 @@ const Hero = ({}: HeaderProps) => {
                   key={name}
                   className="rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_8px_24px_rgba(2,6,23,0.06)] text-center sm:text-left"
                 >
-                  <div className="text-2xl font-extrabold tracking-tight text-blue-700">
-                    <CountUp
-                      start={0}
-                      end={parseFloat(total.toFixed(2))}
-                      duration={2}
-                      decimals={2}
-                    />
-                    <span className="text-blue-300"> $</span>
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <FaChargingStation className="text-blue-600 text-lg" />
+                    <div className="text-2xl font-extrabold tracking-tight text-blue-700">
+                      <CountUp
+                        start={0}
+                        end={parseFloat(total.toFixed(2))}
+                        duration={2}
+                        decimals={2}
+                      />
+                      <span className="text-blue-300"> $</span>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1 truncate">{name}</div>
+                  <div className="text-xs text-gray-500 mt-1 truncate flex items-center justify-center sm:justify-start gap-1">
+                    {name}
+                  </div>
                 </div>
               ))}
 
               {/* Members */}
               <div className="order-last sm:order-none col-span-2 sm:col-span-1 rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_8px_24px_rgba(2,6,23,0.06)] text-center sm:text-left">
-                <div className="text-2xl font-extrabold tracking-tight text-blue-700">
-                  <CountUp start={0} end={userList.length} duration={2} />
-                  <span className="text-blue-300"> +</span>
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                  <FaUsers className="text-blue-600 text-lg" />
+                  <div className="text-2xl font-extrabold tracking-tight text-blue-700">
+                    <CountUp start={0} end={userList.length} duration={2} />
+                    <span className="text-blue-300"> +</span>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 mt-1">Members</div>
+                <div className="text-xs text-gray-500 mt-1 flex items-center justify-center sm:justify-start gap-1">
+                  Members
+                </div>
               </div>
             </div>
           </div>

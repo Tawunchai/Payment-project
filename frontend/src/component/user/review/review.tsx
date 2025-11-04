@@ -6,11 +6,36 @@ import "slick-carousel/slick/slick-theme.css";
 import Like from "../../like/like";
 import { ReviewInterface } from "../../../interface/IReview";
 import { ListReviewsVisible, apiUrlPicture } from "../../../services";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
+import { message } from "antd";
 
-const Review = () => {
+const Review: React.FC = () => {
   const [reviews, setReviews] = useState<ReviewInterface[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userID, setUserID] = useState<number | undefined>(undefined);
 
+  // ✅ โหลด user จาก JWT Cookie
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        let current = getCurrentUser();
+        if (!current) current = await initUserProfile();
+
+        const uid = current?.id;
+        if (!uid) {
+          console.warn("⚠️ ไม่พบข้อมูลผู้ใช้ใน cookie");
+          return;
+        }
+        setUserID(uid);
+      } catch (error) {
+        console.error("Error loading user:", error);
+        message.error("โหลดข้อมูลผู้ใช้ล้มเหลว");
+      }
+    };
+    loadUser();
+  }, []);
+
+  // ✅ โหลดรีวิว
   useEffect(() => {
     const fetchReviews = async () => {
       try {
@@ -27,6 +52,7 @@ const Review = () => {
 
   const hasReviews = reviews.length > 0;
 
+  // ✅ ตั้งค่า Slider
   const settings: Settings = useMemo(() => {
     const n = reviews.length;
     const baseShow = Math.min(3, n || 1);
@@ -52,6 +78,7 @@ const Review = () => {
     };
   }, [reviews.length]);
 
+  // ✅ สถานะโหลด
   if (isLoading) {
     return (
       <section className="flex h-40 items-center justify-center bg-white">
@@ -60,6 +87,7 @@ const Review = () => {
     );
   }
 
+  // ✅ ไม่มีรีวิว
   if (!hasReviews) {
     return (
       <section className="flex h-40 items-center justify-center bg-white">
@@ -68,12 +96,11 @@ const Review = () => {
     );
   }
 
+  // ✅ แสดงรีวิว
   return (
     <section className="w-full">
-      {/* bg: EV minimal (blue gradient subtle) */}
       <div className="">
         <div className="mx-auto max-w-screen-lg px-4 py-10">
-          {/* Title row */}
           <div className="mx-auto mb-6 max-w-md text-center">
             <h2 className="text-[22px] font-bold tracking-tight text-blue-800">
               รีวิวจากผู้ใช้งาน
@@ -100,7 +127,6 @@ const Review = () => {
                       shadow-[0_8px_30px_rgba(37,99,235,0.08)]
                     "
                   >
-                    {/* Top accent line */}
                     <div className="h-[3px] w-full bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600" />
 
                     <div className="flex flex-1 flex-col p-5">
@@ -121,7 +147,6 @@ const Review = () => {
                           <p className="truncate text-[15px] font-semibold text-gray-900">
                             {item.User?.FirstName} {item.User?.LastName}
                           </p>
-                          {/* Rating chips */}
                           <div className="mt-0.5 flex items-center gap-1">
                             {Array.from({ length: 5 }).map((_, i) => (
                               <span
@@ -139,7 +164,7 @@ const Review = () => {
                         </div>
                       </div>
 
-                      {/* Quote icon subtle */}
+                      {/* Quote */}
                       <div className="pointer-events-none absolute right-3 top-3 opacity-10">
                         <svg viewBox="0 0 24 24" className="h-6 w-6 text-blue-700">
                           <path
@@ -166,7 +191,7 @@ const Review = () => {
                       <div className="mt-auto">
                         <Like
                           reviewID={item.ID!}
-                          userID={Number(localStorage.getItem("userid")) || 0}
+                          userID={userID ?? 0} // ✅ ใช้ userID ที่โหลดจาก cookie
                         />
                       </div>
                     </div>
@@ -184,11 +209,11 @@ const Review = () => {
         .slick-dots li { margin: 0 3px; }
         .slick-dots li button:before {
           font-size: 7px;
-          color: #93c5fd; /* blue-300 */
+          color: #93c5fd;
           opacity: 1;
         }
         .slick-dots li.slick-active button:before {
-          color: #2563eb; /* blue-600 */
+          color: #2563eb;
           opacity: 1;
         }
       `}</style>
