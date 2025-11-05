@@ -187,7 +187,7 @@ const EVMapMobile: React.FC = () => {
   if (!loading && !cabinets.length) {
     return (
       <div className="relative w-full h-screen bg-gradient-to-b from-blue-50 to-blue-100 overflow-hidden flex flex-col">
-        <HeaderBar title="แผนที่สถานีชาร์จไฟฟ้า" onBack={() => navigate(-1)} />
+        <HeaderBar title="EV Charging Station Map" onBack={() => navigate(-1)} />
         <div className="flex flex-1 items-center justify-center text-gray-500">
           <div className="text-center">
             <BoltIcon className="h-6 w-6 text-blue-500 mb-2" />
@@ -201,7 +201,7 @@ const EVMapMobile: React.FC = () => {
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-blue-50 to-blue-100 overflow-hidden flex flex-col">
       {/* Header */}
-      <HeaderBar title="แผนที่สถานีชาร์จไฟฟ้า" onBack={() => navigate(-1)} />
+      <HeaderBar title="EV Charging Station Map" onBack={() => navigate(-1)} />
 
       {/* Map */}
       <div className="flex-1 relative">

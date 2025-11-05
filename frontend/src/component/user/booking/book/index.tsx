@@ -33,7 +33,7 @@ interface TimeSlot {
    HeaderBar EV Gradient Blue
    ========================= */
 const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
-  title = "จองตู้ชาร์จไฟฟ้า",
+  title = "Book Charging Station",
   onBack,
 }) => {
   const goBack = () => (onBack ? onBack() : window.history.back());
@@ -239,7 +239,7 @@ const BookingDate: React.FC = () => {
      ========================= */
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 flex flex-col w-full overflow-x-hidden">
-      <HeaderBar title="จองตู้ชาร์จไฟฟ้า" onBack={() => navigate(-1)} />
+      <HeaderBar title="Book Charging Station" onBack={() => navigate(-1)} />
 
       <div className="flex justify-center mt-4 px-4 w-full">
         <Card className="w-full max-w-md md:max-w-3xl rounded-2xl shadow-lg border border-blue-100 bg-white">

@@ -95,7 +95,7 @@ const Hero = ({}: HeaderProps) => {
                         duration={2}
                         decimals={2}
                       />
-                      <span className="text-blue-300"> $</span>
+                      <span className="text-blue-300"> ฿</span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 mt-1 truncate flex items-center justify-center sm:justify-start gap-1">

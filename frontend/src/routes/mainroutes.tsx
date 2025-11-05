@@ -1,5 +1,5 @@
-import { lazy, useEffect, useState } from "react";
-import { useRoutes, RouteObject } from "react-router-dom";
+import { lazy, useEffect, useMemo, useState } from "react";
+import { useRoutes, RouteObject, Navigate } from "react-router-dom";
 import Loadable from "../component/third-patry/Loadable";
 import { GetProfile } from "../services/httpLogin";
 
@@ -51,16 +51,7 @@ const Solar = Loadable(lazy(() => import("../page/admin/mornitor/solar")));
 const Battery = Loadable(lazy(() => import("../page/admin/mornitor/battery")));
 const EVCabinet = Loadable(lazy(() => import("../page/admin/mornitor/ev")));
 
-// Charts
-/*const Area = Loadable(lazy(() => import("../page/admin/chart/Area")));
-const Bar = Loadable(lazy(() => import("../page/admin/chart/Bar")));
-const Financial = Loadable(lazy(() => import("../page/admin/chart/Financial")));
-const LineLinear = Loadable(lazy(() => import("../page/admin/chart/Line")));
-const ColorMapping = Loadable(lazy(() => import("../page/admin/chart/ColorMapping")));
-const Pie = Loadable(lazy(() => import("../page/admin/chart/Pie")));
-const Pyramid = Loadable(lazy(() => import("../page/admin/chart/Pyramid")));
-const Stacked = Loadable(lazy(() => import("../page/admin/chart/Stacked")));*/
-
+// ========== Routes factory ==========
 const UserRoutes = (): RouteObject[] => [
   {
     path: "/",
@@ -69,23 +60,23 @@ const UserRoutes = (): RouteObject[] => [
   {
     path: "/user",
     children: [
-      { index: true, element: <User /> }, //ok
-      { path: "profile", element: <Profile /> }, //ok
-      { path: "evs-selector", element: <EVInputUser /> },//ok
-      { path: "payment", element: <PaymentUser /> }, //ok
-      { path: "payment-by-qrcode", element: <PaymentQr /> }, //ok
-      { path: "charging", element: <ChargingEV /> }, //ok
-      { path: "my-coins", element: <MyCoins /> },//ok
-      { path: "add-coins", element: <PayCoins /> },//ok
-      { path: "intro-cars", element: <IntroCar /> }, //ok
-      { path: "add-cars", element: <AddCar /> }, //ok
-      { path: "map", element: <Map /> },//ok
-      { path: "all-news", element: <AllNews /> }, //ok
-      { path: "one-news", element: <News /> }, //ok
-      { path: "after-payment", element: <AfterPayment /> }, //ok
-      { path: "booking-ev", element: <BookingEV /> }, //ok
-      { path: "booking-date", element: <BookingDate /> }, //ok
-      { path: "*", element: <User /> }, //ok
+      { index: true, element: <User /> },
+      { path: "profile", element: <Profile /> },
+      { path: "evs-selector", element: <EVInputUser /> },
+      { path: "payment", element: <PaymentUser /> },
+      { path: "payment-by-qrcode", element: <PaymentQr /> },
+      { path: "charging", element: <ChargingEV /> },
+      { path: "my-coins", element: <MyCoins /> },
+      { path: "add-coins", element: <PayCoins /> },
+      { path: "intro-cars", element: <IntroCar /> },
+      { path: "add-cars", element: <AddCar /> },
+      { path: "map", element: <Map /> },
+      { path: "all-news", element: <AllNews /> },
+      { path: "one-news", element: <News /> },
+      { path: "after-payment", element: <AfterPayment /> },
+      { path: "booking-ev", element: <BookingEV /> },
+      { path: "booking-date", element: <BookingDate /> },
+      { path: "*", element: <User /> },
     ],
   },
 ];
@@ -95,27 +86,27 @@ const AdminRoutes = (): RouteObject[] => [
     path: "/admin",
     element: <MainLayout />,
     children: [
-      { index: true, element: <Admin /> }, //ok
-      { path: "Dashboard", element: <Admin /> }, //ok
+      { index: true, element: <Admin /> },
+      { path: "Dashboard", element: <Admin /> },
       { path: "Payment", element: <Payment /> },
-      { path: "EV Charging", element: <EV /> },//ok
-      { path: "Service", element: <ServiceManage /> },//ok
-      { path: "Employees", element: <Employees /> },//ok
-      { path: "Customers", element: <Customers /> },//ok
-      { path: "Calendar", element: <Calendar /> },//ok
-      { path: "Guide", element: <Editor /> },//ok
-      { path: "create-editor", element: <Create_Editor /> },//ok
-      { path: "edit-editor", element: <Edit_Editor /> },//ok
-      { path: "New", element: <New /> },//ok
-      { path: "create-new", element: <Create_New /> },//ok
-      { path: "edit-new", element: <Edit_New /> },//ok
-      { path: "Solar", element: <Solar /> },//ok
-      { path: "Battery", element: <Battery /> },//ok
-      { path: "EV Cabinet", element: <EVCabinet /> },//ok
-      { path: "profile", element: <ProfileAdmin /> }, //ok
-      { path: "Car", element: <Car /> },//ok
-      { path: "Car-data", element: <CarData /> },//ok
-      { path: "*", element: <Admin /> },//ok
+      { path: "EV Charging", element: <EV /> },
+      { path: "Service", element: <ServiceManage /> },
+      { path: "Employees", element: <Employees /> },
+      { path: "Customers", element: <Customers /> },
+      { path: "Calendar", element: <Calendar /> },
+      { path: "Guide", element: <Editor /> },
+      { path: "create-editor", element: <Create_Editor /> },
+      { path: "edit-editor", element: <Edit_Editor /> },
+      { path: "New", element: <New /> },
+      { path: "create-new", element: <Create_New /> },
+      { path: "edit-new", element: <Edit_New /> },
+      { path: "Solar", element: <Solar /> },
+      { path: "Battery", element: <Battery /> },
+      { path: "EV Cabinet", element: <EVCabinet /> },
+      { path: "profile", element: <ProfileAdmin /> },
+      { path: "Car", element: <Car /> },
+      { path: "Car-data", element: <CarData /> },
+      { path: "*", element: <Admin /> },
     ],
   },
 ];
@@ -127,13 +118,14 @@ const MainRoutes = (): RouteObject[] => [
       { index: true, element: <Login /> },
       { path: "/register", element: <SignUp /> },
       { path: "/loader", element: <Loader /> },
-      { path: "*", element: <Login /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
       { path: "/reset-password", element: <ResetPassword /> },
+      { path: "*", element: <Login /> },
     ],
   },
 ];
 
+// ========== Fixed ConfigRoutes ==========
 function ConfigRoutes() {
   const [roleName, setRoleName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,43 +133,58 @@ function ConfigRoutes() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await GetProfile();
-        setRoleName(res.data.role);
+        const res = await GetProfile(); // ควรตั้งค่า axios ให้ส่ง withCredentials:true ฝั่ง service
+        setRoleName(res.data.role ?? null);
       } catch {
         setRoleName(null);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProfile();
 
-    // ✅ ฟัง event roleChange จาก login/logout
+    // ฟัง event roleChange จาก login/logout
     const handleRoleChange = () => {
       const role = localStorage.getItem("role");
-      if (role) {
-        setRoleName(role);
-      } else {
-        setRoleName(null); // ✅ reset roleName ตอน logout
-      }
+      setRoleName(role ? role : null);
     };
-
     window.addEventListener("roleChange", handleRoleChange);
     return () => window.removeEventListener("roleChange", handleRoleChange);
   }, []);
 
-  if (loading) {
-    return <div className="text-center mt-20">Loading...</div>;
-  }
+  // ✅ เตรียม "loading routes" เพื่อคงลำดับ hooks ให้เรียก useRoutes ทุกครั้ง
+  const loadingRoutes: RouteObject[] = [
+    { path: "/*", element: <Loader /> },
+  ];
 
-  let routes = MainRoutes(); // default = login routes
+  // ✅ คำนวณ routes ตามสถานะ (มี redirect หน้า "/")
+  const routes = useMemo<RouteObject[]>(() => {
+    if (loading) return loadingRoutes;
 
-  if (roleName === "Admin" || roleName === "Employee") {
-    routes = AdminRoutes();
-  } else if (roleName === "User") {
-    routes = UserRoutes();
-  }
+    if (roleName === "Admin" || roleName === "Employee") {
+      return [
+        // redirect จาก "/" -> "/admin"
+        { path: "/", element: <Navigate to="/admin" replace /> },
+        ...AdminRoutes(),
+        // กันหลุด
+        { path: "*", element: <Navigate to="/admin" replace /> },
+      ];
+    }
 
+    if (roleName === "User") {
+      return [
+        // redirect จาก "/" -> "/user"
+        { path: "/", element: <Navigate to="/user" replace /> },
+        ...UserRoutes(),
+        { path: "*", element: <Navigate to="/user" replace /> },
+      ];
+    }
+
+    // ยังไม่ล็อกอิน
+    return MainRoutes();
+  }, [loading, roleName]);
+
+  // ✅ เรียก useRoutes ทุกครั้ง (แก้ error hook order)
   return useRoutes(routes);
 }
 

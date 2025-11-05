@@ -237,7 +237,7 @@ const Index: React.FC = () => {
           <div className="flex items-center gap-2">
             <BoltIcon className="h-5 w-5 text-white" />
             <span className="text-base font-semibold tracking-wide">
-              EV Selector (Percent Mode)
+              EV Selector
             </span>
           </div>
         </div>
@@ -265,7 +265,7 @@ const Index: React.FC = () => {
 
         {/* 🔷 ตัวเลือก “ตู้ชาร์จ” ใต้ยอดรวมทั้งหมด + รูปภาพตู้ */}
         <section className="mb-5 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
-          <div className="mb-2 text-sm font-semibold text-gray-800">เลือกตู้ชาร์จ (EVCabinet)</div>
+          <div className="mb-2 text-sm font-semibold text-gray-800">เลือกตู้ชาร์จ</div>
 
           {loading ? (
             <div className="space-y-2">
@@ -393,7 +393,7 @@ const Index: React.FC = () => {
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="text-sm font-medium text-gray-900">{Name}</h3>
                         <span className="text-xs text-gray-500 whitespace-nowrap">
-                          ฿{(Price || 0).toFixed(2)} / Power
+                          ฿{(Price || 0).toFixed(2)} / kWh
                         </span>
                       </div>
 
@@ -415,7 +415,7 @@ const Index: React.FC = () => {
                             +
                           </button>
                         </div>
-                        <span className="text-sm text-gray-600">⚡ {power.toFixed(2)} Power</span>
+                        <span className="text-sm text-gray-600">⚡ {power.toFixed(2)} kWh</span>
                       </div>
 
                       <div className="mt-2">
