@@ -264,12 +264,28 @@ const Index: React.FC = () => {
                   />
                   <div className="flex-1">
                     <h3 className="text-sm font-medium text-gray-900 line-clamp-1">{item.name}</h3>
-                    <p className="text-xs text-gray-500">กำลังไฟ: {item.power}</p>
+
+                    {/* ✅ แก้ไขส่วนนี้ให้แสดงค่าเปอร์เซ็นต์จริง */}
+                    <p className="text-xs text-gray-500">
+                      เปอร์เซ็นต์การชาร์จ:{" "}
+                      <span className="font-semibold text-blue-700">
+                        {item.percent ? `${item.percent}%` : "-"}
+                      </span>
+                    </p>
+
+                    <p className="text-xs text-gray-500">
+                      กำลังไฟฟ้า:{" "}
+                      <span className="font-semibold text-blue-700">
+                        {item.power} <span className="text-[10px] text-blue-400"> kWh</span>
+                      </span>
+                    </p>
                   </div>
+
                   <span className="text-sm font-semibold text-blue-700">
                     ฿{Number(item.total || 0).toFixed(2)}
                   </span>
                 </div>
+
                 {index < chargers.length - 1 && <Divider className="!my-3" />}
               </div>
             ))}
@@ -350,11 +366,10 @@ const Index: React.FC = () => {
           <button
             onClick={handlePayment}
             disabled={isProcessing || isLoadingMethod || chargers.length === 0}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white transition ${
-              isProcessing || isLoadingMethod || chargers.length === 0
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white transition ${isProcessing || isLoadingMethod || chargers.length === 0
                 ? "bg-blue-300"
                 : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-            }`}
+              }`}
           >
             <BoltIcon className="h-5 w-5 text-white" />
             <span className="text-sm font-semibold">

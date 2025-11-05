@@ -111,7 +111,7 @@ const GettingStarted: React.FC = () => {
           <div className="flex items-center gap-2">
             <BoltIcon className="h-5 w-5 text-white" />
             <span className="text-base font-semibold tracking-wide">
-              คู่มือการใช้งานสถานีชาร์จ EV
+              EV User Manual
             </span>
           </div>
         </div>

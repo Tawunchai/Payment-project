@@ -28,7 +28,7 @@ const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
    HeaderBar (Desktop)
    ========================= */
 const HeaderBar: React.FC<{ title?: string; onBack?: () => void }> = ({
-  title = "แผนที่สถานีชาร์จไฟฟ้า",
+  title = "EV Charging Station Map",
   onBack,
 }) => {
   const goBack = () => (onBack ? onBack() : window.history.back());
@@ -197,7 +197,7 @@ const EVMapNotebook: React.FC = () => {
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-blue-50 to-blue-100 overflow-hidden flex flex-col">
       {/* Header */}
-      <HeaderBar title="แผนที่สถานีชาร์จไฟฟ้า" onBack={() => navigate(-1)} />
+      <HeaderBar title="EV Charging Station Map" onBack={() => navigate(-1)} />
 
       {/* Map */}
       <div className="flex-1 relative">

@@ -328,20 +328,20 @@ func seedContent(db *gorm.DB) {
 	// GettingStarted
 	getting1 := entity.GettingStarted{
 		Picture:     "uploads/getting_started/gettingone.png",
-		Title:       "Best interest rates on the market",
-		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
+		Title:       "เตรียมความพร้อม",
+		Description: "จอดรถให้พอร์ตชาร์จใกล้กับตู้ชาร์จมากที่สุด จากนั้นดับเครื่องยนต์และปิดระบบขับเคลื่อน เเละเลือกหัวชาร์จที่ตรงกับพอร์ตของรถคุณ",
 		EmployeeID:  empIDPtr,
 	}
 	getting2 := entity.GettingStarted{
 		Picture:     "uploads/getting_started/gettingtwo.png",
-		Title:       "Prevent unstable prices",
-		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
+		Title:       "เริ่มการเชื่อมต่อและชาร์จ",
+		Description: "เสียบหัวชาร์จเข้ากับพอร์ตของรถให้แน่นจนล็อกเข้าที่ กดปุ่ม เริ่ม บนแอปพลิเคชันหรือที่หน้าจอของตู้ชาร์จ เพื่อเริ่มกระบวนการจ่ายไฟ",
 		EmployeeID:  empIDPtr,
 	}
 	getting3 := entity.GettingStarted{
 		Picture:     "uploads/getting_started/gettingthree.png",
-		Title:       "Best price on the market",
-		Description: "Exercitation in fugiat est ut ad ea cupidatat ut in cupidatat occaecat ut occaecat consequat est minim minim esse tempor laborum consequat esse adipisicing eu reprehenderit enim.",
+		Title:       "สิ้นสุดการชาร์จและเก็บสาย",
+		Description: "เมื่อชาร์จถึงระดับที่ต้องการ ให้กดปุ่ม ยกเลิก หรือ เสร็จสิ้น ที่ตู้ชาร์จหรือในแอปพลิเคชัน เพื่อหยุดการชาร์จ",
 		EmployeeID:  empIDPtr,
 	}
 	db.FirstOrCreate(&getting1, entity.GettingStarted{Title: "Best interest rates on the market"})
@@ -409,18 +409,18 @@ func seedContent(db *gorm.DB) {
 	db.FirstOrCreate(send, entity.SendEmail{Email: send.Email})
 
 	cabinet1 := &entity.EVCabinet{
-		Name:        "Cabinet A1",
-		Description: "ตู้ชาร์จสำหรับโซนจอดรถด้านหน้า มีหัวชาร์จ 2 หัว รองรับ Solar และ Grid",
-		Location:    "Zone A - อาคารจอดรถชั้น 1",
+		Name:        "EV Station",
+		Description: "เครื่องชาร์จสำหรับรถไฟฟ้า รองรับ Solar และ Grid",
+		Location:    "มหาวิทยาลัยเทคโนโลยีสุรนารี",
 		Status:      "Active",
 		Latitude:    14.8802,
 		Longitude:   102.018,
-		Image:       "uploads/cabinet/ev_cabinet_a1.jpg",
+		Image:       "uploads/cabinet/cabinet.jpg",
 		EmployeeID:  &emp.ID,
 	}
 
 	// ✅ ใช้ Where() เพื่อป้องกันซ้ำตาม Name
-	db.Where(entity.EVCabinet{Name: "Cabinet A1"}).FirstOrCreate(cabinet1)
+	db.Where(entity.EVCabinet{Name: "EV Station"}).FirstOrCreate(cabinet1)
 
 	cabinetID := uint(1)
 	now := time.Now()
@@ -480,36 +480,34 @@ func seedContent(db *gorm.DB) {
 	db.FirstOrCreate(&status1, entity.Status{Status: "Available"})
 	db.FirstOrCreate(&status2, entity.Status{Status: "Unavailable"})
 
-	type1 := entity.Type{Type: "DC Fast Charger"}
-	type2 := entity.Type{Type: "Level 2 Charger"}
-	type3 := entity.Type{Type: "Level 1 Charger"}
-	db.FirstOrCreate(&type1, entity.Type{Type: "DC Fast Charger"})
-	db.FirstOrCreate(&type2, entity.Type{Type: "Level 2 Charger"})
-	db.FirstOrCreate(&type3, entity.Type{Type: "Level 1 Charger"})
+	type1 := entity.Type{Type: "AC Charge"}
+	type2 := entity.Type{Type: "DC Charge"}
+	db.FirstOrCreate(&type1, entity.Type{Type: "AC Charge"})
+	db.FirstOrCreate(&type2, entity.Type{Type: "DC Charge"})
 
 	// EVcharging (อ้าง Employee คนแรกถ้ามี)
 	ev1 := entity.EVcharging{
-		Name:        "Charger A1",
-		Description: "Charger A1 is Good",
-		Price:       10,
-		Picture:     "uploads/evcharging/product1.jpg",
+		Name:        "Solar",
+		Description: "Solar is Good Power",
+		Price:       2,
+		Picture:     "uploads/evcharging/solar.jpg",
 		EVCabinetID: 1,
 		EmployeeID:  empIDPtr,
 		StatusID:    status1.ID,
 		TypeID:      type1.ID,
 	}
 	ev2 := entity.EVcharging{
-		Name:        "Charger B2",
-		Description: "Charger B2 is Bad",
-		Price:       20,
-		Picture:     "uploads/evcharging/product2.jpg",
+		Name:        "Grid",
+		Description: "Grid is Bad Power",
+		Price:       5,
+		Picture:     "uploads/evcharging/grid.jpg",
 		EVCabinetID: 1,
 		EmployeeID:  empIDPtr,
-		StatusID:    status2.ID,
-		TypeID:      type2.ID,
+		StatusID:    status1.ID,
+		TypeID:      type1.ID,
 	}
-	db.FirstOrCreate(&ev1, entity.EVcharging{Name: "Charger A1"})
-	db.FirstOrCreate(&ev2, entity.EVcharging{Name: "Charger B2"})
+	db.FirstOrCreate(&ev1, entity.EVcharging{Name: "Solar"})
+	db.FirstOrCreate(&ev2, entity.EVcharging{Name: "Grid"})
 
 	// Calendar (อ้าง Employee คนแรกถ้ามี)
 	calendar1 := entity.Calendar{
