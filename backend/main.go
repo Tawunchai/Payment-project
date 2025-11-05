@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/robfig/cron/v3"
 
@@ -229,16 +230,20 @@ func main() {
 	}
 
 	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "API RUNNING... PORT: %s", PORT)
+		c.String(http.StatusOK, "API RUNNING...")
 	})
 
-	//r.Run("localhost:" + PORT)
-	r.Run("0.0.0.0:" + PORT)
+	// ✅ Render จะอัดค่า PORT มาให้ → ต้องอ่านจาก ENV
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	r.Run(":" + port)
 }
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://10.167.17.128:5173") // frontend origin
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "payment-project-deploy.vercel.app") // frontend origin
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
