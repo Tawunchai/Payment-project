@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/robfig/cron/v3"
 
@@ -230,43 +229,23 @@ func main() {
 	}
 
 	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "API RUNNING...")
+		c.String(http.StatusOK, "API RUNNING... PORT: %s", PORT)
 	})
 
-	// ✅ Render จะอัดค่า PORT มาให้ → ต้องอ่านจาก ENV
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	r.Run(":" + port)
+	//r.Run("localhost:" + PORT)
+	r.Run("0.0.0.0:" + PORT)
 }
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		origin := c.Request.Header.Get("Origin")
-		allowedOrigins := []string{
-			"https://payment-project-deploy.vercel.app",
-			"https://payment-project-t4dj.onrender.com",
-		}
-
-		// ตรวจว่า origin ที่มาอยู่ใน allowed list หรือไม่
-		for _, o := range allowedOrigins {
-			if o == origin {
-				c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-				break
-			}
-		}
-
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://10.0.14.228:5173") // frontend origin
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
-		c.Writer.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-
 		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
+			c.AbortWithStatus(204)
 			return
 		}
 		c.Next()
 	}
 }
-
