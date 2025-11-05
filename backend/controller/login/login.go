@@ -9,7 +9,7 @@ import (
 	"github.com/Tawunchai/work-project/services"
 )
 
-// ✅ LOGIN: เก็บ token ใน HttpOnly Cookie สำหรับ Render + Vercel
+// ✅ LOGIN: เก็บ token ใน HttpOnly Cookie สำหรับ Render + Vercel (Cross-site)
 func AddLogin(c *gin.Context) {
 	var loginData entity.User
 	if err := c.ShouldBindJSON(&loginData); err != nil {
@@ -41,22 +41,22 @@ func AddLogin(c *gin.Context) {
 		return
 	}
 
-	// ✅ ตั้งค่า cookie ให้ cross-domain ใช้งานได้กับ HTTPS
-	c.SetSameSite(http.SameSiteNoneMode) // ต้องมีสำหรับ cross-site cookie
+	// ✅ ตั้งค่า cookie สำหรับ cross-site (Render ↔️ Vercel)
+	c.SetSameSite(http.SameSiteNoneMode)
 	c.SetCookie(
 		"access_token",
 		token,
 		86400, // อายุ 1 วัน
 		"/",
-		"payment-project-t4dj.onrender.com", // ✅ domain ของ backend (Render)
-		true,  // ✅ Secure = true (เพราะใช้ HTTPS)
-		true,  // ✅ HttpOnly = true
+		"payment-project-t4dj.onrender.com", // ✅ ใช้ domain ของ backend
+		true,  // Secure (HTTPS เท่านั้น)
+		true,  // HttpOnly
 	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "login success"})
 }
 
-// ✅ LOGOUT: ล้าง cookie ออก
+// ✅ LOGOUT: ล้าง cookie
 func Logout(c *gin.Context) {
 	c.SetSameSite(http.SameSiteNoneMode)
 	c.SetCookie(
@@ -68,11 +68,10 @@ func Logout(c *gin.Context) {
 		true,
 		true,
 	)
-
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
-// ✅ GET PROFILE (เพิ่ม EmployeeID)
+// ✅ GET PROFILE (อ่านข้อมูลผู้ใช้)
 func GetProfile(c *gin.Context) {
 	token, err := c.Cookie("access_token")
 	if err != nil {
@@ -94,7 +93,7 @@ func GetProfile(c *gin.Context) {
 		return
 	}
 
-	var employeeID *uint = nil
+	var employeeID *uint
 	if len(user.Employees) > 0 {
 		employeeID = &user.Employees[0].ID
 	}

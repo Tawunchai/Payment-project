@@ -243,15 +243,30 @@ func main() {
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "https://payment-project-deploy.vercel.app") // frontend origin
+		origin := c.Request.Header.Get("Origin")
+		allowedOrigins := []string{
+			"https://payment-project-deploy.vercel.app",
+			"https://payment-project-t4dj.onrender.com",
+		}
+
+		// ตรวจว่า origin ที่มาอยู่ใน allowed list หรือไม่
+		for _, o := range allowedOrigins {
+			if o == origin {
+				c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+				break
+			}
+		}
+
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
 		c.Writer.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+
 		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 		c.Next()
 	}
 }
+
