@@ -1,14 +1,16 @@
+// src/component/user/ev-selector/index.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ListEVCharging,
   apiUrlPicture,
   GetCarByUserID,
+  ListBank,
 } from "../../../services";
 import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import { EVchargingInterface } from "../../../interface/IEV";
 import { CarsInterface } from "../../../interface/ICar";
-import { ConfigProvider, Modal, Button, Input, Slider, message } from "antd";
+import { ConfigProvider, Modal, Button, Input, Slider } from "antd";
 
 // ⚡ EV Icon
 const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -22,30 +24,27 @@ type CabinetView = {
   name: string;
   location?: string;
   image?: string;
+  status?: string;
   chargers: EVchargingInterface[];
 };
 
 const Index: React.FC = () => {
   //@ts-ignore
   const [allChargers, setAllChargers] = useState<EVchargingInterface[]>([]);
-  // เก็บเฉพาะ “ที่เลือกไว้” (ภายใต้ตู้นั้น)
   const [evChargers, setEvChargers] = useState<EVchargingInterface[]>([]);
-  // แผนที่เปอร์เซ็นต์ของหัวแต่ละตัว
   const [percentMap, setPercentMap] = useState<{ [id: number]: number }>({});
-  // เงินรวม
   const [money, setMoney] = useState<number>(1000);
-  // state อื่น ๆ
+  const [minAmount, setMinAmount] = useState<number>(0);
+  const [errorMsg, setErrorMsg] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [showCarModal, setShowCarModal] = useState(false);
   const [userID, setUserID] = useState<number | undefined>(undefined);
-
-  // รายการ “ตู้ชาร์จ” ที่สรุปจากข้อมูลทั้งหมด
   const [cabinets, setCabinets] = useState<CabinetView[]>([]);
   const [selectedCabinetId, setSelectedCabinetId] = useState<number | null>(null);
 
   const navigate = useNavigate();
 
-  // ✅ โหลด userID จาก JWT Cookie
+  // ✅ โหลด userID
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -53,38 +52,57 @@ const Index: React.FC = () => {
         if (!current) current = await initUserProfile();
         const uid = current?.id;
         if (!uid) {
-          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
           navigate("/login");
           return;
         }
         setUserID(uid);
       } catch (error) {
         console.error("Error loading user:", error);
-        message.error("โหลดข้อมูลผู้ใช้ล้มเหลว");
       }
     };
     loadUser();
   }, [navigate]);
 
-  // ✅ โหลดข้อมูล EV Charger ทั้งหมด
+  // ✅ โหลดค่า Minimum จากธนาคาร
+  useEffect(() => {
+    const fetchBankMin = async () => {
+      try {
+        const banks = await ListBank();
+        if (Array.isArray(banks) && banks.length > 0) {
+          const firstBank = banks[0];
+          if (firstBank?.Minimum !== undefined) {
+            setMinAmount(firstBank.Minimum);
+            setMoney(firstBank.Minimum);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading banks:", err);
+      }
+    };
+    fetchBankMin();
+  }, []);
+
+  // ✅ โหลดข้อมูล EV Charger ทั้งหมด + Cabinet เฉพาะ Active
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const data = await ListEVCharging();
         if (Array.isArray(data) && data.length > 0) {
-          setAllChargers(data);
-
-          // จัดกลุ่มตาม EVCabinetID
           const groupMap = new Map<number, CabinetView>();
           data.forEach((c) => {
-            const id = c.EVCabinetID!;
+            const cab = c.EVCabinet;
+            if (!cab) return;
+            // ✅ กรอง Cabinet เฉพาะ Active
+            if (cab.Status !== "Active") return;
+            const id = cab.ID!;
             if (!groupMap.has(id)) {
               groupMap.set(id, {
                 id,
-                name: c.EVCabinet?.Name || `Cabinet #${id}`,
-                location: c.EVCabinet?.Location || "",
-                image: c.EVCabinet?.Image ? `${apiUrlPicture}${c.EVCabinet.Image}` : undefined,
+                name: cab.Name || `Cabinet #${id}`,
+                location: cab.Location || "",
+                image: cab.Image ? `${apiUrlPicture}${cab.Image}` : undefined,
+                status: cab.Status,
                 chargers: [],
               });
             }
@@ -94,28 +112,19 @@ const Index: React.FC = () => {
           const list = Array.from(groupMap.values());
           setCabinets(list);
 
-          // ตั้งค่า default: เลือกตู้ตัวแรก
           if (list.length > 0) {
             const firstCab = list[0];
-            setSelectedCabinetId(firstCab.id);
-
-            // โหมด Percent → ใช้ 2 ตัวแรกในตู้นั้น (ถ้ามากกว่า 2)
-            const selectedTwo = firstCab.chargers.slice(0, 2);
-            setEvChargers(selectedTwo);
-
-            // ค่าเริ่มต้น: ตัวแรก 100%, ที่เหลือ 0%
+            const availableChargers = firstCab.chargers.filter(
+              (c) => c.Status?.Status !== "Unavailable"
+            );
+            setEvChargers(availableChargers);
             const init: { [id: number]: number } = {};
-            selectedTwo.forEach((item, idx) => {
+            availableChargers.forEach((item, idx) => {
               init[item.ID] = idx === 0 ? 100 : 0;
             });
             setPercentMap(init);
+            setSelectedCabinetId(firstCab.id);
           }
-        } else {
-          setAllChargers([]);
-          setCabinets([]);
-          setEvChargers([]);
-          setSelectedCabinetId(null);
-          setPercentMap({});
         }
       } catch (err) {
         console.error("Error loading chargers:", err);
@@ -126,25 +135,25 @@ const Index: React.FC = () => {
     fetchData();
   }, []);
 
-  // ✅ เมื่อเปลี่ยน “ตู้ที่เลือก” → อัปเดตหัวชาร์จในตู้นั้น + percentMap
+  // ✅ เมื่อเปลี่ยน “ตู้ที่เลือก”
   useEffect(() => {
     if (selectedCabinetId == null || cabinets.length === 0) return;
     const cab = cabinets.find((c) => c.id === selectedCabinetId);
     if (!cab) return;
-
-    const selectedTwo = cab.chargers.slice(0, 2);
-    setEvChargers(selectedTwo);
-
+    const availableChargers = cab.chargers.filter(
+      (c) => c.Status?.Status !== "Unavailable"
+    );
+    setEvChargers(availableChargers);
     const init: { [id: number]: number } = {};
-    selectedTwo.forEach((item, idx) => {
+    availableChargers.forEach((item, idx) => {
       init[item.ID] = idx === 0 ? 100 : 0;
     });
     setPercentMap(init);
   }, [selectedCabinetId, cabinets]);
 
-  // ✅ ปรับเปอร์เซ็นต์ (จำกัด 2 ตัว ให้รวมกัน = 100)
+  // ✅ ปรับเปอร์เซ็นต์
   const setPercent = (id: number, value: number) => {
-    if (evChargers.length !== 2) return;
+    if (evChargers.length < 2) return;
     const other = evChargers.find((c) => c.ID !== id);
     if (!other) return;
     const fixed = Math.min(100, Math.max(0, value));
@@ -155,7 +164,7 @@ const Index: React.FC = () => {
     });
   };
 
-  // ✅ คำนวณเงินและพลังงาน
+  // ✅ คำนวณเงิน
   const itemsWithCalc = useMemo(() => {
     return evChargers.map((charger) => {
       const percent = percentMap[charger.ID] || 0;
@@ -171,48 +180,54 @@ const Index: React.FC = () => {
     [itemsWithCalc]
   );
 
-  // ✅ เมื่อกด Next
-  const handleNext = async () => {
-    try {
-      if (!userID) {
-        message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
-        navigate("/login");
-        return;
-      }
-
-      const cars: CarsInterface[] | null = await GetCarByUserID(userID);
-      if (!cars || cars.length === 0) {
-        setShowCarModal(true);
-        return;
-      }
-
-      const payload = itemsWithCalc.map((it) => ({
-        id: it.charger.ID,
-        name: it.charger.Name,
-        picture: it.charger.Picture,
-        power: it.power,
-        total: it.total,
-        percent: it.percent,
-        price_per_power: it.charger.Price,
-        amount: it.amount,
-      }));
-
-      navigate("/user/payment", { state: { chargers: payload } });
-    } catch (err) {
-      console.error("Error checking user car:", err);
-      setShowCarModal(true);
+  // ✅ ตรวจสอบขั้นต่ำ
+  const handleMoneyChange = (value: number) => {
+    if (value < minAmount) {
+      setErrorMsg(`จำนวนเงินต้องไม่ต่ำกว่า ${minAmount.toFixed(2)} บาท`);
+    } else {
+      setErrorMsg("");
     }
+    setMoney(value);
   };
 
-  // 🔎 รายชื่อ “ตู้ชาร์จทั้งหมด” (จากข้อมูลจริง) เพื่อแสดงใต้ “ยอดรวมทั้งหมด”
-  const cabinetSummary = useMemo(() => {
-    return cabinets.map((cab) => ({
-      id: cab.id,
-      name: cab.name,
-      location: cab.location,
-      image: cab.image,
-      chargerNames: cab.chargers.map((c) => c.Name).filter(Boolean),
+  // ✅ Next
+  const handleNext = async () => {
+    if (!userID) {
+      navigate("/login");
+      return;
+    }
+    const cars: CarsInterface[] | null = await GetCarByUserID(userID);
+    if (!cars || cars.length === 0) {
+      setShowCarModal(true);
+      return;
+    }
+    const payload = itemsWithCalc.map((it) => ({
+      id: it.charger.ID,
+      name: it.charger.Name,
+      picture: it.charger.Picture,
+      power: it.power,
+      total: it.total,
+      percent: it.percent,
+      price_per_power: it.charger.Price,
+      amount: it.amount,
     }));
+    navigate("/user/payment", { state: { chargers: payload } });
+  };
+
+  // ✅ แสดงเฉพาะ Cabinet Active เท่านั้น
+  const cabinetSummary = useMemo(() => {
+    return cabinets
+      .filter((cab) => cab.status === "Active")
+      .map((cab) => ({
+        id: cab.id,
+        name: cab.name,
+        location: cab.location,
+        image: cab.image,
+        chargerNames: cab.chargers
+          .filter((c) => c.Status?.Status !== "Unavailable")
+          .map((c) => c.Name)
+          .filter(Boolean),
+      }));
   }, [cabinets]);
 
   return (
@@ -236,37 +251,43 @@ const Index: React.FC = () => {
           </button>
           <div className="flex items-center gap-2">
             <BoltIcon className="h-5 w-5 text-white" />
-            <span className="text-base font-semibold tracking-wide">
-              EV Selector
-            </span>
+            <span className="text-base font-semibold tracking-wide">EV Selector</span>
           </div>
         </div>
       </header>
 
       {/* CONTENT */}
       <main className="mx-auto max-w-screen-sm px-4 pb-28 pt-4">
-        {/* Input เงิน */}
-        <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
-          <label className="text-sm font-medium text-blue-700">💰 ใส่จำนวนเงิน (บาท)</label>
-          <Input
-            type="number"
-            min={0}
-            value={money}
-            onChange={(e) => setMoney(Number(e.target.value) || 0)}
-            className="mt-2 rounded-lg border-blue-200"
-          />
+        {/* 💵 Input เงิน */}
+        <div className="mb-5 rounded-xl bg-gradient-to-r from-[#EAF3FF] via-[#F3F8FF] to-[#FFFFFF] border border-blue-100 p-3 shadow-sm">
+          <label className="block text-xs font-medium text-[#0A84FF] mb-1">
+            💵 ใส่จำนวนเงินที่ต้องการเติม (ขั้นต่ำ {minAmount} บาท)
+          </label>
+          <div className="relative">
+            <Input
+              type="number"
+              min={minAmount}
+              value={money}
+              onChange={(e) => handleMoneyChange(Number(e.target.value) || 0)}
+              placeholder={`ขั้นต่ำ ${minAmount} บาท`}
+              className={`h-9 w-full rounded-lg border ${
+                errorMsg ? "border-red-400" : "border-blue-200/40"
+              } bg-white/70 text-gray-700 placeholder:text-gray-400 focus:ring-1 transition-all duration-300`}
+            />
+            <span className="absolute right-3 top-1.5 text-[#0A84FF] font-semibold text-sm">฿</span>
+          </div>
+          {errorMsg && <p className="text-red-500 text-xs mt-1">{errorMsg}</p>}
         </div>
 
-        {/* สรุปยอดรวม */}
+        {/* ยอดรวม */}
         <div className="mb-3 flex items-center justify-between rounded-2xl bg-blue-100 px-4 py-3">
           <span className="text-sm text-blue-900">ยอดรวมทั้งหมด</span>
           <span className="text-xl font-bold text-blue-700">฿{totalAmount.toFixed(2)}</span>
         </div>
 
-        {/* 🔷 ตัวเลือก “ตู้ชาร์จ” ใต้ยอดรวมทั้งหมด + รูปภาพตู้ */}
+        {/* 🔷 ตัวเลือก Cabinet */}
         <section className="mb-5 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
           <div className="mb-2 text-sm font-semibold text-gray-800">เลือกตู้ชาร์จ</div>
-
           {loading ? (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
@@ -291,7 +312,6 @@ const Index: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      {/* รูป Cabinet */}
                       <div className="h-12 w-16 overflow-hidden rounded-xl ring-1 ring-blue-100 bg-blue-50 shrink-0">
                         {cab.image ? (
                           <img
@@ -304,8 +324,6 @@ const Index: React.FC = () => {
                           />
                         ) : null}
                       </div>
-
-                      {/* รายละเอียด */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span
@@ -313,14 +331,11 @@ const Index: React.FC = () => {
                               isActive ? "bg-blue-600" : "bg-gray-300"
                             }`}
                           />
-                          <span className="font-medium text-gray-900">
-                            {cab.name}
-                          </span>
+                          <span className="font-medium text-gray-900">{cab.name}</span>
                         </div>
-                        {cab.location ? (
+                        {cab.location && (
                           <div className="mt-0.5 text-xs text-gray-500">{cab.location}</div>
-                        ) : null}
-                        {/* รายชื่อหัวชาร์จในตู้นี้ */}
+                        )}
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {cab.chargerNames.length > 0 ? (
                             cab.chargerNames.map((nm, idx) => (
@@ -332,11 +347,12 @@ const Index: React.FC = () => {
                               </span>
                             ))
                           ) : (
-                            <span className="text-xs text-gray-400">— ไม่มีหัวชาร์จ —</span>
+                            <span className="text-xs text-gray-400">
+                              — ไม่มีหัวชาร์จที่พร้อมใช้งาน —
+                            </span>
                           )}
                         </div>
                       </div>
-
                       {isActive && (
                         <span className="shrink-0 rounded-xl bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white">
                           เลือกอยู่
@@ -350,7 +366,7 @@ const Index: React.FC = () => {
           )}
         </section>
 
-        {/* รายการ Charger (เฉพาะตู้นี้) */}
+        {/* รายการ Charger */}
         <ConfigProvider
           theme={{
             components: {
@@ -370,16 +386,18 @@ const Index: React.FC = () => {
             </div>
           ) : evChargers.length === 0 ? (
             <div className="rounded-2xl border border-gray-100 bg-white px-4 py-6 text-center text-sm text-gray-500">
-              — ตู้นี้ยังไม่มีหัวชาร์จที่ใช้งานได้ —
+              — ไม่มีหัวชาร์จที่พร้อมใช้งาน —
             </div>
           ) : (
             evChargers.map(({ ID, Name, Picture, Price }) => {
               const percent = percentMap[ID] ?? 0;
               const amount = (money * percent) / 100;
               const power = Price ? amount / Price : 0;
-
               return (
-                <div key={ID} className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm mb-3">
+                <div
+                  key={ID}
+                  className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm mb-3"
+                >
                   <div className="flex items-center gap-3">
                     <img
                       src={`${apiUrlPicture}${Picture}`}
@@ -396,11 +414,10 @@ const Index: React.FC = () => {
                           ฿{(Price || 0).toFixed(2)} / kWh
                         </span>
                       </div>
-
                       <div className="mt-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setPercent(ID, (percent ?? 0) - 10)}
+                            onClick={() => setPercent(ID, (percent ?? 0) - 1)}
                             className="h-7 w-7 rounded-lg border border-gray-200 text-gray-700 active:bg-gray-50"
                           >
                             –
@@ -409,7 +426,7 @@ const Index: React.FC = () => {
                             {percent}%
                           </span>
                           <button
-                            onClick={() => setPercent(ID, (percent ?? 0) + 10)}
+                            onClick={() => setPercent(ID, (percent ?? 0) + 1)}
                             className="h-7 w-7 rounded-lg border border-gray-200 text-gray-700 active:bg-gray-50"
                           >
                             +
@@ -417,7 +434,6 @@ const Index: React.FC = () => {
                         </div>
                         <span className="text-sm text-gray-600">⚡ {power.toFixed(2)} kWh</span>
                       </div>
-
                       <div className="mt-2">
                         <Slider
                           min={0}
@@ -440,13 +456,15 @@ const Index: React.FC = () => {
         <div className="mx-auto flex max-w-screen-sm items-center justify-between gap-3 px-4 py-3">
           <div className="flex flex-col leading-tight">
             <span className="text-xs text-gray-500">ยอดรวม</span>
-            <span className="text-lg font-bold text-blue-700">฿{totalAmount.toFixed(2)}</span>
+            <span className="text-lg font-bold text-blue-700">
+              ฿{totalAmount.toFixed(2)}
+            </span>
           </div>
           <button
             onClick={handleNext}
-            disabled={loading || evChargers.length === 0}
+            disabled={loading || evChargers.length === 0 || money < minAmount}
             className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-white transition ${
-              loading || evChargers.length === 0
+              loading || evChargers.length === 0 || money < minAmount
                 ? "bg-blue-300"
                 : "bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 shadow-md"
             }`}
@@ -469,7 +487,9 @@ const Index: React.FC = () => {
       >
         <div className="text-4xl mb-3">🚗</div>
         <h3 className="text-lg font-semibold text-blue-700 mb-2">ไม่พบข้อมูลรถของคุณ</h3>
-        <p className="text-gray-600 mb-5">ก่อนทำการชำระเงิน กรุณาเพิ่มข้อมูลรถของคุณในระบบ</p>
+        <p className="text-gray-600 mb-5">
+          ก่อนทำการชำระเงิน กรุณาเพิ่มข้อมูลรถของคุณในระบบ
+        </p>
         <div className="flex justify-center gap-3">
           <Button
             onClick={() => setShowCarModal(false)}

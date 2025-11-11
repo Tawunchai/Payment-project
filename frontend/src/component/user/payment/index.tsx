@@ -276,7 +276,7 @@ const Index: React.FC = () => {
                     <p className="text-xs text-gray-500">
                       กำลังไฟฟ้า:{" "}
                       <span className="font-semibold text-blue-700">
-                        {item.power} <span className="text-[10px] text-blue-400"> kWh</span>
+                        {item.power?.toFixed(2)} <span className="text-[10px] text-blue-400">kWh</span>
                       </span>
                     </p>
                   </div>
@@ -367,8 +367,8 @@ const Index: React.FC = () => {
             onClick={handlePayment}
             disabled={isProcessing || isLoadingMethod || chargers.length === 0}
             className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white transition ${isProcessing || isLoadingMethod || chargers.length === 0
-                ? "bg-blue-300"
-                : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+              ? "bg-blue-300"
+              : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
               }`}
           >
             <BoltIcon className="h-5 w-5 text-white" />

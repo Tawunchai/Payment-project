@@ -431,6 +431,7 @@ const EV: React.FC = () => {
     setLoading(true);
     try {
       const evs = await ListEVCharging();
+      console.log(evs); // ดูข้อมูลจริงจาก backend
       if (evs) {
         const rows: RowType[] = evs.map((ev: any) => {
           const id = Number(ev.ID);
@@ -438,14 +439,15 @@ const EV: React.FC = () => {
             key: id,
             ID: id,
             Name: ev.Name ?? "-",
-            Email: ev.Employee?.User?.Email ?? "-",
+            Email: ev.Employee?.User?.Email ?? "-", // (ใช้ได้หากต้องการเก็บไว้)
             Description: ev.Description ?? "-",
             Price: Number(ev.Price ?? 0),
             Type: ev.Type?.Type ?? "-",
             Status: ev.Status?.Status ?? "-",
-            EmployeeName: ev.Employee
-              ? `${ev.Employee?.User?.FirstName ?? ""} ${ev.Employee?.User?.LastName ?? ""}`.trim()
-              : "-",
+
+            // ✅ เปลี่ยน Owner → ชื่อ Cabinet
+            EmployeeName: ev.EVCabinet?.Name ?? "-", // <— แก้ตรงนี้
+
             Picture: ev.Picture ?? "",
             EmployeeID: ev.EmployeeID,
             StatusID: ev.StatusID,
@@ -462,6 +464,7 @@ const EV: React.FC = () => {
       setLoading(false);
     }
   };
+
 
   const fetchLists = async () => {
     const [statuses, types] = await Promise.all([ListStatus(), ListTypeEV()]);
@@ -628,7 +631,7 @@ const EV: React.FC = () => {
       render: (v) => <span className="font-semibold text-blue-700">{Number(v).toLocaleString()}</span>,
     },
     {
-      title: "Owner",
+      title: "EV Cabinet",
       dataIndex: "EmployeeName",
       key: "owner",
       width: 160,

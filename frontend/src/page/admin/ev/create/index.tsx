@@ -3,7 +3,7 @@ import { Upload, message, Select } from "antd";
 import ImgCrop from "antd-img-crop";
 import { StatusInterface } from "../../../../interface/IStatus";
 import { TypeInterface } from "../../../../interface/IType";
-import { CreateEV } from "../../../../services/index";
+import { CreateEV, ListCabinetsEV } from "../../../../services/index";
 import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 import {
   FaTimes,
@@ -13,6 +13,7 @@ import {
   FaMoneyBillWave,
   FaListAlt,
   FaInfoCircle,
+  FaChargingStation,
 } from "react-icons/fa";
 
 interface CreateEVModalProps {
@@ -21,6 +22,12 @@ interface CreateEVModalProps {
   onSaved: () => void;
   statusList: StatusInterface[];
   typeList: TypeInterface[];
+}
+
+interface CabinetInterface {
+  ID: number;
+  Name: string;
+  Location: string;
 }
 
 const CreateEVModal: React.FC<CreateEVModalProps> = ({
@@ -35,12 +42,14 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
   const [price, setPrice] = useState<string>("");
   const [statusID, setStatusID] = useState<number | undefined>(undefined);
   const [typeID, setTypeID] = useState<number | undefined>(undefined);
+  const [evCabinetID, setEvCabinetID] = useState<number | undefined>(undefined);
   const [fileList, setFileList] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // ✅ ดึง employee_id จาก JWT token
+  const [cabinets, setCabinets] = useState<CabinetInterface[]>([]);
   const [employeeID, setEmployeeID] = useState<number | null>(null);
 
+  // ✅ โหลด employee_id จาก JWT
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
@@ -58,11 +67,26 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
     fetchEmployee();
   }, []);
 
-  // ตรวจมือถือเพื่อกำหนดความสูงโมดัล (ให้เลื่อนใน body)
-  const isMobile =
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 768px)").matches;
+  // ✅ โหลดรายการ Cabinet จาก service
+  useEffect(() => {
+    const fetchCabinets = async () => {
+      try {
+        const res = await ListCabinetsEV();
+        if (res && Array.isArray(res)) {
+          setCabinets(res);
+        } else if (res) {
+          setCabinets(res);
+        } else {
+          setCabinets([]);
+        }
+      } catch {
+        message.error("ไม่สามารถโหลดข้อมูล Cabinet ได้");
+      }
+    };
+    if (open) fetchCabinets();
+  }, [open]);
 
+  // ✅ รีเซ็ตค่าเมื่อ modal เปิด
   useEffect(() => {
     if (open) {
       setName("");
@@ -70,13 +94,28 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
       setPrice("");
       setStatusID(undefined);
       setTypeID(undefined);
+      setEvCabinetID(undefined);
       setFileList([]);
       setSubmitting(false);
     }
   }, [open]);
 
+  // ✅ ตรวจขนาดหน้าจอมือถือ
+  const isMobile =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 768px)").matches;
+
+  // ✅ Submit form
   const handleSubmit = async () => {
-    if (!name || !description || !price || !statusID || !typeID || fileList.length === 0) {
+    if (
+      !name ||
+      !description ||
+      !price ||
+      !statusID ||
+      !typeID ||
+      !evCabinetID ||
+      fileList.length === 0
+    ) {
       message.error("กรุณากรอกข้อมูลให้ครบถ้วนและเลือกรูปภาพ");
       return;
     }
@@ -89,14 +128,8 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
       formData.append("price", price);
       formData.append("statusID", String(statusID));
       formData.append("typeID", String(typeID));
-
-      // ✅ ผูก employee_id จาก JWT token
-      if (employeeID) {
-        formData.append("employeeID", String(employeeID));
-      } else {
-        message.warning("ไม่พบรหัสพนักงานในระบบ");
-      }
-
+      formData.append("evCabinetID", String(evCabinetID)); // ✅ Cabinet ID
+      if (employeeID) formData.append("employeeID", String(employeeID));
       formData.append("picture", fileList[0].originFileObj);
 
       const result = await CreateEV(formData);
@@ -142,8 +175,8 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
         aria-hidden="true"
       />
 
+      {/* Modal container */}
       <div className="relative w-full max-w-[600px] mx-4 md:mx-auto mb-8 md:mb-0">
-        {/* กล่อง modal เป็นคอลัมน์: header (fixed) + body (scroll) + footer (fixed) */}
         <div
           className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100 flex flex-col"
           style={{ maxHeight: isMobile ? "78vh" : "82vh" }}
@@ -170,14 +203,10 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
             </button>
           </div>
 
-          {/* Body (scroll area) */}
+          {/* Body */}
           <div
-            className="px-5 py-5 bg-blue-50/40 space-y-3"
-            style={{
-              overflowY: "auto",
-              WebkitOverflowScrolling: "touch",
-              maxHeight: "100%",
-            }}
+            className="px-5 py-5 bg-blue-50/40 space-y-3 overflow-y-auto"
+            style={{ WebkitOverflowScrolling: "touch" }}
           >
             {/* Upload */}
             <div className="flex justify-center mb-3">
@@ -193,7 +222,7 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                       message.error("กรุณาอัปโหลดเฉพาะไฟล์รูปภาพ");
                       return Upload.LIST_IGNORE;
                     }
-                    return false; // อัปโหลดตอน submit
+                    return false;
                   }}
                   maxCount={1}
                 >
@@ -207,7 +236,7 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
               </ImgCrop>
             </div>
 
-            {/* Form Fields */}
+            {/* Form */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Name */}
               <label className="flex flex-col gap-1">
@@ -244,7 +273,6 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                 </span>
                 <Select
                   className="ev-select w-full"
-                  popupClassName="ev-select-dropdown"
                   placeholder="เลือกสถานะ"
                   value={statusID}
                   onChange={(val) => setStatusID(val as number)}
@@ -253,7 +281,6 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                     value: s.ID,
                   }))}
                   allowClear
-                  showSearch={false}
                   size="large"
                 />
               </label>
@@ -265,7 +292,6 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                 </span>
                 <Select
                   className="ev-select w-full"
-                  popupClassName="ev-select-dropdown"
                   placeholder="เลือกประเภท"
                   value={typeID}
                   onChange={(val) => setTypeID(val as number)}
@@ -274,7 +300,26 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                     value: t.ID,
                   }))}
                   allowClear
-                  showSearch={false}
+                  size="large"
+                />
+              </label>
+
+              {/* Cabinet */}
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className="text-xs text-slate-600 flex items-center gap-2">
+                  <FaChargingStation className="text-blue-500" /> ตู้ชาร์จ (Cabinet)
+                </span>
+                <Select
+                  className="ev-select w-full"
+                  placeholder="เลือก Cabinet"
+                  value={evCabinetID}
+                  onChange={(val) => setEvCabinetID(val as number)}
+                  options={cabinets.map((c) => ({
+                    label: `${c.Name} (${c.Location || "ไม่ระบุที่ตั้ง"})`,
+                    value: c.ID,
+                  }))}
+                  allowClear
+                  showSearch
                   size="large"
                 />
               </label>
@@ -313,7 +358,7 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
             </button>
           </div>
 
-          {/* safe-area ด้านล่างสำหรับมือถือ */}
+          {/* Safe area (mobile) */}
           <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>

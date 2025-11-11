@@ -23,6 +23,7 @@ import (
 	modal "github.com/Tawunchai/work-project/controller/modal"
 	"github.com/Tawunchai/work-project/controller/new"
 	"github.com/Tawunchai/work-project/controller/notify"
+	"github.com/Tawunchai/work-project/controller/ocpp"
 	"github.com/Tawunchai/work-project/controller/otp"
 	"github.com/Tawunchai/work-project/controller/payment"
 	"github.com/Tawunchai/work-project/controller/report"
@@ -113,7 +114,8 @@ func main() {
 		public.POST("/create-payment-coins", payment.CreatePaymentCoin)
 		public.GET("/payment-coins/:user_id", payment.ListPaymentCoinsByUserID)
 		public.DELETE("/payment-coins", payment.DeletePaymentCoins)
-		r.DELETE("/payments", payment.DeletePayment)
+		public.DELETE("/payments", payment.DeletePayment)
+		public.GET("/ref/:ref", payment.GetDataPaymentByRef)
 
 		//Send Email
 		public.GET("/send-emails", sendemail.ListSendEmail)
@@ -226,6 +228,10 @@ func main() {
 
 		// ✅ ตรวจสอบ token
 		public.GET("/token/verify", tokening.VerifyChargingSession)
+
+		//OCPP Test
+		public.GET("/ocpp/:chargerID", ocpp.HandleOCPP)
+		public.GET("/frontend", ocpp.HandleFrontend)      // ส่งให้ frontend
 	}
 
 	r.GET("/", func(c *gin.Context) {
@@ -238,7 +244,7 @@ func main() {
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://10.167.17.128:5173") // frontend origin
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://10.0.14.228:5173") // frontend origin
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
