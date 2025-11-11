@@ -35,12 +35,14 @@ func ListEVData(c *gin.Context) {
 func UpdateEVByID(c *gin.Context) {
 	id := c.Param("id")
 	var ev entity.EVcharging
+
+	// ตรวจว่ามีข้อมูล EVcharging หรือไม่
 	if err := config.DB().First(&ev, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบข้อมูล EV Charging ที่ต้องการอัปเดต"})
 		return
 	}
 
-	// รูปภาพ
+	// ✅ อัปโหลดรูปภาพใหม่ (ถ้ามี)
 	file, err := c.FormFile("picture")
 	if err == nil && file != nil {
 		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
@@ -55,8 +57,13 @@ func UpdateEVByID(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็น .jpg, .png, .gif เท่านั้น"})
 			return
 		}
+
 		uploadDir := "uploads/evcharging"
-		os.MkdirAll(uploadDir, os.ModePerm)
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างโฟลเดอร์ได้"})
+			return
+		}
+
 		ext := filepath.Ext(file.Filename)
 		newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 		filePath := filepath.Join(uploadDir, newFileName)
@@ -65,10 +72,11 @@ func UpdateEVByID(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "บันทึกรูปไม่สำเร็จ"})
 			return
 		}
+
 		ev.Picture = filePath
 	}
 
-	// อัปเดตข้อมูลจาก form
+	// ✅ อัปเดตฟิลด์จากฟอร์ม
 	if name := c.PostForm("name"); name != "" {
 		ev.Name = name
 	}
@@ -97,15 +105,32 @@ func UpdateEVByID(c *gin.Context) {
 		}
 	}
 
+	// ✅ เพิ่มส่วนนี้: อัปเดต Cabinet ID
+	if evCabinetID := c.PostForm("evCabinetID"); evCabinetID != "" {
+		if v, err := strconv.ParseUint(evCabinetID, 10, 64); err == nil {
+			ev.EVCabinetID = uint(v)
+		}
+	}
+
+	// ✅ บันทึกข้อมูล
 	if err := config.DB().Save(&ev).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "อัปเดตไม่สำเร็จ"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "อัปเดตข้อมูลไม่สำเร็จ"})
 		return
 	}
 
-	config.DB().Preload("Employee").Preload("Status").Preload("Type").First(&ev, id)
-	c.JSON(http.StatusOK, gin.H{"message": "อัปเดตข้อมูล EV Charging สำเร็จ", "data": ev})
-}
+	// ✅ โหลดข้อมูลพร้อมความสัมพันธ์
+	config.DB().
+		Preload("Employee.User").
+		Preload("Status").
+		Preload("Type").
+		Preload("EVCabinet").
+		First(&ev, id)
 
+	c.JSON(http.StatusOK, gin.H{
+		"message": "อัปเดตข้อมูล EV Charging สำเร็จ",
+		"data":    ev,
+	})
+}
 
 func CreateEV(c *gin.Context) {
 	file, err := c.FormFile("picture")
@@ -142,12 +167,13 @@ func CreateEV(c *gin.Context) {
 		return
 	}
 
-	// รับข้อมูลจาก form
+	// ✅ รับข้อมูลจาก form
 	name := c.PostForm("name")
 	description := c.PostForm("description")
 	price, _ := strconv.ParseFloat(c.PostForm("price"), 64)
 	statusID, _ := strconv.ParseUint(c.PostForm("statusID"), 10, 64)
 	typeID, _ := strconv.ParseUint(c.PostForm("typeID"), 10, 64)
+	evCabinetID, _ := strconv.ParseUint(c.PostForm("evCabinetID"), 10, 64) // ✅ เพิ่มบรรทัดนี้
 
 	var employeeID *uint
 	if empStr := c.PostForm("employeeID"); empStr != "" {
@@ -156,26 +182,37 @@ func CreateEV(c *gin.Context) {
 		employeeID = &temp
 	}
 
+	// ✅ สร้างอ็อบเจกต์ EVcharging พร้อม CabinetID
 	ev := entity.EVcharging{
-		Name:        name,
-		Description: description,
-		Price:       price,
-		Picture:     filePath,
-		EmployeeID:  employeeID,
-		StatusID:    uint(statusID),
-		TypeID:      uint(typeID),
+		Name:         name,
+		Description:  description,
+		Price:        price,
+		Picture:      filePath,
+		EmployeeID:   employeeID,
+		StatusID:     uint(statusID),
+		TypeID:       uint(typeID),
+		EVCabinetID:  uint(evCabinetID), // ✅ เพิ่มตรงนี้
 	}
 
+	// ✅ บันทึกข้อมูล
 	if err := config.DB().Create(&ev).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างข้อมูล EV Charging ได้"})
 		return
 	}
 
-	config.DB().Preload("Employee.User").Preload("Status").Preload("Type").First(&ev, ev.ID)
-	c.JSON(http.StatusCreated, gin.H{"message": "สร้างข้อมูล EV Charging สำเร็จ", "data": ev})
+	// ✅ โหลดข้อมูลสัมพันธ์กลับมา
+	config.DB().
+		Preload("Employee.User").
+		Preload("Status").
+		Preload("Type").
+		Preload("EVCabinet").
+		First(&ev, ev.ID)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "สร้างข้อมูล EV Charging สำเร็จ",
+		"data":    ev,
+	})
 }
-
-
 
 func DeleteEVByID(c *gin.Context) {
 	id := c.Param("id")

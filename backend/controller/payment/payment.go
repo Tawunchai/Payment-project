@@ -489,3 +489,40 @@ func DeletePayment(c *gin.Context) {
 		"deleted": ids,
 	})
 }
+
+// ✅ GetDataPaymentByRef: ตรวจสอบว่ามี ref นี้ใน Payment หรือ PaymentCoin หรือไม่
+func GetDataPaymentByRef(c *gin.Context) {
+	ref := c.Param("ref")
+	db := config.DB()
+
+	// ค้นใน Payment ก่อน
+	var payment entity.Payment
+	if err := db.Where("reference_number = ?", ref).First(&payment).Error; err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"found":   true,
+			"type":    "Payment",
+			"message": "พบข้อมูลใน Payment",
+			"data":    payment,
+		})
+		return
+	}
+
+	// ถ้าไม่พบใน Payment ให้ค้นใน PaymentCoin
+	var paymentCoin entity.PaymentCoin
+	if err := db.Where("reference_number = ?", ref).First(&paymentCoin).Error; err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"found":   true,
+			"type":    "PaymentCoin",
+			"message": "พบข้อมูลใน PaymentCoin",
+			"data":    paymentCoin,
+		})
+		return
+	}
+
+	// ไม่พบข้อมูล
+	c.JSON(http.StatusNotFound, gin.H{
+		"found":   false,
+		"ref":     ref,
+		"message": "ไม่พบข้อมูลใน Payment หรือ PaymentCoin",
+	})
+}

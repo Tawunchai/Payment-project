@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Select, Checkbox, Input, message } from "antd";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { Checkbox, Input, message } from "antd";
 import { FaCarSide, FaCity, FaTags, FaBolt, FaTimes } from "react-icons/fa";
-import { UpdateCarByID, ListCars } from "../../../../services";
+import { UpdateCarByID, ListCars, ListModals } from "../../../../services";
 import type { CarsInterface } from "../../../../interface/ICar";
-
-const { Option } = Select;
+import type { ModalInterface } from "../../../../interface/ICarCatalog";
 
 interface ModalEditCarProps {
   open: boolean;
@@ -17,6 +16,127 @@ interface ModalEditCarProps {
 function isCarsArray(arr: unknown): arr is CarsInterface[] {
   return Array.isArray(arr);
 }
+
+/* ===========================
+   Custom Select Component
+   =========================== */
+
+type Option = { label: string; value: string };
+
+interface EVSelectProps {
+  value?: string;
+  placeholder?: string;
+  options: Option[];
+  disabled?: boolean;
+  onChange: (val: string | undefined) => void;
+}
+
+const EVSelect: React.FC<EVSelectProps> = ({
+  value,
+  placeholder,
+  options,
+  disabled,
+  onChange,
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  const selectedLabel =
+    options.find((o) => o.value === value)?.label ?? "";
+
+  // ปิด dropdown เมื่อคลิกนอก component
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((prev) => !prev)}
+        className={`w-full flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm md:text-base bg-white transition
+          ${
+            disabled
+              ? "border-slate-200 text-slate-400 cursor-not-allowed bg-slate-50"
+              : "border-slate-300 text-slate-900 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          }`}
+      >
+        <span
+          className={
+            value ? "text-slate-900" : "text-slate-400 select-none"
+          }
+        >
+          {value ? selectedLabel : placeholder || "เลือก"}
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          className={`h-4 w-4 text-slate-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && !disabled && (
+        <div className="absolute z-20 mt-1 w-full rounded-xl bg-white shadow-lg ring-1 ring-slate-200 max-h-60 overflow-y-auto">
+          {options.length === 0 && (
+            <div className="px-3 py-2 text-sm text-slate-400">
+              ไม่มีตัวเลือก
+            </div>
+          )}
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+              className={`w-full px-3 py-2 text-left text-sm md:text-base hover:bg-slate-50 ${
+                opt.value === value ? "bg-blue-50 text-blue-700" : ""
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+
+          {value && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange(undefined);
+                setOpen(false);
+              }}
+              className="w-full px-3 py-2 text-left text-xs text-red-500 border-t border-slate-100 hover:bg-red-50"
+            >
+              ล้างค่า
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ===========================
+   MAIN MODAL COMPONENT
+   =========================== */
 
 const ModalEditCar: React.FC<ModalEditCarProps> = ({
   open,
@@ -34,48 +154,129 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
   const [plateError, setPlateError] = useState<string | null>(null);
   const [allCars, setAllCars] = useState<CarsInterface[]>([]);
 
-  // === ตัวเลือก (ตัวอย่าง / fallback) ===
-  const brandOptions = ["Toyota", "Honda", "Mazda", "Nissan", "BYD", "Tesla"];
-  const modelOptionsByBrand: Record<string, string[]> = {
-    Toyota: ["Corolla Cross", "Yaris Ativ", "bZ4X"],
-    Honda: ["City", "Civic e:HEV", "HR-V"],
-    Mazda: ["Mazda2", "CX-3", "MX-30"],
-    Nissan: ["Almera", "Kicks e-Power", "Leaf"],
-    BYD: ["Atto 3", "Dolphin", "Seal"],
-    Tesla: ["Model 3", "Model Y"],
-  };
-  const provinces = [
-    "กรุงเทพมหานคร","เชียงใหม่","ขอนแก่น","ภูเก็ต","นครราชสีมา","ชลบุรี","สงขลา","สุราษฎร์ธานี",
-  ];
+  // Catalog Brand/Model จาก ListModals
+  const [modals, setModals] = useState<ModalInterface[]>([]);
 
-  const modelOptions = useMemo(() => modelOptionsByBrand[brand] ?? [], [brand]);
+  // จังหวัดทั้งหมด (base)
+  const baseProvinces = [
+    "กระบี่",
+    "กรุงเทพมหานคร",
+    "กาญจนบุรี",
+    "กาฬสินธุ์",
+    "กำแพงเพชร",
+    "ขอนแก่น",
+    "จันทบุรี",
+    "ฉะเชิงเทรา",
+    "ชลบุรี",
+    "ชัยนาท",
+    "ชัยภูมิ",
+    "ชุมพร",
+    "เชียงราย",
+    "เชียงใหม่",
+    "ตรัง",
+    "ตราด",
+    "ตาก",
+    "นครนายก",
+    "นครปฐม",
+    "นครพนม",
+    "นครราชสีมา",
+    "นครศรีธรรมราช",
+    "นครสวรรค์",
+    "นนทบุรี",
+    "นราธิวาส",
+    "น่าน",
+    "บึงกาฬ",
+    "บุรีรัมย์",
+    "ปทุมธานี",
+    "ประจวบคีรีขันธ์",
+    "ปราจีนบุรี",
+    "ปัตตานี",
+    "พระนครศรีอยุธยา",
+    "พะเยา",
+    "พังงา",
+    "พัทลุง",
+    "พิจิตร",
+    "พิษณุโลก",
+    "เพชรบุรี",
+    "เพชรบูรณ์",
+    "แพร่",
+    "ภูเก็ต",
+    "มหาสารคาม",
+    "มุกดาหาร",
+    "แม่ฮ่องสอน",
+    "ยโสธร",
+    "ยะลา",
+    "ร้อยเอ็ด",
+    "ระนอง",
+    "ระยอง",
+    "ราชบุรี",
+    "ลพบุรี",
+    "ลำปาง",
+    "ลำพูน",
+    "เลย",
+    "ศรีสะเกษ",
+    "สกลนคร",
+    "สงขลา",
+    "สตูล",
+    "สมุทรปราการ",
+    "สมุทรสงคราม",
+    "สมุทรสาคร",
+    "สระแก้ว",
+    "สระบุรี",
+    "สิงห์บุรี",
+    "สุโขทัย",
+    "สุพรรณบุรี",
+    "สุราษฎร์ธานี",
+    "สุรินทร์",
+    "หนองคาย",
+    "หนองบัวลำภู",
+    "อ่างทอง",
+    "อำนาจเจริญ",
+    "อุดรธานี",
+    "อุตรดิตถ์",
+    "อุทัยธานี",
+    "อุบลราชธานี",
+  ];
 
   // ✅ ชื่อเจ้าของ (หลายคนคั่นด้วย , )
   const ownerNames = useMemo(() => {
     const users = (car as any)?.User ?? [];
     if (!Array.isArray(users) || users.length === 0) return "-";
     return users
-      .map((u) => `${u?.FirstName ?? ""} ${u?.LastName ?? ""}`.trim())
+      .map(
+        (u) => `${u?.FirstName ?? ""} ${u?.LastName ?? ""}`.trim()
+      )
       .filter(Boolean)
       .join(", ");
   }, [car]);
 
-  // โหลดรถทั้งหมดเพื่อเช็คทะเบียนซ้ำ (โหลดเมื่อ modal เปิด)
+  // โหลดรถทั้งหมด + catalog จาก ListModals เมื่อ modal เปิด
   useEffect(() => {
-    const fetchCars = async () => {
+    const fetchData = async () => {
       if (!open) return;
       try {
-        const res = await ListCars();
-        if (isCarsArray(res)) {
-          setAllCars(res);
+        const [resCars, resModals] = await Promise.all([
+          ListCars(),
+          ListModals(),
+        ]);
+
+        if (isCarsArray(resCars)) {
+          setAllCars(resCars);
         } else {
           setAllCars([]);
         }
+
+        if (resModals && Array.isArray(resModals)) {
+          setModals(resModals);
+        } else {
+          setModals([]);
+        }
       } catch {
         setAllCars([]);
+        setModals([]);
       }
     };
-    fetchCars();
+    fetchData();
   }, [open]);
 
   // ตั้งค่าจากรถที่กำลังแก้ไข
@@ -90,6 +291,43 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
     }
   }, [car]);
 
+  // รวม brand จาก catalog + ของรถปัจจุบัน (เผื่อไม่อยู่ใน catalog)
+  const brandOptions = useMemo(() => {
+    const set = new Set<string>();
+    if (car?.Brand) set.add(car.Brand);
+    modals.forEach((m) => {
+      const name = m.Brand?.BrandName?.trim();
+      if (name) set.add(name);
+    });
+    return Array.from(set);
+  }, [modals, car?.Brand]);
+
+  // รวม model ตาม brand + model เดิมของรถ
+  const modelOptions = useMemo(() => {
+    const set = new Set<string>();
+    if (!brand) {
+      if (car?.ModelCar) set.add(car.ModelCar);
+      return Array.from(set);
+    }
+
+    modals
+      .filter((m) => m.Brand?.BrandName === brand)
+      .forEach((m) => {
+        if (m.ModalName) set.add(m.ModalName);
+      });
+
+    if (car?.ModelCar) set.add(car.ModelCar);
+
+    return Array.from(set);
+  }, [brand, modals, car?.ModelCar]);
+
+  // รวม province จาก base + ของรถ (กันหาย)
+  const provinces = useMemo(() => {
+    const set = new Set<string>(baseProvinces);
+    if (car?.City) set.add(car.City);
+    return Array.from(set);
+  }, [car?.City]);
+
   // ===== ตรวจรูปแบบ/ซ้ำของทะเบียน =====
   const plateRegex = /^[A-Za-zก-ฮ]{2}\s?\d{4}$/;
   const normalizePlate = (s: string) => s.replace(/\s+/g, "").toUpperCase();
@@ -101,7 +339,9 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
       return;
     }
     if (!plateRegex.test(v)) {
-      setPlateError("รูปแบบทะเบียนไม่ถูกต้อง (เช่น กข 1234 หรือ AB 1234)");
+      setPlateError(
+        "รูปแบบทะเบียนไม่ถูกต้อง (เช่น กข 1234 หรือ AB 1234)"
+      );
       return;
     }
     const norm = normalizePlate(v);
@@ -125,7 +365,6 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
   const handleSubmit = async () => {
     if (!car || car.ID === undefined || submitting || !canSubmit) return;
 
-    // กันกรณี state lag: ตรวจอีกครั้งก่อนส่ง
     validatePlate(plate);
     if (plateError) {
       message.error("กรุณาแก้ไขทะเบียนให้ถูกต้องก่อนบันทึก");
@@ -144,7 +383,6 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
       const ok = await UpdateCarByID(car.ID, payload);
 
       if (ok) {
-        // ✅ ให้ข้อความโชว์ก่อน แล้วค่อยปิด (global message ไม่หายแม้ modal unmount)
         await message.open({
           type: "success",
           content: "อัปเดตข้อมูลรถสำเร็จ",
@@ -174,7 +412,11 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       {/* Dialog */}
       <div className="relative w-full max-w-[520px] mx-4 mt-24 md:mt-0 mb-8 md:mb-0">
@@ -185,7 +427,9 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FaBolt className="opacity-90" />
-                <h2 className="text-base md:text-lg font-semibold">แก้ไขข้อมูลพาหนะ</h2>
+                <h2 className="text-base md:text-lg font-semibold">
+                  แก้ไขข้อมูลพาหนะ
+                </h2>
               </div>
               <button
                 onClick={onClose}
@@ -205,25 +449,19 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
                 <span className="text-xs text-slate-600 flex items-center gap-2">
                   <FaCarSide className="text-blue-500" /> ยี่ห้อรถ
                 </span>
-                <Select
-                  className="ev-select w-full"
-                  placeholder="เลือกยี่ห้อ"
-                  size="large"
+                <EVSelect
                   value={brand || undefined}
-                  allowClear
-                  showSearch
-                  optionFilterProp="children"
+                  placeholder="เลือกยี่ห้อ"
+                  options={brandOptions.map((b) => ({
+                    label: b,
+                    value: b,
+                  }))}
+                  disabled={brandOptions.length === 0}
                   onChange={(val) => {
                     setBrand(val || "");
                     setModel("");
                   }}
-                >
-                  {brandOptions.map((b) => (
-                    <Option key={b} value={b}>
-                      {b}
-                    </Option>
-                  ))}
-                </Select>
+                />
               </label>
 
               {/* MODEL */}
@@ -231,23 +469,18 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
                 <span className="text-xs text-slate-600 flex items-center gap-2">
                   <FaTags className="text-blue-500" /> รุ่นรถ
                 </span>
-                <Select
-                  className="ev-select w-full"
-                  placeholder={brand ? "เลือกรุ่น" : "กรุณาเลือกยี่ห้อก่อน"}
-                  size="large"
-                  disabled={!brand}
+                <EVSelect
                   value={model || undefined}
-                  allowClear
-                  showSearch
-                  optionFilterProp="children"
+                  placeholder={
+                    brand ? "เลือกรุ่น" : "กรุณาเลือกยี่ห้อก่อน"
+                  }
+                  options={modelOptions.map((m) => ({
+                    label: m,
+                    value: m,
+                  }))}
+                  disabled={!brand || modelOptions.length === 0}
                   onChange={(val) => setModel(val || "")}
-                >
-                  {modelOptions.map((m) => (
-                    <Option key={m} value={m}>
-                      {m}
-                    </Option>
-                  ))}
-                </Select>
+                />
               </label>
 
               {/* LICENSE PLATE */}
@@ -265,7 +498,11 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
                   value={plate}
                   onChange={(e) => setPlate(e.target.value)}
                 />
-                {plateError && <p className="text-xs text-red-500 mt-1">{plateError}</p>}
+                {plateError && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {plateError}
+                  </p>
+                )}
               </label>
 
               {/* PROVINCE */}
@@ -273,33 +510,34 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
                 <span className="text-xs text-slate-600 flex items-center gap-2">
                   <FaCity className="text-blue-500" /> จังหวัด
                 </span>
-                <Select
-                  className="ev-select w-full"
-                  placeholder="เลือกจังหวัด"
-                  size="large"
-                  allowClear
-                  showSearch
-                  optionFilterProp="children"
+                <EVSelect
                   value={province || undefined}
+                  placeholder="เลือกจังหวัด"
+                  options={provinces.map((p) => ({
+                    label: p,
+                    value: p,
+                  }))}
+                  disabled={provinces.length === 0}
                   onChange={(val) => setProvince(val || "")}
-                >
-                  {provinces.map((p) => (
-                    <Option key={p} value={p}>
-                      {p}
-                    </Option>
-                  ))}
-                </Select>
+                />
               </label>
 
               {/* SPECIAL NUMBER */}
               <div className="flex items-center gap-2 mt-2">
-                <Checkbox checked={isSpecialReg} onChange={(e) => setIsSpecialReg(e.target.checked)} />
-                <span className="text-sm text-gray-700">ทะเบียนพิเศษ (Special Number)</span>
+                <Checkbox
+                  checked={isSpecialReg}
+                  onChange={(e) => setIsSpecialReg(e.target.checked)}
+                />
+                <span className="text-sm text-gray-700">
+                  ทะเบียนพิเศษ (Special Number)
+                </span>
               </div>
 
               {/* OWNER */}
               <div className="pt-2">
-                <p className="text-xs text-slate-500 text-center">เจ้าของ: {ownerNames}</p>
+                <p className="text-xs text-slate-500 text-center">
+                  เจ้าของ: {ownerNames}
+                </p>
               </div>
             </div>
           </div>
@@ -316,7 +554,9 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
               onClick={handleSubmit}
               disabled={!canSubmit || submitting}
               className={`px-4 h-10 rounded-xl text-white text-sm font-semibold shadow-sm ${
-                canSubmit && !submitting ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-300 cursor-not-allowed"
+                canSubmit && !submitting
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-blue-300 cursor-not-allowed"
               }`}
             >
               {submitting ? "กำลังบันทึก..." : "บันทึก"}
@@ -327,34 +567,6 @@ const ModalEditCar: React.FC<ModalEditCarProps> = ({
           <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
-
-      {/* Scoped CSS */}
-      <style>{`
-        .ev-scope .ev-select .ant-select-selector {
-          border-radius: 0.75rem !important;
-          border-color: #e2e8f0 !important;
-          height: 44px !important;
-          display: flex;
-          align-items: center;
-          background-color: #ffffff !important;
-        }
-        .ev-scope .ev-select:hover .ant-select-selector {
-          border-color: #cbd5e1 !important;
-        }
-        .ev-scope .ev-select.ant-select-focused .ant-select-selector,
-        .ev-scope .ev-select .ant-select-selector:focus {
-          border-color: #2563eb !important;
-          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
-        }
-        .ev-scope .ev-select .ant-select-selection-item,
-        .ev-scope .ev-select .ant-select-selection-placeholder {
-          line-height: 42px !important;
-        }
-        .ev-scope .ev-select-dropdown {
-          border-radius: 0.75rem !important;
-          overflow: hidden !important;
-        }
-      `}</style>
     </div>
   );
 };

@@ -8,6 +8,7 @@ import {
   getUserByID,
   CreatePaymentCoin,
   ListBank,
+  GetDataPaymentByRef,
 } from "../../../services";
 import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import { FileImageOutlined } from "@ant-design/icons";
@@ -28,17 +29,20 @@ const AddMoneyCoin: React.FC = () => {
 
   const [coinAmount, setCoinAmount] = useState<number>(0);
   const [totalAmount, setTotalAmount] = useState<number>(0);
-
-  const [userID, setUserID] = useState<number | undefined>(undefined);
+  const [userID, setUserID] = useState<number>();
   const [userCoin, setUserCoin] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
 
-  const [loading, setLoading] = useState<boolean>(false);
   const [promptPay, setPromptPay] = useState<string>("");
-  const [minimum, setMinimum] = useState<number>(0);
+  const [defaultAmount, setDefaultAmount] = useState<number>(0);
+
+  // ✅ ข้อมูล Bank สำหรับตรวจสอบ
+  const [bankingCode, setBankingCode] = useState<string>("");
+  const [managerName, setManagerName] = useState<string>("");
 
   const navigate = useNavigate();
 
-  // ✅ โหลด User จาก JWT
+  // ✅ โหลดข้อมูลผู้ใช้
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -63,16 +67,19 @@ const AddMoneyCoin: React.FC = () => {
     loadUser();
   }, [navigate]);
 
-  // ✅ โหลด PromptPay และ Minimum จาก Bank
+  // ✅ โหลด PromptPay และ Default Amount จาก Bank
   useEffect(() => {
     const fetchBank = async () => {
       try {
         const banks = await ListBank();
         if (banks && banks.length > 0) {
-          setPromptPay(banks[0].PromptPay);
-          setMinimum(banks[0].Minimum);
-          setCoinAmount(banks[0].Minimum);
-          setTotalAmount(banks[0].Minimum);
+          const bank = banks[0];
+          setPromptPay(bank.PromptPay);
+          setDefaultAmount(bank.Minimum || 0);
+          setCoinAmount(bank.Minimum || 0);
+          setTotalAmount(bank.Minimum || 0);
+          setBankingCode(bank.Banking);
+          setManagerName(bank.Manager);
         }
       } catch {
         message.error("ไม่สามารถโหลดข้อมูลธนาคารได้");
@@ -81,21 +88,20 @@ const AddMoneyCoin: React.FC = () => {
     fetchBank();
   }, []);
 
-  // ✅ สร้าง QR Code จาก PromptPay + จำนวนเงิน
+  // ✅ สร้าง QR Code จาก PromptPay
   useEffect(() => {
-    if (promptPay && totalAmount >= minimum) {
+    if (promptPay && totalAmount > 0) {
       const payload = generatePayload(promptPay, { amount: totalAmount });
       setQrCode(payload);
     } else {
       setQrCode("");
     }
-  }, [promptPay, totalAmount, minimum]);
+  }, [promptPay, totalAmount]);
 
-  // ✅ อัปโหลด slip
+  // ✅ Upload Slip
   const handleUploadClick = () => fileInputRef.current?.click();
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0)
-      setUploadedFile(e.target.files[0]);
+    if (e.target.files?.length) setUploadedFile(e.target.files[0]);
   };
   const handleRemoveFile = () => {
     setUploadedFile(null);
@@ -109,27 +115,75 @@ const AddMoneyCoin: React.FC = () => {
       return;
     }
 
-    if (!uploadedFile || totalAmount < minimum || coinAmount < minimum) {
-      message.warning(`กรุณาใส่จำนวนขั้นต่ำ ${minimum} บาท และอัปโหลดสลิปก่อน`);
+    if (!uploadedFile || coinAmount <= 0) {
+      message.warning("กรุณาใส่จำนวนเงินและอัปโหลดสลิปก่อน");
       return;
     }
 
     try {
       setLoading(true);
 
-      // อัปโหลดสลิป
+      // 🔹 อัปโหลดสลิป
       const result = await uploadSlipOK(uploadedFile);
-      if (!result) {
-        message.error("ส่งหลักฐานล้มเหลว");
+      console.log("🔹 uploadSlipOK result:", result);
+
+      if (!result || !result.data?.ref) {
+        message.warning("ไม่สามารถอ่านข้อมูลจากสลิปได้");
         setLoading(false);
         return;
       }
 
-      // สร้างข้อมูลการเติมเงิน
+      // ✅ ตรวจสอบข้อมูลสลิป
+      const slipData = result.data;
+      const receiverBank = slipData.receiver_bank;
+      const receiverName = slipData.receiver_name?.trim()?.toUpperCase();
+      const slipAmount = Number(slipData.amount);
+      const refNumber = slipData.ref;
+
+      const bankCode = bankingCode?.trim()?.toUpperCase();
+      const manager = managerName?.trim()?.toUpperCase();
+
+      console.log("🧩 ตรวจสอบข้อมูล:", {
+        receiverBank,
+        receiverName,
+        slipAmount,
+        bankCode,
+        manager,
+        coinAmount,
+        refNumber,
+      });
+
+      if (receiverBank !== bankCode) {
+        message.warning(`รหัสธนาคารผู้รับ (${receiverBank}) ไม่ตรงกับระบบ (${bankCode})`);
+        setLoading(false);
+        return;
+      }
+
+      if (receiverName !== manager) {
+        message.warning(`ชื่อผู้รับในสลิป (${receiverName}) ไม่ตรงกับผู้จัดการบัญชี (${manager})`);
+        setLoading(false);
+        return;
+      }
+
+      if (slipAmount !== coinAmount) {
+        message.warning(`จำนวนเงินในสลิป (${slipAmount} บาท) ไม่ตรงกับที่กรอก (${coinAmount} บาท)`);
+        setLoading(false);
+        return;
+      }
+
+      // ✅ ตรวจสอบสลิปซ้ำ
+      const existing = await GetDataPaymentByRef(refNumber);
+      if (existing && existing.found) {
+        message.warning("สลิปนี้ถูกใช้ไปแล้ว กรุณาอัปโหลดสลิปใหม่");
+        setLoading(false);
+        return;
+      }
+
+      // ✅ สร้างข้อมูล PaymentCoin
       const paymentCoin = {
-        Date: new Date().toISOString(),
-        Amount: coinAmount,
-        ReferenceNumber: "REF" + Date.now(),
+        Date: slipData.date || new Date().toISOString(),
+        Amount: slipData.amount || coinAmount,
+        ReferenceNumber: refNumber,
         Picture: uploadedFile,
         UserID: userID,
       };
@@ -141,7 +195,7 @@ const AddMoneyCoin: React.FC = () => {
         return;
       }
 
-      // อัปเดตเหรียญ
+      // ✅ อัปเดต Coin ใหม่
       const newTotalCoin = userCoin + coinAmount;
       const updateResult = await UpdateCoin({
         user_id: userID,
@@ -158,13 +212,13 @@ const AddMoneyCoin: React.FC = () => {
 
       setTimeout(() => {
         setUserCoin(newTotalCoin);
-        setCoinAmount(minimum);
-        setTotalAmount(minimum);
+        setCoinAmount(defaultAmount);
+        setTotalAmount(defaultAmount);
         setUploadedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
         navigate("/user");
         setLoading(false);
-      }, 1200);
+      }, 1000);
     } catch (error) {
       console.error("Error submit:", error);
       message.error("เกิดข้อผิดพลาดในการส่งหลักฐาน");
@@ -172,28 +226,26 @@ const AddMoneyCoin: React.FC = () => {
     }
   };
 
-  // ✅ Drag & Drop สำหรับอัปโหลด
+  // ✅ Drag & Drop
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (e.dataTransfer.files?.length) {
       setUploadedFile(e.dataTransfer.files[0]);
       e.dataTransfer.clearData();
     }
   };
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
-  const canSubmit = !!uploadedFile && coinAmount >= minimum && !loading;
+  const canSubmit = !!uploadedFile && coinAmount > 0 && !loading;
 
   return (
     <div className="min-h-screen bg-white">
       {/* HEADER */}
-      <header className="sticky top-0 z-30 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden w-full">
-        <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
-          {/* ปุ่มย้อนกลับ */}
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md">
+        <div className="w-full px-4 py-3 flex items-center gap-2">
           <button
             onClick={() => navigate(-1)}
-            aria-label="ย้อนกลับ"
-            className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15"
           >
             <svg
               viewBox="0 0 24 24"
@@ -209,8 +261,6 @@ const AddMoneyCoin: React.FC = () => {
               />
             </svg>
           </button>
-
-          {/* ไอคอน + ข้อความหัวข้อ */}
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/15">
               <BoltIcon className="h-5 w-5 text-white" />
@@ -222,66 +272,55 @@ const AddMoneyCoin: React.FC = () => {
         </div>
       </header>
 
-      {/* Loading Overlay */}
+      {/* Loading */}
       {loading && (
-        <div className="fixed inset-0 bg-black/60 flex flex-col items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <LoadingAnimation />
         </div>
       )}
 
-      {/* MAIN CONTENT */}
+      {/* MAIN */}
       <main className="mx-auto max-w-screen-sm px-4 pb-28 pt-4">
-        {/* Summary capsule */}
-        <div className="mb-4 flex items-center justify-between rounded-2xl bg-blue-50 px-4 py-3">
+        <div className="mb-4 flex justify-between rounded-2xl bg-blue-50 px-4 py-3">
           <div className="text-sm text-blue-900">ยอดที่จะชำระ</div>
           <div className="text-xl font-bold text-blue-700">
             ฿{totalAmount.toFixed(2)}
           </div>
         </div>
 
-        {/* QR + Input + Upload */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          {/* QR */}
+        <div className="rounded-2xl border bg-white p-4 shadow-sm">
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-2 mb-3">
               <FaPaypal className="text-blue-600 text-2xl" />
-              <span className="text-base font-semibold text-gray-800">
-                PromptPay
-              </span>
+              <span className="text-base font-semibold text-gray-800">PromptPay</span>
             </div>
-            <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="p-3 bg-white rounded-xl border">
               {qrCode ? (
                 <QRCode value={qrCode} size={180} errorLevel="H" />
               ) : (
                 <div className="w-[180px] h-[180px] flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg">
-                  กรุณาใส่จำนวนเงิน (ขั้นต่ำ {minimum} บาท)
+                  ใส่จำนวนเงินเพื่อสร้าง QR
                 </div>
               )}
             </div>
           </div>
 
-          {/* Amount */}
+          {/* จำนวน Coin */}
           <div className="mt-5">
             <label className="block text-sm font-semibold text-gray-900 mb-2">
-              จำนวน Coin ที่ต้องการเติม <span className="text-red-500">*</span>
+              จำนวน Coin ที่ต้องการเติม
             </label>
             <div className="rounded-xl border border-gray-200 p-2">
               <InputNumber
-                min={minimum}
                 value={coinAmount}
-                onChange={(value) => {
-                  const val = Number(value);
+                onChange={(v) => {
+                  const val = Number(v);
                   setCoinAmount(val);
                   setTotalAmount(val);
                 }}
                 className="w-full"
               />
             </div>
-            {coinAmount < minimum && (
-              <div className="text-red-500 text-xs mt-1">
-                จำนวนขั้นต่ำ {minimum} บาท
-              </div>
-            )}
           </div>
 
           {/* Upload Slip */}
@@ -289,46 +328,34 @@ const AddMoneyCoin: React.FC = () => {
             <h2 className="text-sm font-semibold text-gray-900 mb-2">
               อัปโหลดสลิปชำระเงิน
             </h2>
-
             {uploadedFile ? (
-              <div className="relative mb-2 flex justify-center border border-gray-200 rounded-xl p-2 bg-white">
+              <div className="relative mb-2 flex justify-center border rounded-xl p-2 bg-white">
                 <Image
                   src={URL.createObjectURL(uploadedFile)}
                   alt="Preview slip"
-                  style={{
-                    maxHeight: 240,
-                    maxWidth: "100%",
-                    objectFit: "contain",
-                    borderRadius: 12,
-                  }}
-                  placeholder
-                  preview={{ maskClassName: "rounded-xl" }}
+                  style={{ maxHeight: 240, objectFit: "contain", borderRadius: 12 }}
                 />
                 <button
                   onClick={handleRemoveFile}
-                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow transition"
-                  aria-label="Remove uploaded file"
-                  title="ลบสลิปที่อัปโหลด"
-                  type="button"
+                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5"
                 >
                   <FaTimes size={14} />
                 </button>
               </div>
             ) : (
               <div
-                className="mb-2 flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-xl py-10 text-gray-500 cursor-pointer select-none"
+                className="mb-2 flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-xl py-10 text-gray-500 cursor-pointer"
                 onClick={handleUploadClick}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
               >
                 <FileImageOutlined style={{ fontSize: 44, marginBottom: 10 }} />
                 <p className="text-sm font-medium">ยังไม่มีสลิปที่อัปโหลด</p>
-                <p className="text-[12px] mt-1 text-gray-500 text-center px-2">
-                  คลิกหรือ “ลาก-วาง” ไฟล์สลิปมาที่นี่เพื่ออัปโหลด
+                <p className="text-xs mt-1 text-gray-500 text-center px-2">
+                  คลิกหรือ “ลาก-วาง” ไฟล์สลิปมาที่นี่
                 </p>
               </div>
             )}
-
             <input
               ref={fileInputRef}
               type="file"
@@ -340,16 +367,12 @@ const AddMoneyCoin: React.FC = () => {
         </div>
       </main>
 
-      {/* Sticky Bottom Bar */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
+      {/* ปุ่มล่าง */}
+      <div className="fixed inset-x-0 bottom-0 border-t bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-screen-sm items-center gap-3 px-4 py-3">
           <button
             onClick={handleUploadClick}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white
-              bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white bg-blue-600 hover:bg-blue-700"
           >
             <FaUpload />
             <span className="text-sm font-semibold">อัปโหลดสลิป</span>
@@ -358,13 +381,11 @@ const AddMoneyCoin: React.FC = () => {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white transition
-              ${
-                canSubmit
-                  ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 active:from-blue-800 active:to-blue-700"
-                  : "bg-blue-300 cursor-not-allowed"
-              }`}
-            aria-busy={canSubmit ? loading : undefined}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white transition ${
+              canSubmit
+                ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                : "bg-blue-300 cursor-not-allowed"
+            }`}
           >
             <FaPaperPlane />
             <span className="text-sm font-semibold">ส่งหลักฐาน</span>

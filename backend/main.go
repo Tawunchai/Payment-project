@@ -24,6 +24,7 @@ import (
 	modal "github.com/Tawunchai/work-project/controller/modal"
 	"github.com/Tawunchai/work-project/controller/new"
 	"github.com/Tawunchai/work-project/controller/notify"
+	"github.com/Tawunchai/work-project/controller/ocpp"
 	"github.com/Tawunchai/work-project/controller/otp"
 	"github.com/Tawunchai/work-project/controller/payment"
 	"github.com/Tawunchai/work-project/controller/report"
@@ -114,7 +115,8 @@ func main() {
 		public.POST("/create-payment-coins", payment.CreatePaymentCoin)
 		public.GET("/payment-coins/:user_id", payment.ListPaymentCoinsByUserID)
 		public.DELETE("/payment-coins", payment.DeletePaymentCoins)
-		r.DELETE("/payments", payment.DeletePayment)
+		public.DELETE("/payments", payment.DeletePayment)
+		public.GET("/ref/:ref", payment.GetDataPaymentByRef)
 
 		//Send Email
 		public.GET("/send-emails", sendemail.ListSendEmail)
@@ -227,6 +229,10 @@ func main() {
 
 		// ✅ ตรวจสอบ token
 		public.GET("/token/verify", tokening.VerifyChargingSession)
+
+		//OCPP Test
+		public.GET("/ocpp/:chargerID", ocpp.HandleOCPP)
+		public.GET("/frontend", ocpp.HandleFrontend)      // ส่งให้ frontend
 	}
 
 	r.GET("/", func(c *gin.Context) {

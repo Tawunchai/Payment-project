@@ -6,6 +6,7 @@ import {
   FiBatteryCharging,
 } from "react-icons/fi";
 
+import TestingOCPP from "./test"
 /** ---------- Types ---------- */
 type Parameter = {
   name: string;
@@ -88,11 +89,10 @@ const Index: React.FC = () => {
                   {item.icon}
                 </div>
                 <span
-                  className={`text-[10px] md:text-xs px-2 py-1 rounded-full font-semibold ${
-                    item.status === "ON"
+                  className={`text-[10px] md:text-xs px-2 py-1 rounded-full font-semibold ${item.status === "ON"
                       ? "bg-green-50 text-green-700 border border-green-200"
                       : "bg-gray-50 text-gray-500 border border-gray-200"
-                  }`}
+                    }`}
                 >
                   {item.status}
                 </span>
@@ -194,6 +194,7 @@ const Index: React.FC = () => {
         {/* bottom spacing */}
         <div className="h-10" />
       </main>
+      <TestingOCPP />
     </div>
   );
 };

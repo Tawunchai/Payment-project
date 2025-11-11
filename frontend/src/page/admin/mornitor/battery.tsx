@@ -1,3 +1,4 @@
+// src/component/user/battery/index.tsx
 import React from "react";
 import {
   FiBattery,
@@ -25,7 +26,7 @@ const batteries: BatteryInfo[] = [
     capacity: "83%",
     voltage: "402 V",
     status: "Charging",
-    icon: <FiCharge className="text-2xl md:text-3xl text-green-500" />,
+    icon: <FiCharge className="text-2xl md:text-3xl text-blue-600" />,
   },
   {
     id: 2,
@@ -33,7 +34,7 @@ const batteries: BatteryInfo[] = [
     capacity: "71%",
     voltage: "399 V",
     status: "Discharging",
-    icon: <FiBattery className="text-2xl md:text-3xl text-blue-500" />,
+    icon: <FiBattery className="text-2xl md:text-3xl text-blue-600" />,
   },
   {
     id: 3,
@@ -41,13 +42,14 @@ const batteries: BatteryInfo[] = [
     capacity: "95%",
     voltage: "405 V",
     status: "Idle",
-    icon: <FiBattery className="text-2xl md:text-3xl text-gray-500" />,
+    icon: <FiBattery className="text-2xl md:text-3xl text-blue-600" />,
   },
 ];
 
 /** ---------- Mock Graph Data ---------- */
 const chargeHistory = [60, 64, 67, 70, 74, 77, 79, 82, 84, 83, 85, 88, 90, 91, 93];
 
+/** ---------- Helper: Convert to polyline ---------- */
 function toPolylinePoints(values: number[], width = 720, height = 140): string {
   if (values.length === 0) return "";
   const min = Math.min(...values);
@@ -69,10 +71,10 @@ const Battery: React.FC = () => {
   const points = toPolylinePoints(chargeHistory, 720, 140);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 mt-14 sm:mt-0">
+    <div className="min-h-screen bg-white text-gray-900 mt-14 sm:mt-0">
       {/* Header */}
       <div
-        className="sticky top-0 z-10 bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-sm"
+        className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -87,14 +89,14 @@ const Battery: React.FC = () => {
 
       {/* Content */}
       <main className="w-full px-4 sm:px-6 pt-5 pb-24">
-        {/* Battery overview */}
+        {/* Overview */}
         <section className="rounded-2xl bg-white border border-gray-200 p-5 md:p-6 shadow-sm">
           <div className="flex items-end justify-between">
             <div>
               <p className="text-xs md:text-sm text-gray-500 font-medium">
                 Total System Charge
               </p>
-              <p className="text-3xl md:text-4xl font-extrabold text-green-600">82%</p>
+              <p className="text-3xl md:text-4xl font-extrabold text-blue-700">82%</p>
               <p className="text-sm md:text-base text-gray-500">
                 Estimated 4 hrs to Full
               </p>
@@ -108,16 +110,16 @@ const Battery: React.FC = () => {
           </div>
         </section>
 
-        {/* Battery packs */}
+        {/* Battery Packs */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
           {batteries.map((b) => (
             <div
               key={b.id}
-              className="rounded-xl bg-white border border-gray-200 p-5 shadow hover:shadow-md transition-all"
+              className="rounded-xl bg-white border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
                     {b.icon}
                   </div>
                   <div>
@@ -130,7 +132,7 @@ const Battery: React.FC = () => {
                     b.status === "Charging"
                       ? "bg-green-50 text-green-700 border border-green-200"
                       : b.status === "Discharging"
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
                       : "bg-gray-50 text-gray-600 border border-gray-200"
                   }`}
                 >
@@ -138,7 +140,7 @@ const Battery: React.FC = () => {
                 </span>
               </div>
               <div className="mt-4 text-center">
-                <p className="text-3xl font-bold text-green-600">{b.capacity}</p>
+                <p className="text-3xl font-bold text-blue-700">{b.capacity}</p>
                 <p className="text-xs text-gray-500">Charge Level</p>
               </div>
             </div>
@@ -150,7 +152,7 @@ const Battery: React.FC = () => {
           <div className="px-5 pt-4 flex items-center justify-between">
             <div>
               <p className="text-xs md:text-sm text-gray-500">Charge History</p>
-              <p className="text-lg md:text-xl font-bold text-green-600">
+              <p className="text-lg md:text-xl font-bold text-blue-700">
                 Last 15 hours
               </p>
             </div>
@@ -177,7 +179,7 @@ const Battery: React.FC = () => {
                       x2="720"
                       y1={y}
                       y2={y}
-                      stroke="rgba(0,0,0,0.06)"
+                      stroke="rgba(2,6,23,0.06)"
                       strokeWidth="1"
                     />
                   ))}
@@ -185,27 +187,27 @@ const Battery: React.FC = () => {
 
                 {/* Gradients */}
                 <defs>
-                  <linearGradient id="lineGradGreen" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="rgba(34,197,94,0.9)" />
-                    <stop offset="100%" stopColor="rgba(59,130,246,0.6)" />
+                  <linearGradient id="lineGradBlue" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="rgba(37,99,235,0.95)" />
+                    <stop offset="100%" stopColor="rgba(37,99,235,0.65)" />
                   </linearGradient>
-                  <linearGradient id="areaGradGreen" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="rgba(134,239,172,0.25)" />
-                    <stop offset="100%" stopColor="rgba(187,247,208,0.00)" />
+                  <linearGradient id="areaGradBlue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="rgba(59,130,246,0.20)" />
+                    <stop offset="100%" stopColor="rgba(59,130,246,0.00)" />
                   </linearGradient>
                 </defs>
 
                 {/* Filled Area */}
                 <polyline
                   points={`${toPolylinePoints(chargeHistory, 720, 140)} 720,180 0,180`}
-                  fill="url(#areaGradGreen)"
+                  fill="url(#areaGradBlue)"
                   stroke="none"
                 />
                 {/* Line */}
                 <polyline
                   points={points}
                   fill="none"
-                  stroke="url(#lineGradGreen)"
+                  stroke="url(#lineGradBlue)"
                   strokeWidth="3"
                   strokeLinejoin="round"
                   strokeLinecap="round"
@@ -215,17 +217,17 @@ const Battery: React.FC = () => {
 
             {/* Summary */}
             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] md:text-xs">
-              <div className="rounded-lg bg-green-50 border border-green-100 py-2">
+              <div className="rounded-lg bg-blue-50 border border-blue-100 py-2">
                 <p className="text-gray-500">Min</p>
-                <p className="font-semibold text-green-700">60%</p>
+                <p className="font-semibold text-blue-700">60%</p>
               </div>
-              <div className="rounded-lg bg-green-50 border border-green-100 py-2">
+              <div className="rounded-lg bg-blue-50 border border-blue-100 py-2">
                 <p className="text-gray-500">Avg</p>
-                <p className="font-semibold text-green-700">79%</p>
+                <p className="font-semibold text-blue-700">79%</p>
               </div>
-              <div className="rounded-lg bg-green-50 border border-green-100 py-2">
+              <div className="rounded-lg bg-blue-50 border border-blue-100 py-2">
                 <p className="text-gray-500">Max</p>
-                <p className="font-semibold text-green-700">93%</p>
+                <p className="font-semibold text-blue-700">93%</p>
               </div>
             </div>
           </div>

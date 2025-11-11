@@ -1,3 +1,4 @@
+// src/component/user/ev-calibet/index.tsx
 import React from "react";
 import {
   FiClock,
@@ -74,10 +75,10 @@ const EVCalibet: React.FC = () => {
   const points = toPolylinePoints(powerTrend, 720, 140);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 mt-14 sm:mt-0">
+    <div className="min-h-screen bg-white text-gray-900 mt-14 sm:mt-0">
       {/* Header */}
       <div
-        className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-blue-400 shadow-sm text-white"
+        className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -99,7 +100,7 @@ const EVCalibet: React.FC = () => {
               <p className="text-xs md:text-sm text-gray-500 font-medium">
                 Total Output
               </p>
-              <p className="text-3xl md:text-4xl font-extrabold text-blue-600">
+              <p className="text-3xl md:text-4xl font-extrabold text-blue-700">
                 27.6 kW
               </p>
               <p className="text-sm md:text-base text-gray-500">
@@ -120,15 +121,15 @@ const EVCalibet: React.FC = () => {
           {ports.map((port) => (
             <div
               key={port.id}
-              className="rounded-xl bg-white border border-gray-200 p-5 shadow hover:shadow-md transition-all"
+              className="rounded-xl bg-white border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
                     {port.status === "Charging" ? (
-                      <FiBatteryCharging className="text-blue-500 text-2xl" />
+                      <FiBatteryCharging className="text-blue-600 text-2xl" />
                     ) : port.status === "Available" ? (
-                      <FiPower className="text-green-500 text-2xl" />
+                      <FiPower className="text-green-600 text-2xl" />
                     ) : (
                       <FiCpu className="text-red-500 text-2xl" />
                     )}
@@ -154,18 +155,19 @@ const EVCalibet: React.FC = () => {
                   {port.status}
                 </span>
               </div>
+
               <div className="flex justify-between text-sm">
                 <div>
                   <p className="text-gray-500 text-[11px]">Energy</p>
-                  <p className="font-bold text-blue-600">{port.energy}</p>
+                  <p className="font-bold text-blue-700">{port.energy}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 text-[11px]">Power</p>
-                  <p className="font-bold text-blue-600">{port.power}</p>
+                  <p className="font-bold text-blue-700">{port.power}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 text-[11px]">Duration</p>
-                  <p className="font-bold text-blue-600">{port.duration}</p>
+                  <p className="font-bold text-blue-700">{port.duration}</p>
                 </div>
               </div>
             </div>
@@ -177,7 +179,7 @@ const EVCalibet: React.FC = () => {
           <div className="px-5 pt-4 flex items-center justify-between">
             <div>
               <p className="text-xs md:text-sm text-gray-500">Power Usage</p>
-              <p className="text-lg md:text-xl font-bold text-blue-600">
+              <p className="text-lg md:text-xl font-bold text-blue-700">
                 Last 13 hours
               </p>
             </div>
@@ -204,7 +206,7 @@ const EVCalibet: React.FC = () => {
                       x2="720"
                       y1={y}
                       y2={y}
-                      stroke="rgba(0,0,0,0.06)"
+                      stroke="rgba(2,6,23,0.06)"
                       strokeWidth="1"
                     />
                   ))}
@@ -213,11 +215,11 @@ const EVCalibet: React.FC = () => {
                 {/* Gradients */}
                 <defs>
                   <linearGradient id="lineGradEV" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="rgba(37,99,235,0.9)" />
-                    <stop offset="100%" stopColor="rgba(59,130,246,0.7)" />
+                    <stop offset="0%" stopColor="rgba(37,99,235,0.95)" />
+                    <stop offset="100%" stopColor="rgba(37,99,235,0.65)" />
                   </linearGradient>
                   <linearGradient id="areaGradEV" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="rgba(59,130,246,0.15)" />
+                    <stop offset="0%" stopColor="rgba(59,130,246,0.20)" />
                     <stop offset="100%" stopColor="rgba(59,130,246,0.00)" />
                   </linearGradient>
                 </defs>

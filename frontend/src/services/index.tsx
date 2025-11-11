@@ -23,8 +23,8 @@ import { BookingInterface,EVCabinetInterface } from "../interface/IBooking";
 import { ModalInterface } from "../interface/ICarCatalog";
 import { BrandInterface } from "../interface/IBrand";
 
-//const apiUrl = "http://10.167.17.128:8000";
-//export const apiUrlPicture = "http://10.167.17.128:8000/";
+//const apiUrl = "http://10.0.14.228:8000";
+//export const apiUrlPicture = "http://10.0.14.228:8000/";
 //const apiUrl = "http://192.168.1.141:8000";
 //export const apiUrlPicture = "http://192.168.1.141:8000/";
 //export const apiUrlPicture = "http://localhost:8000/";
@@ -2267,4 +2267,74 @@ export const VerifyChargingToken = async (token: string): Promise<boolean> => {
     console.error("Error verifying charging token:", err);
     return false;
   }
+};
+
+// ✅ Interface (ถ้าต้องการ type)
+export interface PaymentDataInterface {
+  ID: number;
+  Date: string;
+  Amount: number;
+  ReferenceNumber: string;
+  Picture?: string;
+  UserID?: number;
+  type?: string;
+  found?: boolean;
+  message?: string;
+}
+
+// ✅ ดึงข้อมูลการชำระเงินจาก ReferenceNumber
+export const GetDataPaymentByRef = async (
+  ref: string
+): Promise<PaymentDataInterface | null> => {
+  try {
+    const response = await axios.get(`${apiUrl}/ref/${ref}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    if (error.response && error.response.status === 404) {
+      console.warn(`ไม่พบข้อมูลการชำระเงินสำหรับ ref: ${ref}`);
+    } else {
+      console.error("Error fetching payment data:", error);
+    }
+    return null;
+  }
+};
+
+export const connectOcppSocket = (onMessage: (data: any) => void) => {
+  const ws = new WebSocket(`${apiUrl}/frontend`);
+
+  ws.onopen = () => {
+    console.log("✅ Connected to Go OCPP Server");
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const parsed = JSON.parse(event.data);
+      console.log("📩 Message:", parsed);
+      onMessage(parsed);
+    } catch {
+      console.log("📩 Raw Message:", event.data);
+      onMessage(event.data);
+    }
+  };
+
+  ws.onclose = () => {
+    console.log("⚠️ WebSocket disconnected");
+  };
+
+  ws.onerror = (err) => {
+    console.error("❌ WebSocket error:", err);
+  };
+
+  return ws;
 };

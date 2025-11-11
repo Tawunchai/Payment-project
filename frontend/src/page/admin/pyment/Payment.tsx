@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import LineChart from "./chart/EVRevenueChartIndex";
 import { Modal, Input, Button, message, Skeleton } from "antd";
 import { ListPayments, ListBank, UpdateBank } from "../../../services";
@@ -11,6 +11,48 @@ import {
 } from "@heroicons/react/24/outline";
 import PaymentHistoryTable from "./payment/index";
 import PaymentCoinsTable from "./coin/index";
+
+/* ===========================
+   BANK CODE MAP
+   =========================== */
+const TH_BANK_CODE_MAP: Record<string, string> = {
+  "002": "ธนาคารกรุงเทพ จำกัด (มหาชน)",
+  "004": "ธนาคารกสิกรไทย จำกัด (มหาชน)",
+  "006": "ธนาคารกรุงไทย จำกัด (มหาชน)",
+  "008": "ธนาคารเจพีมอร์แกน เชส",
+  "011": "ธนาคารทหารไทยธนชาต จำกัด (มหาชน)",
+  "014": "ธนาคารไทยพาณิชย์ จำกัด (มหาชน)",
+  "017": "ธนาคารซิตี้แบงก์",
+  "018": "ธนาคารซูมิโตโม มิตซุย แบงกิ้ง คอร์ปอเรชั่น",
+  "020": "ธนาคารสแตนดาร์ดชาร์เตอร์ด (ไทย) จำกัด (มหาชน)",
+  "022": "ธนาคารซีไอเอ็มบี ไทย จำกัด (มหาชน)",
+  "024": "ธนาคารยูโอบี จำกัด (มหาชน)",
+  "025": "ธนาคารกรุงศรีอยุธยา จำกัด (มหาชน)",
+  "026": "ธนาคารเมกะ สากลพาณิชย์ จำกัด (มหาชน)",
+  "027": "ธนาคารแห่งอเมริกา เนชั่นแนล แอสโซซิเอชั่น",
+  "030": "ธนาคารออมสิน",
+  "031": "ธนาคารฮ่องกงและเซี่ยงไฮ้แบงกิ้งคอร์ปอเรชั่น จำกัด",
+  "032": "ธนาคารดอยซ์แบงก์",
+  "033": "ธนาคารอาคารสงเคราะห์",
+  "034": "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร",
+  "039": "ธนาคารมิซูโฮ จํากัด",
+  "045": "ธนาคารบีเอ็นพี พารีบาส์",
+  "052": "ธนาคารแห่งประเทศจีน (ไทย) จำกัด (มหาชน)",
+  "066": "ธนาคารอิสลามแห่งประเทศไทย",
+  "067": "ธนาคารทิสโก้ จำกัด (มหาชน)",
+  "069": "ธนาคารเกียรตินาคินภัทร จำกัด (มหาชน)",
+  "070": "ธนาคารไอซีบีซี (ไทย) จำกัด (มหาชน)",
+  "071": "ธนาคารไทยเครดิต จำกัด (มหาชน)",
+  "073": "ธนาคารแลนด์ แอนด์ เฮ้าส์ จำกัด (มหาชน)",
+};
+
+// ฟังก์ชันแปลงค่าธนาคารให้แสดงชื่อเต็ม
+const formatBankingDisplay = (banking: string | undefined | null): string => {
+  if (!banking) return "-";
+  const trimmed = String(banking).trim();
+  if (TH_BANK_CODE_MAP[trimmed]) return `${TH_BANK_CODE_MAP[trimmed]}`;
+  return trimmed;
+};
 
 const Payment = () => {
   const [paymentData, setPaymentData] = useState<PaymentsInterface[]>([]);
@@ -66,13 +108,16 @@ const Payment = () => {
     }
   };
 
+  const selectedBankCode = useMemo(() => {
+    if (!editBank?.Banking) return "";
+    const val = String(editBank.Banking).trim();
+    return TH_BANK_CODE_MAP[val] ? val : "";
+  }, [editBank?.Banking]);
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-blue-50 via-white to-white mt-14 sm:mt-0">
       {/* Header */}
-      <header
-        className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
+      <header className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm">
         <div className="mx-auto max-w-screen-xl px-4 sm:px-6 py-3 flex items-center justify-between">
           <h1 className="text-sm sm:text-base font-semibold tracking-wide">
             Payment & Banking
@@ -111,7 +156,7 @@ const Payment = () => {
                       <tr key={bank.ID}>
                         <td>{bank.PromptPay}</td>
                         <td>{bank.Manager}</td>
-                        <td>{bank.Banking}</td>
+                        <td>{formatBankingDisplay(bank.Banking)}</td>
                         <td>{bank.Minimum} บาท</td>
                         <td className="text-center">
                           <Button
@@ -141,7 +186,7 @@ const Payment = () => {
           {tableLoading ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <PaymentHistoryTable data={paymentData}/>
+            <PaymentHistoryTable data={paymentData} />
           )}
         </section>
 
@@ -150,14 +195,12 @@ const Payment = () => {
           {tableLoading ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            // ...
-            <PaymentCoinsTable/>
-            // ...
+            <PaymentCoinsTable />
           )}
         </section>
       </main>
 
-      {/* ✅ Modal — EV Clean White Style */}
+      {/* Modal */}
       <Modal
         open={!!editBank}
         onCancel={() => setEditBank(null)}
@@ -176,7 +219,6 @@ const Payment = () => {
       >
         {editBank && (
           <div className="px-5 py-6 text-gray-800">
-            {/* Header */}
             <div className="flex items-center justify-center mb-4 border-b border-gray-100 pb-3">
               <BanknotesIcon className="h-6 w-6 text-blue-600 mr-2" />
               <h2 className="text-base sm:text-lg font-semibold text-blue-700">
@@ -184,8 +226,8 @@ const Payment = () => {
               </h2>
             </div>
 
-            {/* Inputs */}
             <div className="space-y-4">
+              {/* PromptPay */}
               <label className="block">
                 <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
                   <BanknotesIcon className="h-5 w-5 mr-2 text-blue-500" />
@@ -193,12 +235,15 @@ const Payment = () => {
                 </span>
                 <Input
                   value={editBank.PromptPay}
-                  onChange={(e) => handleBankChange("PromptPay", e.target.value)}
+                  onChange={(e) =>
+                    handleBankChange("PromptPay", e.target.value)
+                  }
                   className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   placeholder="เลข PromptPay"
                 />
               </label>
 
+              {/* Manager */}
               <label className="block">
                 <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
                   <UserIcon className="h-5 w-5 mr-2 text-blue-500" />
@@ -206,25 +251,57 @@ const Payment = () => {
                 </span>
                 <Input
                   value={editBank.Manager}
-                  onChange={(e) => handleBankChange("Manager", e.target.value)}
+                  onChange={(e) =>
+                    handleBankChange("Manager", e.target.value)
+                  }
                   className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   placeholder="ชื่อผู้จัดการ"
                 />
               </label>
 
+              {/* Custom Select (แทน Antd Select) */}
               <label className="block">
                 <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
                   <CreditCardIcon className="h-5 w-5 mr-2 text-blue-500" />
-                  Banking
+                  ธนาคาร
                 </span>
-                <Input
-                  value={editBank.Banking}
-                  onChange={(e) => handleBankChange("Banking", e.target.value)}
-                  className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="ชื่อธนาคาร / สาขา"
-                />
+                <div className="relative">
+                  <select
+                    value={selectedBankCode}
+                    onChange={(e) =>
+                      handleBankChange("Banking", e.target.value)
+                    }
+                    className="appearance-none w-full rounded-lg border border-gray-300 h-10 px-3 pr-8 text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer bg-white"
+                  >
+                    <option value="">เลือกธนาคาร</option>
+                    {Object.entries(TH_BANK_CODE_MAP).map(([code, name]) => (
+                      <option key={code} value={code}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="absolute right-3 top-3.5 h-4 w-4 text-gray-400 pointer-events-none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      d="M6 8l4 4 4-4"
+                    />
+                  </svg>
+                </div>
+                {!selectedBankCode && editBank.Banking && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    ค่าที่เก็บเดิม: {String(editBank.Banking)} (ไม่ใช่รหัสธนาคาร
+                    0XX — กรุณาเลือกธนาคารใหม่)
+                  </p>
+                )}
               </label>
 
+              {/* Minimum */}
               <label className="block">
                 <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
                   <CreditCardIcon className="h-5 w-5 mr-2 text-blue-500" />
@@ -234,7 +311,9 @@ const Payment = () => {
                   type="number"
                   min={0}
                   value={editBank.Minimum}
-                  onChange={(e) => handleBankChange("Minimum", e.target.value)}
+                  onChange={(e) =>
+                    handleBankChange("Minimum", e.target.value)
+                  }
                   className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   placeholder="จำนวนเงินขั้นต่ำ"
                 />
@@ -278,7 +357,7 @@ const Payment = () => {
         )}
       </Modal>
 
-      {/* Table styles */}
+      {/* Table style */}
       <style>{`
         .ev-table thead th {
           background: #f9fafb;
