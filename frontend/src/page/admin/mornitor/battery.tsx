@@ -6,6 +6,7 @@ import {
   FiClock,
 } from "react-icons/fi";
 
+import MassageTestOCPP from "./massage"
 /** ---------- Types ---------- */
 type BatteryStatus = "Charging" | "Discharging" | "Idle";
 
@@ -233,6 +234,7 @@ const Battery: React.FC = () => {
           </div>
         </section>
       </main>
+      <MassageTestOCPP />
     </div>
   );
 };
