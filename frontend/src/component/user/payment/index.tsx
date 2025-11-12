@@ -2,7 +2,7 @@
 import React, { useEffect, useState, memo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import qrpayment from "../../../assets/PromptPay-logo.png";
-import { Divider, Button, message } from "antd";
+import { Divider, message } from "antd";
 import {
   getUserByID,
   UpdateCoin,
@@ -12,6 +12,7 @@ import {
   apiUrlPicture,
   CreateChargingToken,
 } from "../../../services";
+import { connectHardwareSocket, sendHardwareCommand } from "../../../services"; // ✅ เพิ่ม import
 import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import { UsersInterface } from "../../../interface/IUser";
 import { MethodInterface } from "../../../interface/IMethod";
@@ -20,7 +21,6 @@ import { MethodInterface } from "../../../interface/IMethod";
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h2 className="text-base font-semibold text-gray-900">{children}</h2>
 );
-
 const SmallNote: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <p className="text-xs text-gray-500">{children}</p>
 );
@@ -64,6 +64,7 @@ const Index: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { chargers } = location.state || { chargers: [] as any[] };
+  console.log(chargers);
 
   const [paymentMethod, setPaymentMethod] = useState<"qr" | "card">("qr");
   const [user, setUser] = useState<UsersInterface | null>(null);
@@ -110,10 +111,29 @@ const Index: React.FC = () => {
     fetchUserData();
   }, [navigate]);
 
+  // ✅ ฟังก์ชันส่งข้อมูลไปยัง Hardware
+  const sendToHardware = (solar: number, grid: number) => {
+    try {
+      const ws = connectHardwareSocket(() => {
+      });
+
+      // ✅ รอเปิดการเชื่อมต่อก่อนส่ง
+      ws.onopen = () => {
+        console.log("✅ Connected to Hardware WebSocket");
+        const command = { solar_kwh: solar, grid_kwh: grid };
+        sendHardwareCommand(ws, "hardware_001", command);
+      };
+
+      ws.onclose = () => console.warn("⚠️ Hardware WebSocket disconnected");
+      ws.onerror = (err) => console.error("❌ Hardware WebSocket error:", err);
+    } catch (err) {
+      console.error("❌ Failed to send to hardware:", err);
+    }
+  };
+
   // ✅ กด "ชำระเงิน"
   const handlePayment = async () => {
     if (!user) return;
-
     const selectedMethod = paymentMethod === "qr" ? qrMethod : coinMethod;
 
     // ✅ QR Payment
@@ -146,7 +166,7 @@ const Index: React.FC = () => {
     try {
       setIsProcessing(true);
 
-      // หัก Coin
+      // ✅ หัก Coin
       const updatedCoin = (user.Coin || 0) - totalAmount;
       const result = await UpdateCoin({ user_id: user.ID!, coin: updatedCoin });
 
@@ -158,7 +178,7 @@ const Index: React.FC = () => {
 
       message.success("ชำระเงินด้วย Coin สำเร็จแล้ว");
 
-      // สร้าง Payment
+      // ✅ สร้าง Payment
       const paymentData = {
         date: new Date().toISOString().split("T")[0],
         amount: Number(totalAmount),
@@ -175,7 +195,7 @@ const Index: React.FC = () => {
         return;
       }
 
-      // ผูก EVChargingPayment
+      // ✅ ผูก EVChargingPayment
       if (Array.isArray(chargers)) {
         for (const charger of chargers) {
           const evChargingPaymentData = {
@@ -189,12 +209,18 @@ const Index: React.FC = () => {
         }
       }
 
-      // ✅ สร้าง Token สำหรับ session การชาร์จ (ส่ง user.ID ด้วย)
+      // ✅ สร้าง Token สำหรับ session การชาร์จ
       const token = await CreateChargingToken(user.ID!, paymentResult.ID);
       if (!token) {
         setIsProcessing(false);
         return;
       }
+
+      // ✅ ดึงค่าของ Solar และ Grid เพื่อส่งให้ Hardware
+      const solar = chargers.find((c : any) => c.name.toLowerCase().includes("solar"))?.power || 0;
+      const grid = chargers.find((c : any) => c.name.toLowerCase().includes("grid"))?.power || 0;
+
+      sendToHardware(solar, grid);
 
       localStorage.setItem("charging_token", token);
       setTimeout(() => {
@@ -208,26 +234,19 @@ const Index: React.FC = () => {
     }
   };
 
+  // ================== UI ==================
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header
-        className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
+      <header className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
           <button
             onClick={() => window.history.back()}
             aria-label="ย้อนกลับ"
             className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -241,7 +260,6 @@ const Index: React.FC = () => {
 
       {/* Content */}
       <main className="mx-auto max-w-screen-sm px-4 pb-28 pt-4">
-        {/* Summary */}
         <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-blue-900">ยอดชำระทั้งหมด</span>
@@ -250,7 +268,6 @@ const Index: React.FC = () => {
           <SmallNote>ตรวจสอบรายการก่อนชำระเงิน</SmallNote>
         </div>
 
-        {/* Order List */}
         <section className="mb-6">
           <SectionTitle>รายการสั่งซื้อ</SectionTitle>
           <div className="mt-3 rounded-2xl border border-gray-100">
@@ -264,34 +281,27 @@ const Index: React.FC = () => {
                   />
                   <div className="flex-1">
                     <h3 className="text-sm font-medium text-gray-900 line-clamp-1">{item.name}</h3>
-
-                    {/* ✅ แก้ไขส่วนนี้ให้แสดงค่าเปอร์เซ็นต์จริง */}
                     <p className="text-xs text-gray-500">
                       เปอร์เซ็นต์การชาร์จ:{" "}
                       <span className="font-semibold text-blue-700">
                         {item.percent ? `${item.percent}%` : "-"}
                       </span>
                     </p>
-
                     <p className="text-xs text-gray-500">
                       กำลังไฟฟ้า:{" "}
                       <span className="font-semibold text-blue-700">
-                        {item.power?.toFixed(2)} <span className="text-[10px] text-blue-400">kWh</span>
+                        {item.power?.toFixed(2)}{" "}
+                        <span className="text-[10px] text-blue-400">kWh</span>
                       </span>
                     </p>
                   </div>
-
                   <span className="text-sm font-semibold text-blue-700">
                     ฿{Number(item.total || 0).toFixed(2)}
                   </span>
                 </div>
-
                 {index < chargers.length - 1 && <Divider className="!my-3" />}
               </div>
             ))}
-            {chargers.length === 0 && (
-              <div className="px-4 py-6 text-center text-sm text-gray-500">ไม่มีรายการ</div>
-            )}
           </div>
         </section>
 
@@ -335,21 +345,6 @@ const Index: React.FC = () => {
                     }
                   />
                 )}
-
-                {paymentMethod === "card" && user && (user.Coin || 0) < totalAmount && (
-                  <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
-                    <p className="text-sm font-medium">⚠️ Coin ไม่เพียงพอ</p>
-                    <div className="mt-1">
-                      <Button
-                        type="link"
-                        onClick={() => navigate("/user/my-coins")}
-                        className="px-0 text-blue-600"
-                      >
-                        ไปหน้าเติม Coin
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -366,10 +361,11 @@ const Index: React.FC = () => {
           <button
             onClick={handlePayment}
             disabled={isProcessing || isLoadingMethod || chargers.length === 0}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white transition ${isProcessing || isLoadingMethod || chargers.length === 0
-              ? "bg-blue-300"
-              : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-              }`}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-white transition ${
+              isProcessing || isLoadingMethod || chargers.length === 0
+                ? "bg-blue-300"
+                : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+            }`}
           >
             <BoltIcon className="h-5 w-5 text-white" />
             <span className="text-sm font-semibold">
