@@ -2338,3 +2338,81 @@ export const connectOcppSocket = (onMessage: (data: any) => void) => {
 
   return ws;
 };
+
+export const connectSolarSocket = (onMessage: (data: any) => void) => {
+  const ws = new WebSocket(`${apiUrl}/solar/frontend`);
+
+  ws.onopen = () => {
+    console.log("✅ Connected to Go Solar WebSocket Server");
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const parsed = JSON.parse(event.data);
+      console.log("☀️ Received Solar Data:", parsed);
+      onMessage(parsed);
+    } catch {
+      console.log("📩 Raw Message (non-JSON):", event.data);
+      onMessage(event.data);
+    }
+  };
+
+  ws.onclose = () => {
+    console.log("⚠️ Solar WebSocket disconnected");
+  };
+
+  ws.onerror = (err) => {
+    console.error("❌ Solar WebSocket error:", err);
+  };
+
+  return ws;
+};
+
+
+/** 🌐 เชื่อมต่อ WebSocket ไปยัง Backend Hardware */
+export const connectHardwareSocket = (onMessage: (data: any) => void) => {
+  const ws = new WebSocket(`${apiUrl}/hardware/frontend`);
+
+  ws.onopen = () => {
+    console.log("✅ Connected to Go Hardware WebSocket Server");
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const parsed = JSON.parse(event.data);
+      console.log("📩 Received from Hardware:", parsed);
+      onMessage(parsed);
+    } catch {
+      console.log("📩 Raw Message:", event.data);
+      onMessage(event.data);
+    }
+  };
+
+  ws.onclose = () => {
+    console.warn("⚠️ Hardware WebSocket disconnected");
+  };
+
+  ws.onerror = (err) => {
+    console.error("❌ Hardware WebSocket error:", err);
+  };
+
+  return ws;
+};
+
+/** 📤 ส่งคำสั่งจาก Web → Backend → Hardware */
+export const sendHardwareCommand = (
+  ws: WebSocket,
+  deviceId: string,
+  command: Record<string, any>
+) => {
+  if (ws.readyState === WebSocket.OPEN) {
+    const payload = {
+      device_id: deviceId,
+      command,
+    };
+    ws.send(JSON.stringify(payload));
+    console.log("📤 Sent command to Backend:", payload);
+  } else {
+    console.warn("⚠️ WebSocket not connected — cannot send command.");
+  }
+};

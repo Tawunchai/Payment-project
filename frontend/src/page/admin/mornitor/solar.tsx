@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   FiZap,
   FiBarChart2,
-  FiThermometer,
   FiBatteryCharging,
+  FiClock,
 } from "react-icons/fi";
+import { connectSolarSocket } from "../../../services";
 
-import TestingOCPP from "./test"
 /** ---------- Types ---------- */
 type Parameter = {
   name: string;
@@ -15,18 +15,17 @@ type Parameter = {
   icon: React.ReactNode;
 };
 
-/** ---------- Mock Data ---------- */
-const params: Parameter[] = [
-  { name: "Power Output", value: "5.2 kW", status: "ON", icon: <FiZap className="text-xl md:text-2xl text-blue-600" /> },
-  { name: "Energy Today", value: "38.5 kWh", status: "ON", icon: <FiBarChart2 className="text-xl md:text-2xl text-blue-600" /> },
-  { name: "Panel Temp.", value: "44°C", status: "ON", icon: <FiThermometer className="text-xl md:text-2xl text-blue-600" /> },
-  { name: "Battery", value: "83%", status: "ON", icon: <FiBatteryCharging className="text-xl md:text-2xl text-blue-600" /> },
-];
+type SolarData = {
+  payload?: {
+    timestamp?: string;
+    data?: {
+      power_in?: number;
+      battery_percentage?: number;
+    };
+  };
+};
 
-// ตัวอย่างกราฟ (Power Output รายชั่วโมง)
-const powerSeries = [3.1, 3.6, 4.2, 4.8, 5.2, 5.0, 4.5, 4.9, 5.3, 5.1, 5.4, 5.6, 5.2, 5.0];
-
-/** แปลงชุดข้อมูลเป็น polyline points */
+/** ---------- Helper: แปลงชุดข้อมูลเป็น polyline points ---------- */
 function toPolylinePoints(values: number[], width = 560, height = 120): string {
   if (values.length === 0) return "";
   const min = Math.min(...values);
@@ -44,15 +43,73 @@ function toPolylinePoints(values: number[], width = 560, height = 120): string {
 }
 
 const Index: React.FC = () => {
+  // ---------- STATE ----------
+  const [solarData, setSolarData] = useState<SolarData | null>(null);
+  const [powerSeries, setPowerSeries] = useState<number[]>([]);
+
+  // ---------- CONNECT WEBSOCKET ----------
+  useEffect(() => {
+    const socket = connectSolarSocket((data) => {
+      setSolarData(data);
+
+      // ✅ เก็บค่า power_in เพื่อใช้แสดงในกราฟย้อนหลัง
+      if (data?.payload?.data?.power_in !== undefined) {
+        setPowerSeries((prev) => {
+          const updated = [...prev, data.payload!.data!.power_in!];
+          return updated.slice(-10); // เก็บไว้ 10 จุดล่าสุด
+        });
+      }
+    });
+    return () => socket.close();
+  }, []);
+
+  // ---------- เตรียมค่าที่จะใช้แสดง ----------
+  const powerIn = solarData?.payload?.data?.power_in ?? 0;
+  const battery = solarData?.payload?.data?.battery_percentage ?? 0;
+  const updatedTime = solarData?.payload?.timestamp
+    ? new Date(solarData.payload.timestamp).toLocaleTimeString()
+    : "Waiting...";
+
+  const params: Parameter[] = [
+    {
+      name: "Power In",
+      value: `${powerIn.toFixed(2)} W`,
+      status: "ON",
+      icon: <FiZap className="text-xl md:text-2xl text-blue-600" />,
+    },
+    {
+      name: "Power Out",
+      value: `0.00 kWh`, // ✅ คงที่
+      status: "ON",
+      icon: <FiBarChart2 className="text-xl md:text-2xl text-blue-600" />,
+    },
+    {
+      name: "Battery",
+      value: `${battery.toFixed(1)}%`,
+      status: "ON",
+      icon: <FiBatteryCharging className="text-xl md:text-2xl text-blue-600" />,
+    },
+    {
+      name: "Time",
+      value: updatedTime,
+      status: "ON",
+      icon: <FiClock className="text-xl md:text-2xl text-blue-600" />,
+    },
+  ];
+
+  // ✅ ใช้ power_in เป็นข้อมูลในกราฟ
   const points = toPolylinePoints(powerSeries, 720, 140);
 
   return (
     <div className="min-h-screen bg-white text-gray-900 mt-14 sm:mt-0">
-      {/* Top bar — แบบ News Management แต่ไม่มี CREATE */}
-      <div className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      {/* Top bar */}
+      <div
+        className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <h1 className="text-sm sm:text-base font-semibold tracking-wide">
-            EV Station • Monitor
+            Solar Station • Monitor
           </h1>
           <span className="text-[11px] sm:text-xs bg-white/15 px-2 py-1 rounded-lg border border-white/20">
             Live
@@ -60,24 +117,29 @@ const Index: React.FC = () => {
         </div>
       </div>
 
-      {/* เนื้อหาเต็มหน้าจอ */}
       <main className="w-full px-4 sm:px-6 pt-5 pb-24">
         {/* Hero — สรุปสถานะรวม */}
         <section className="rounded-2xl bg-white border border-gray-200 p-5 md:p-6 shadow-sm">
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-xs md:text-sm text-gray-500 font-medium">System Status</p>
-              <p className="text-3xl md:text-4xl font-extrabold text-blue-700">29°</p>
-              <p className="text-sm md:text-base text-gray-500">Mostly Sunny • Celsius</p>
+              <p className="text-xs md:text-sm text-gray-500 font-medium">
+                System Status
+              </p>
+              <p className="text-3xl md:text-4xl font-extrabold text-blue-700">
+                {battery.toFixed(1)}%
+              </p>
+              <p className="text-sm md:text-base text-gray-500">
+                Battery Capacity
+              </p>
             </div>
             <div className="text-right">
               <p className="text-[11px] md:text-xs text-gray-500">Updated</p>
-              <p className="text-sm md:text-base font-semibold">Just now</p>
+              <p className="text-sm md:text-base font-semibold">{updatedTime}</p>
             </div>
           </div>
         </section>
 
-        {/* การ์ดค่าหลัก 4 ตัว */}
+        {/* การ์ดค่าหลัก */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-4">
           {params.map((item) => (
             <div
@@ -89,33 +151,44 @@ const Index: React.FC = () => {
                   {item.icon}
                 </div>
                 <span
-                  className={`text-[10px] md:text-xs px-2 py-1 rounded-full font-semibold ${item.status === "ON"
+                  className={`text-[10px] md:text-xs px-2 py-1 rounded-full font-semibold ${
+                    item.status === "ON"
                       ? "bg-green-50 text-green-700 border border-green-200"
                       : "bg-gray-50 text-gray-500 border border-gray-200"
-                    }`}
+                  }`}
                 >
                   {item.status}
                 </span>
               </div>
               <div className="mt-3">
-                <p className="text-[11px] md:text-xs text-gray-500">{item.name}</p>
-                <p className="text-xl md:text-2xl font-bold text-blue-700">{item.value}</p>
+                <p className="text-[11px] md:text-xs text-gray-500">
+                  {item.name}
+                </p>
+                <p className="text-xl md:text-2xl font-bold text-blue-700">
+                  {item.value}
+                </p>
               </div>
             </div>
           ))}
         </section>
 
-        {/* กราฟเส้น (SVG) เต็มกว้าง */}
+        {/* 🔹 กราฟ Power In */}
         <section className="mt-5 rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-5 pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs md:text-sm text-gray-500">Power Output</p>
-                <p className="text-lg md:text-xl font-bold text-blue-700">Last 14 hours</p>
+                <p className="text-xs md:text-sm text-gray-500">Power Input</p>
+                <p className="text-lg md:text-xl font-bold text-blue-700">
+                  Last 10 Data
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-[11px] md:text-xs text-gray-500">Peak</p>
-                <p className="text-sm md:text-base font-semibold text-blue-700">5.6 kW</p>
+                <p className="text-sm md:text-base font-semibold text-blue-700">
+                  {powerSeries.length > 0
+                    ? `${Math.max(...powerSeries).toFixed(2)} W`
+                    : "0.00 W"}
+                </p>
               </div>
             </div>
           </div>
@@ -126,7 +199,7 @@ const Index: React.FC = () => {
                 viewBox="0 0 720 180"
                 className="w-full h-40 md:h-48"
                 role="img"
-                aria-label="Power output line chart"
+                aria-label="Power input line chart"
               >
                 {/* Grid */}
                 <g>
@@ -157,7 +230,7 @@ const Index: React.FC = () => {
 
                 {/* Filled area */}
                 <polyline
-                  points={`${toPolylinePoints(powerSeries, 720, 140)} 720,180 0,180`}
+                  points={`${points} 720,180 0,180`}
                   fill="url(#areaGradBlue)"
                   stroke="none"
                 />
@@ -173,28 +246,41 @@ const Index: React.FC = () => {
               </svg>
             </div>
 
-            {/* สรุปค่า Min/Avg/Max */}
+            {/* Min/Avg/Max */}
             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] md:text-xs">
               <div className="rounded-lg bg-blue-50 border border-blue-100 py-2">
                 <p className="text-gray-500">Min</p>
-                <p className="font-semibold text-blue-700">3.1 kW</p>
+                <p className="font-semibold text-blue-700">
+                  {powerSeries.length > 0
+                    ? `${Math.min(...powerSeries).toFixed(2)} W`
+                    : "0.00 W"}
+                </p>
               </div>
               <div className="rounded-lg bg-blue-50 border border-blue-100 py-2">
                 <p className="text-gray-500">Avg</p>
-                <p className="font-semibold text-blue-700">4.9 kW</p>
+                <p className="font-semibold text-blue-700">
+                  {powerSeries.length > 0
+                    ? `${(
+                        powerSeries.reduce((a, b) => a + b, 0) /
+                        powerSeries.length
+                      ).toFixed(2)} W`
+                    : "0.00 W"}
+                </p>
               </div>
               <div className="rounded-lg bg-blue-50 border border-blue-100 py-2">
                 <p className="text-gray-500">Max</p>
-                <p className="font-semibold text-blue-700">5.6 kW</p>
+                <p className="font-semibold text-blue-700">
+                  {powerSeries.length > 0
+                    ? `${Math.max(...powerSeries).toFixed(2)} W`
+                    : "0.00 W"}
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* bottom spacing */}
         <div className="h-10" />
       </main>
-      <TestingOCPP />
     </div>
   );
 };

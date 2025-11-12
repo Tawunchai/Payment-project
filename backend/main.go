@@ -30,9 +30,11 @@ import (
 	"github.com/Tawunchai/work-project/controller/report"
 	"github.com/Tawunchai/work-project/controller/review"
 	"github.com/Tawunchai/work-project/controller/role"
+	hardware "github.com/Tawunchai/work-project/controller/senddata"
 	"github.com/Tawunchai/work-project/controller/sendemail"
 	"github.com/Tawunchai/work-project/controller/service"
 	"github.com/Tawunchai/work-project/controller/slip"
+	"github.com/Tawunchai/work-project/controller/solar"
 	"github.com/Tawunchai/work-project/controller/status"
 	tokening "github.com/Tawunchai/work-project/controller/token"
 	types "github.com/Tawunchai/work-project/controller/type"
@@ -232,7 +234,16 @@ func main() {
 
 		//OCPP Test
 		public.GET("/ocpp/:chargerID", ocpp.HandleOCPP)
-		public.GET("/frontend", ocpp.HandleFrontend)      // ส่งให้ frontend
+		public.GET("/frontend", ocpp.HandleFrontend) // ส่งให้ frontend
+
+		// 🌞 Solar WebSocket Routes
+		public.GET("/solar/:deviceID", solar.HandleSolar)   // สำหรับพี่คุณส่งข้อมูลเข้ามา
+		public.GET("/solar/frontend", solar.HandleFrontend) // สำหรับเว็บคุณรับข้อมูลแบบ real-time
+
+		// ⚙️ Hardware WebSocket Routes
+		public.GET("/hardware/:deviceID", hardware.HandleHardware) // สำหรับอุปกรณ์จริง
+		public.GET("/hardware/frontend", hardware.HandleFrontend)           // สำหรับ React dashboard
+
 	}
 
 	r.GET("/", func(c *gin.Context) {
