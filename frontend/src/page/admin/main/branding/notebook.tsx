@@ -27,40 +27,49 @@ const Index = () => {
 
       const todayDate = new Date().toISOString().split("T")[0];
 
-      // ✅ Filter EV Charging ของวันนี้
+      /* ======================================================
+         1) EV Charging Power วันนี้
+      ====================================================== */
       const todayEV = evResponse!.filter((item: any) => {
         const paymentDate = item?.Payment?.Date?.split("T")[0];
         return paymentDate === todayDate;
       });
 
-      // ✅ รวม Quantity
-      let totalQuantity = 0;
+      let totalPower = 0;
       const map: { [name: string]: number } = {};
+
       todayEV.forEach((item: any) => {
         const chargerName = item?.EVcharging?.Name || "Unknown";
-        const qty = item?.Quantity || 0;
-        totalQuantity += qty;
 
-        if (map[chargerName]) map[chargerName] += qty;
-        else map[chargerName] = qty;
+        // ❗ เปลี่ยน Quantity → Power
+        const pwr = Number(item?.Power) || 0;
+
+        totalPower += pwr;
+
+        if (map[chargerName]) map[chargerName] += pwr;
+        else map[chargerName] = pwr;
       });
-      setPower(totalQuantity);
+
+      setPower(totalPower);
       setChargerPowerMap(map);
 
-      // ✅ Filter Payment วันนี้
+      /* ======================================================
+         2) Payment วันนี้
+      ====================================================== */
       const todayPayments = paymentResponse!.filter((item: any) =>
         item.Date?.startsWith(todayDate)
       );
       setTodayPaymentCount(todayPayments.length);
 
-      // ✅ รวมจำนวนเงิน
       const totalAmount = todayPayments.reduce(
         (sum: number, item: any) => sum + item.Amount,
         0
       );
       setExpense(totalAmount);
 
-      // ✅ วันที่
+      /* ======================================================
+         3) Today date format
+      ====================================================== */
       const date = new Date();
       const options: Intl.DateTimeFormatOptions = {
         year: "numeric",
@@ -69,7 +78,9 @@ const Index = () => {
       };
       setToday(date.toLocaleDateString("en-US", options));
 
-      // ✅ Leaders (เฉพาะ Admin)
+      /* ======================================================
+         4) Leaders (Admin)
+      ====================================================== */
       const adminUsers = userResponse!.filter(
         (user: any) => user.UserRole?.RoleName === "Admin"
       );
@@ -90,7 +101,8 @@ const Index = () => {
 
   return (
     <div className="w-250 bg-gradient-to-br from-blue-50 to-blue-100 dark:text-gray-200 rounded-2xl shadow-lg border border-blue-200 p-6 m-3 transition-all duration-300 hover:shadow-xl">
-      {/* ===== Header ===== */}
+
+      {/* Header */}
       <div className="flex justify-between items-center">
         <p className="text-xl font-semibold text-blue-800">EV Station Overview</p>
         <button
@@ -101,12 +113,12 @@ const Index = () => {
         </button>
       </div>
 
-      {/* ===== Date Tag ===== */}
+      {/* Date Tag */}
       <p className="text-xs font-semibold rounded-full w-fit px-3 py-1 mt-6 text-white bg-blue-600 shadow-md">
         {today}
       </p>
 
-      {/* ===== Summary ===== */}
+      {/* Summary */}
       <div className="flex gap-6 border-b border-blue-200 mt-6 pb-3">
         {medicalproBranding.data.map((item) => (
           <div key={item.title} className="pr-4">
@@ -116,27 +128,29 @@ const Index = () => {
         ))}
       </div>
 
-      {/* ===== Power Type ===== */}
+      {/* Power Type */}
       <div className="border-b border-blue-200 pb-4 mt-4">
         <p className="text-md font-semibold text-blue-900 mb-2 flex items-center gap-2">
           <BsBatteryCharging className="text-blue-600" /> Power Type
         </p>
+
         <div className="flex flex-wrap gap-2">
-          {Object.entries(chargerPowerMap).map(([name, qty]) => (
+          {Object.entries(chargerPowerMap).map(([name, pwr]) => (
             <p
               key={name}
               className="cursor-pointer text-white py-1 px-3 rounded-full text-xs bg-blue-600 hover:bg-blue-700 transition-all shadow-sm"
             >
-              {name}: {qty.toFixed(2)} kWh
+              {name}: {pwr.toFixed(2)} kWh
             </p>
           ))}
+
           {Object.keys(chargerPowerMap).length === 0 && (
             <p className="text-xs text-gray-400">No data available</p>
           )}
         </div>
       </div>
 
-      {/* ===== Leaders ===== */}
+      {/* Leaders */}
       <div className="mt-4">
         <p className="text-md font-semibold text-blue-900 mb-2">Leaders</p>
         <div className="flex gap-3">
@@ -148,13 +162,14 @@ const Index = () => {
               alt={`Leader ${index}`}
             />
           ))}
+
           {leaders.length === 0 && (
             <p className="text-xs text-gray-400">No leaders found</p>
           )}
         </div>
       </div>
 
-      {/* ===== Footer ===== */}
+      {/* Footer */}
       <div className="flex justify-between items-center mt-5 border-t border-blue-200 pt-3">
         <button
           type="button"

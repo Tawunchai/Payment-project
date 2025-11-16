@@ -24,15 +24,17 @@ export interface EVchargingInterface {
   Description: string;
   Price: number;
   Picture: string;
+
   Employee?: EmployeeInterface;
   Status?: StatusInterface;
   Type?: TypeInterface;
-//
+
   EmployeeID?: number;
   StatusID?: number;
   TypeID?: number;
-  EVCabinetID:number;
-  EVCabinet:EVCabinetInterface;
+
+  // ⭐ เปลี่ยนจาก 1 Cabinet → หลาย Cabinet
+  Cabinets: EVCabinetInterface[];
 }
 
 export interface CreateEVInput {

@@ -40,53 +40,55 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [price, setPrice] = useState<string>("");
+
   const [statusID, setStatusID] = useState<number | undefined>(undefined);
   const [typeID, setTypeID] = useState<number | undefined>(undefined);
-  const [evCabinetID, setEvCabinetID] = useState<number | undefined>(undefined);
+
+  // ⭐ เลือกหลาย Cabinet
+  const [selectedCabinets, setSelectedCabinets] = useState<number[]>([]);
+
   const [fileList, setFileList] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   const [cabinets, setCabinets] = useState<CabinetInterface[]>([]);
   const [employeeID, setEmployeeID] = useState<number | null>(null);
 
-  // ✅ โหลด employee_id จาก JWT
+  // โหลด employee_id
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
         await initUserProfile();
         const currentUser = getCurrentUser();
-        if (currentUser && currentUser.employee_id) {
+        if (currentUser?.employee_id) {
           setEmployeeID(currentUser.employee_id);
         } else {
-          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+          message.warning("ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่");
         }
       } catch {
-        message.error("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
+        message.error("โหลดข้อมูลผู้ใช้ล้มเหลว");
       }
     };
     fetchEmployee();
   }, []);
 
-  // ✅ โหลดรายการ Cabinet จาก service
+  // โหลด Cabinet
   useEffect(() => {
-    const fetchCabinets = async () => {
+    const fetchCab = async () => {
       try {
         const res = await ListCabinetsEV();
-        if (res && Array.isArray(res)) {
-          setCabinets(res);
-        } else if (res) {
+        if (Array.isArray(res)) {
           setCabinets(res);
         } else {
           setCabinets([]);
         }
       } catch {
-        message.error("ไม่สามารถโหลดข้อมูล Cabinet ได้");
+        message.error("โหลดข้อมูล Cabinet ไม่สำเร็จ");
       }
     };
-    if (open) fetchCabinets();
+    if (open) fetchCab();
   }, [open]);
 
-  // ✅ รีเซ็ตค่าเมื่อ modal เปิด
+  // Reset เมื่อเปิด modal
   useEffect(() => {
     if (open) {
       setName("");
@@ -94,18 +96,17 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
       setPrice("");
       setStatusID(undefined);
       setTypeID(undefined);
-      setEvCabinetID(undefined);
+      setSelectedCabinets([]); // reset
       setFileList([]);
       setSubmitting(false);
     }
   }, [open]);
 
-  // ✅ ตรวจขนาดหน้าจอมือถือ
   const isMobile =
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 768px)").matches;
 
-  // ✅ Submit form
+  // Submit
   const handleSubmit = async () => {
     if (
       !name ||
@@ -113,10 +114,10 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
       !price ||
       !statusID ||
       !typeID ||
-      !evCabinetID ||
+      selectedCabinets.length === 0 ||
       fileList.length === 0
     ) {
-      message.error("กรุณากรอกข้อมูลให้ครบถ้วนและเลือกรูปภาพ");
+      message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
       return;
     }
 
@@ -128,8 +129,12 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
       formData.append("price", price);
       formData.append("statusID", String(statusID));
       formData.append("typeID", String(typeID));
-      formData.append("evCabinetID", String(evCabinetID)); // ✅ Cabinet ID
+
+      // ⭐ ส่งหลายตู้ → "1,3,5"
+      formData.append("cabinetIDs", selectedCabinets.join(","));
+
       if (employeeID) formData.append("employeeID", String(employeeID));
+
       formData.append("picture", fileList[0].originFileObj);
 
       const result = await CreateEV(formData);
@@ -141,12 +146,13 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
         message.error("ไม่สามารถสร้างข้อมูลได้");
       }
     } catch {
-      message.error("เกิดข้อผิดพลาดระหว่างการบันทึก");
+      message.error("เกิดข้อผิดพลาด");
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Preview รูป
   const onPreview = async (file: any) => {
     let src = file.url;
     if (!src && file.originFileObj) {
@@ -163,119 +169,93 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-    >
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={submitting ? undefined : onClose}
-        aria-hidden="true"
       />
 
-      {/* Modal container */}
       <div className="relative w-full max-w-[600px] mx-4 md:mx-auto mb-8 md:mb-0">
         <div
-          className="bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-blue-100 flex flex-col"
+          className="bg-white rounded-2xl shadow-xl ring-1 ring-blue-100 flex flex-col overflow-hidden"
           style={{ maxHeight: isMobile ? "78vh" : "82vh" }}
         >
-          {/* Header */}
-          <div
-            className="px-5 pt-3 pb-4 bg-blue-600 text-white flex justify-between items-center"
-            style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
-          >
+          {/* HEADER */}
+          <div className="px-5 py-4 bg-blue-600 text-white flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <FaBolt className="opacity-90" />
-              <h2 className="text-base md:text-lg font-semibold">
-                เพิ่มข้อมูล EV Charging
-              </h2>
+              <FaBolt />
+              <h2 className="text-lg font-semibold">เพิ่มข้อมูล EV Charging</h2>
             </div>
             <button
               onClick={onClose}
               disabled={submitting}
-              className="p-2 -m-2 rounded-lg hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60"
-              title="ปิด"
-              aria-label="ปิด"
+              className="p-2 hover:bg-white/10 rounded-lg"
             >
               <FaTimes />
             </button>
           </div>
 
-          {/* Body */}
-          <div
-            className="px-5 py-5 bg-blue-50/40 space-y-3 overflow-y-auto"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
+          {/* BODY */}
+          <div className="px-5 py-5 bg-blue-50/40 space-y-4 overflow-y-auto">
             {/* Upload */}
-            <div className="flex justify-center mb-3">
+            <div className="flex justify-center">
               <ImgCrop rotationSlider>
                 <Upload
                   accept="image/*"
                   listType="picture-card"
                   fileList={fileList}
-                  onChange={({ fileList: newList }) => setFileList(newList)}
+                  onChange={({ fileList }) => setFileList(fileList)}
                   onPreview={onPreview}
-                  beforeUpload={(file) => {
-                    if (!file.type?.startsWith("image/")) {
-                      message.error("กรุณาอัปโหลดเฉพาะไฟล์รูปภาพ");
-                      return Upload.LIST_IGNORE;
-                    }
-                    return false;
-                  }}
+                  beforeUpload={() => false}
                   maxCount={1}
                 >
                   {fileList.length < 1 && (
                     <div className="flex flex-col items-center text-blue-500">
                       <FaImage size={24} />
-                      <span className="mt-1 text-sm font-medium">Upload</span>
+                      <span className="mt-1 text-sm">Upload</span>
                     </div>
                   )}
                 </Upload>
               </ImgCrop>
             </div>
 
-            {/* Form */}
+            {/* FORM */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Name */}
+              {/* NAME */}
               <label className="flex flex-col gap-1">
-                <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaTag className="text-blue-500" /> ชื่อสถานี (Name)
+                <span className="text-xs flex items-center gap-2">
+                  <FaTag className="text-blue-500" /> ชื่อสถานี
                 </span>
                 <input
-                  className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  type="text"
-                  placeholder="ชื่อ EV Charging"
+                  className="px-3 py-2 rounded-xl border"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </label>
 
-              {/* Price */}
+              {/* PRICE */}
               <label className="flex flex-col gap-1">
-                <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaMoneyBillWave className="text-blue-500" /> ราคา (Price)
+                <span className="text-xs flex items-center gap-2">
+                  <FaMoneyBillWave className="text-blue-500" /> ราคา (บาท)
                 </span>
                 <input
-                  className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   type="number"
-                  placeholder="ราคา (บาท)"
+                  className="px-3 py-2 rounded-xl border"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                 />
               </label>
 
-              {/* Status */}
+              {/* STATUS */}
               <label className="flex flex-col gap-1">
-                <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaListAlt className="text-blue-500" /> สถานะ (Status)
+                <span className="text-xs flex items-center gap-2">
+                  <FaListAlt className="text-blue-500" /> สถานะ
                 </span>
                 <Select
-                  className="ev-select w-full"
+                  className="w-full"
                   placeholder="เลือกสถานะ"
                   value={statusID}
-                  onChange={(val) => setStatusID(val as number)}
+                  onChange={(v) => setStatusID(v)}
                   options={statusList.map((s) => ({
                     label: s.Status,
                     value: s.ID,
@@ -285,16 +265,16 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                 />
               </label>
 
-              {/* Type */}
+              {/* TYPE */}
               <label className="flex flex-col gap-1">
-                <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaInfoCircle className="text-blue-500" /> ประเภท (Type)
+                <span className="text-xs flex items-center gap-2">
+                  <FaInfoCircle className="text-blue-500" /> ประเภท
                 </span>
                 <Select
-                  className="ev-select w-full"
+                  className="w-full"
                   placeholder="เลือกประเภท"
                   value={typeID}
-                  onChange={(val) => setTypeID(val as number)}
+                  onChange={(v) => setTypeID(v)}
                   options={typeList.map((t) => ({
                     label: t.Type,
                     value: t.ID,
@@ -304,18 +284,19 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                 />
               </label>
 
-              {/* Cabinet */}
+              {/* MULTI CABINET */}
               <label className="flex flex-col gap-1 md:col-span-2">
-                <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaChargingStation className="text-blue-500" /> ตู้ชาร์จ (Cabinet)
+                <span className="text-xs flex items-center gap-2">
+                  <FaChargingStation className="text-blue-500" /> ตู้ชาร์จ (เลือกได้หลายตัว)
                 </span>
                 <Select
-                  className="ev-select w-full"
+                  mode="multiple"
+                  className="w-full"
                   placeholder="เลือก Cabinet"
-                  value={evCabinetID}
-                  onChange={(val) => setEvCabinetID(val as number)}
+                  value={selectedCabinets}
+                  onChange={(values) => setSelectedCabinets(values)}
                   options={cabinets.map((c) => ({
-                    label: `${c.Name} (${c.Location || "ไม่ระบุที่ตั้ง"})`,
+                    label: `${c.Name} (${c.Location || "ไม่ระบุ"})`,
                     value: c.ID,
                   }))}
                   allowClear
@@ -324,15 +305,14 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
                 />
               </label>
 
-              {/* Description */}
+              {/* DESCRIPTION */}
               <label className="flex flex-col gap-1 md:col-span-2">
-                <span className="text-xs text-slate-600 flex items-center gap-2">
-                  <FaInfoCircle className="text-blue-500" /> รายละเอียด (Description)
+                <span className="text-xs flex items-center gap-2">
+                  <FaInfoCircle className="text-blue-500" /> รายละเอียด
                 </span>
                 <textarea
-                  className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  placeholder="คำอธิบายเพิ่มเติม"
                   rows={3}
+                  className="px-3 py-2 rounded-xl border"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
@@ -340,26 +320,23 @@ const CreateEVModal: React.FC<CreateEVModalProps> = ({
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-5 py-4 bg-white border-t border-blue-100 flex gap-2 justify-end">
+          {/* FOOTER */}
+          <div className="px-5 py-4 bg-white border-t flex justify-end gap-2">
             <button
               onClick={onClose}
               disabled={submitting}
-              className="px-4 h-10 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50 active:scale-[0.99] disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-blue-100 transition"
+              className="px-4 py-2 rounded-xl border"
             >
               ยกเลิก
             </button>
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="px-4 h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 active:scale-[0.99] disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-blue-200 transition"
+              className="px-4 py-2 rounded-xl bg-blue-600 text-white"
             >
               {submitting ? "กำลังบันทึก..." : "สร้าง"}
             </button>
           </div>
-
-          {/* Safe area (mobile) */}
-          <div className="md:hidden h-[env(safe-area-inset-bottom)] bg-white" />
         </div>
       </div>
     </div>

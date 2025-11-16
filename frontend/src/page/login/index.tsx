@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { message } from "antd";
 import { LoginInterface } from "../../interface/Login";
-import { AddLogin, GetEmployeeByUserID } from "../../services/httpLogin";
+import { AddLogin, GetProfile } from "../../services/httpLogin";
 import { CreateUser } from "../../services/index";
 import { UsersInterface } from "../../interface/IUser";
 import Logo_Login from "../../assets/car_login.svg";
@@ -11,11 +11,10 @@ import "./login.css";
 function Login() {
   const [messageApi, contextHolder] = message.useMessage();
 
-  // Sign in state
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  // Sign up states
+  // sign up
   const [signUpUsername, setSignUpUsername] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
@@ -24,86 +23,63 @@ function Login() {
   const [signUpPhoneNumber, setSignUpPhoneNumber] = useState("");
   const [signUpGenderID, setSignUpGenderID] = useState<number | undefined>(undefined);
 
-  // Toggle between sign in and sign up mode
-  const [isSignUpMode, setIsSignUpMode] = useState(false);// @ts-ignore
-  const [fileList, setFileList] = useState<any[]>([]);
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
 
+  // ===========================
+  // LOGIN
+  // ===========================
   const clickLoginbt = async (datalogin: LoginInterface) => {
     const res = await AddLogin(datalogin);
-    console.log(res.data)
 
-    if (res.status === 200) {
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("token_type", res.data.token_type);
-      localStorage.setItem("isLogin", "true");
-      localStorage.setItem("roleName", res.data.UserRole.RoleName);
-      localStorage.setItem("userid", res.data.UserID);
-      localStorage.setItem("firstnameuser", res.data.FirstNameUser);
-      localStorage.setItem("email", res.data.Email || "");
-      localStorage.setItem("phonenumber", res.data.PhoneNumber || "");
-      localStorage.setItem("profile", res.data.Profile || "");
-      localStorage.setItem("lastnameuser", res.data.LastNameUser);
-
-      const RoleName = localStorage.getItem("roleName");
-      const userID = localStorage.getItem("userid");
-      console.log(RoleName)
-      console.log(userID)
-
-      if (userID && RoleName !== "User") {
-        try {
-          const employeeID = await GetEmployeeByUserID(Number(userID));
-          if (employeeID != null) {
-            localStorage.setItem("employeeid", employeeID.toString());
-          }
-        } catch (error) {
-          console.error("Failed to fetch EmployeeID:", error);
-        }
-      }
-
-      messageApi.success(`ท่านได้ทำการ เข้าสู่ระบบ ${RoleName} สำเร็จ`);
-
-      console.log("Login response:", res.data);
-
-      setTimeout(() => {
-        if (RoleName === "Admin") window.location.href = "/admin";
-        else if (RoleName === "User") window.location.href = "/user";
-      }, 100);
-    } else {
-      messageApi.open({
-        type: "warning",
-        content: "รหัสผ่านหรือข้อมูลผู้ใช้ไม่ถูกต้อง!! กรุณากรอกข้อมูลใหม่",
-      });
+    if (res.status !== 200) {
+      return messageApi.warning("รหัสผ่านหรือข้อมูลผู้ใช้ไม่ถูกต้อง!! กรุณากรอกข้อมูลใหม่");
     }
+
+    messageApi.success("เข้าสู่ระบบสำเร็จ");
+
+    // โหลดข้อมูลโปรไฟล์จาก cookie โดยตรง
+    const profile = await GetProfile();
+    if (!profile || !profile.data) {
+      messageApi.error("โหลดข้อมูลผู้ใช้ไม่สำเร็จ");
+      return;
+    }
+
+    const role = profile.data.role;
+
+    // 🔥 ส่ง event ไปให้ ConfigRoutes โหลด role ใหม่ทันที (แก้ปัญหาต้อง refresh)
+    window.dispatchEvent(new Event("roleChange"));
+
+    // Redirect ตาม role
+    setTimeout(() => {
+      if (role === "Admin") window.location.href = "/admin";
+      else if (role === "User") window.location.href = "/user";
+      else window.location.href = "/";
+    }, 200);
   };
 
   const handleSubmitSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!username || !password) {
-      messageApi.warning("กรุณากรอก Username และ Password ให้ครบ");
-      return;
+      return messageApi.warning("กรุณากรอก Username และ Password ให้ครบ");
     }
 
-    const datalogin: LoginInterface = {
+    const data: LoginInterface = {
       username: username.trim(),
       password,
     };
 
-    await clickLoginbt(datalogin);
+    await clickLoginbt(data);
   };
 
-  // --- Sign Up Logic ---
-
+  // ===========================
+  // SIGN UP
+  // ===========================
   const handleSubmitSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !signUpUsername ||
-      !signUpEmail ||
-      !signUpPassword ||
-      signUpGenderID === undefined
-    ) {
-      messageApi.warning("กรุณากรอกข้อมูลให้ครบทุกช่องที่จำเป็น");
-      return;
+    if (!signUpUsername || !signUpEmail || !signUpPassword || signUpGenderID === undefined) {
+      return messageApi.warning("กรุณากรอกข้อมูลให้ครบทุกช่อง");
     }
 
     const newUser: UsersInterface = {
@@ -118,14 +94,12 @@ function Login() {
       Profile: "",
     };
 
-    console.log(newUser)
-
     const res = await CreateUser(newUser);
 
     if (res) {
       messageApi.success("สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ");
       setIsSignUpMode(false);
-      // เคลียร์ฟอร์ม
+
       setSignUpUsername("");
       setSignUpEmail("");
       setSignUpPassword("");
@@ -134,17 +108,20 @@ function Login() {
       setSignUpPhoneNumber("");
       setSignUpGenderID(undefined);
     } else {
-      messageApi.error("สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      messageApi.error("สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่");
     }
   };
 
+  // ===========================
+  // RENDER
+  // ===========================
   return (
     <div className={`custom-container ${isSignUpMode ? "custom-sign-up-mode" : ""}`}>
       {contextHolder}
 
       <div className="custom-forms-container">
         <div className="custom-signin-signup">
-          {/* Sign In Form */}
+          {/* LOGIN */}
           <form onSubmit={handleSubmitSignIn} className="custom-sign-in-form">
             <h2 className="custom-title">Sign in</h2>
 
@@ -170,13 +147,10 @@ function Login() {
               />
             </div>
 
-            <button type="submit" className="custom-btn">
-              Login
-            </button>
-            <p className="custom-social-text">Welcome To My Website</p>
+            <button type="submit" className="custom-btn">Login</button>
           </form>
 
-          {/* Sign Up Form */}
+          {/* SIGN UP */}
           <form onSubmit={handleSubmitSignUp} className="custom-sign-up-form">
             <h2 className="custom-title">Sign up</h2>
 
@@ -250,19 +224,13 @@ function Login() {
                 onChange={(e) => setSignUpGenderID(Number(e.target.value))}
                 required
               >
-                <option value="" disabled>
-                  Select Gender
-                </option>
+                <option value="" disabled>Select Gender</option>
                 <option value={1}>Male</option>
                 <option value={2}>Female</option>
-                {/* เพิ่มตามฐานข้อมูล Gender */}
               </select>
             </div>
 
-            <button type="submit" className="custom-btn">
-              Sign up
-            </button>
-            <center className="custom-social-text">Welcome To My Website</center>
+            <button type="submit" className="custom-btn">Sign up</button>
           </form>
         </div>
       </div>
@@ -270,40 +238,23 @@ function Login() {
       <div className="custom-panels-container">
         <div className="custom-panel custom-left-panel">
           <div className="custom-content">
-            <h3>New here ?</h3>
-            <p>
-              Lorem ipsum, dolor sit amet consectetur adipisicing elit. Debitis,
-              ex ratione. Aliquid!
-            </p>
-            <button
-              className="custom-btn transparent"
-              onClick={() => setIsSignUpMode(true)}
-              id="sign-up-btn"
-              type="button"
-            >
+            <h3>New here?</h3>
+            <p>Welcome to our EV Station</p>
+            <button className="custom-btn transparent" onClick={() => setIsSignUpMode(true)}>
               Sign up
             </button>
           </div>
-          <img src={Logo_Login} className="custom-image" alt="login img" />
+          <img src={Logo_Login} className="custom-image" alt="login" />
         </div>
 
         <div className="custom-panel custom-right-panel">
           <div className="custom-content">
-            <h3>One of us ?</h3>
-            <p>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Nostrum
-              laboriosam ad deleniti.
-            </p>
-            <button
-              className="custom-btn transparent"
-              onClick={() => setIsSignUpMode(false)}
-              id="sign-in-btn"
-              type="button"
-            >
+            <h3>Already a member?</h3>
+            <button className="custom-btn transparent" onClick={() => setIsSignUpMode(false)}>
               Sign in
             </button>
           </div>
-          <img src={Logo_Regis} className="custom-image" alt="register img" />
+          <img src={Logo_Regis} className="custom-image" alt="register" />
         </div>
       </div>
     </div>

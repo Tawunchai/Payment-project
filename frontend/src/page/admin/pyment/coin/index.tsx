@@ -28,6 +28,9 @@ import {
 } from "../../../../services";
 import { Trash2 } from "react-feather";
 
+/* ======================
+   Modal
+====================== */
 const EvModal: React.FC<{
   open: boolean;
   onClose: () => void;
@@ -35,11 +38,7 @@ const EvModal: React.FC<{
 }> = ({ open, onClose, children }) => {
   if (!open) return null;
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
@@ -54,6 +53,9 @@ const EvModal: React.FC<{
   );
 };
 
+/* ======================
+   Types
+====================== */
 type RowType = {
   key: number;
   Index: number;
@@ -89,21 +91,35 @@ const formatDateTime = (iso?: string) => {
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
-const PaymentCoinsTable: React.FC = () => {
+/* ======================
+   MAIN COMPONENT
+====================== */
+interface Props {
+  role: string | null; // ⭐ รับ role
+}
+
+const PaymentCoinsTable: React.FC<Props> = ({ role }) => {
   const [rows, setRows] = useState<RowType[]>([]);
   const [searchText, setSearchText] = useState("");
   const [tableLoading, setTableLoading] = useState(true);
+
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const selectedIDsRef = useRef<number[]>([]);
+
   const [exportingCsv, setExportingCsv] = useState(false);
   const [exportingZip, setExportingZip] = useState(false);
+
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const selectedIDsRef = useRef<number[]>([]);
 
   const [scrollX, setScrollX] = useState(900);
 
+  /* ======================
+     Responsive Scroll
+  ======================= */
   useEffect(() => {
     const updateScrollX = () => {
       if (window.innerWidth <= 1300 && window.innerWidth >= 768) {
@@ -117,7 +133,9 @@ const PaymentCoinsTable: React.FC = () => {
     return () => window.removeEventListener("resize", updateScrollX);
   }, []);
 
-  // ✅ ดึงข้อมูล + เรียงจากใหม่ → เก่า
+  /* ======================
+     Fetch Data
+  ======================= */
   const fetchCoins = async () => {
     setTableLoading(true);
     try {
@@ -132,19 +150,15 @@ const PaymentCoinsTable: React.FC = () => {
           CustomerEmail: p.User?.Email || "-",
           CustomerImage: toAvatarUrl(p.User?.Profile),
           DateISO: p.Date ? new Date(p.Date).toISOString() : "",
-          Amount:
-            typeof p.Amount === "number" ? p.Amount : Number(p.Amount ?? 0),
+          Amount: Number(p.Amount ?? 0),
           ReferenceNumber: p.ReferenceNumber || "-",
           Picture: p.Picture,
           Raw: p,
         };
       });
 
-      // ✅ เรียงจากวันล่าสุด → วันเก่าสุด
       const sorted = mapped.sort((a, b) => {
-        const da = new Date(a.DateISO).getTime();
-        const db = new Date(b.DateISO).getTime();
-        return db - da;
+        return new Date(b.DateISO).getTime() - new Date(a.DateISO).getTime();
       });
 
       setRows(sorted);
@@ -160,10 +174,13 @@ const PaymentCoinsTable: React.FC = () => {
     fetchCoins();
   }, []);
 
-  // ✅ Filter Search
+  /* ======================
+     Filter Search
+  ======================= */
   const filtered = useMemo(() => {
     const q = searchText.trim().toLowerCase();
     if (!q) return rows;
+
     return rows.filter(
       (r) =>
         r.CustomerName.toLowerCase().includes(q) ||
@@ -172,37 +189,52 @@ const PaymentCoinsTable: React.FC = () => {
     );
   }, [rows, searchText]);
 
-  // ✅ Modal ลบข้อมูล
+  /* ======================
+     Delete (เฉพาะ Admin)
+  ======================= */
   const openDeleteModal = () => {
+    if (role !== "Admin") return; // ❌ กัน user
     if (selectedRowKeys.length === 0) return;
+
     selectedIDsRef.current = selectedRowKeys.map((k) => Number(k));
     setOpenConfirmModal(true);
   };
+
   const cancelDelete = () => {
     setOpenConfirmModal(false);
     setConfirmLoading(false);
   };
+
   const confirmDelete = async () => {
+    if (role !== "Admin") return; // ❌ อีกชั้น
     setConfirmLoading(true);
+
     const ids = selectedIDsRef.current;
     const res = await DeletePaymentCoins(ids);
+
     if (res) {
-      setRows((prev) => prev.filter((row) => !ids.includes(row.ID)));
-      message.success("ลบข้อมูลการชำระเงิน Coin สำเร็จ");
+      setRows((prev) => prev.filter((r) => !ids.includes(r.ID)));
+      message.success("ลบข้อมูล Coin สำเร็จ");
       setSelectedRowKeys([]);
     } else {
       message.error("เกิดข้อผิดพลาดในการลบ");
     }
+
     cancelDelete();
   };
 
-  // ✅ Export CSV
+  /* ======================
+     Export CSV
+  ======================= */
   const handleExportCSV = async () => {
     try {
       setExportingCsv(true);
-      const pick = selectedRowKeys.length
-        ? filtered.filter((r) => selectedRowKeys.includes(r.key))
-        : filtered;
+
+      const pick =
+        selectedRowKeys.length && role === "Admin"
+          ? filtered.filter((r) => selectedRowKeys.includes(r.key))
+          : filtered;
+
       if (!pick.length) {
         message.info("ไม่มีข้อมูลสำหรับส่งออก");
         return;
@@ -218,6 +250,7 @@ const PaymentCoinsTable: React.FC = () => {
         "Reference",
         "HasProof",
       ];
+
       const rowsCsv = pick.map((r) => [
         r.Index,
         r.ID,
@@ -228,26 +261,31 @@ const PaymentCoinsTable: React.FC = () => {
         r.ReferenceNumber,
         r.Picture ? "Yes" : "No",
       ]);
+
       const csvContent = [
         headers.join(","),
         ...rowsCsv.map((cols) =>
           cols
             .map((v) => {
-              const val =
-                v === null || v === undefined ? "" : String(v).replace(/"/g, '""');
-              return /[",\n]/.test(val) ? `"${val}"` : val;
+              const val = v === null || v === undefined ? "" : String(v);
+              return /[",\n]/.test(val) ? `"${val.replace(/"/g, '""')}"` : val;
             })
             .join(",")
         ),
       ].join("\n");
+
       const blob = new Blob(["\ufeff" + csvContent], {
         type: "text/csv;charset=utf-8;",
       });
-      const filename = `payment_coin_history_${new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace(/[:T]/g, "-")}.csv`;
-      saveAs(blob, filename);
+
+      saveAs(
+        blob,
+        `payment_coin_${new Date()
+          .toISOString()
+          .slice(0, 19)
+          .replace(/[:T]/g, "-")}.csv`
+      );
+
       message.success("ส่งออก CSV สำเร็จ");
     } catch (e) {
       console.error(e);
@@ -257,27 +295,35 @@ const PaymentCoinsTable: React.FC = () => {
     }
   };
 
-  // ✅ Download Proof ZIP
+  /* ======================
+     Download ZIP
+  ======================= */
   const handleDownloadImagesZip = async () => {
     try {
       setExportingZip(true);
-      const pick = selectedRowKeys.length
-        ? filtered.filter((r) => selectedRowKeys.includes(r.key))
-        : filtered;
+
+      const pick =
+        selectedRowKeys.length && role === "Admin"
+          ? filtered.filter((r) => selectedRowKeys.includes(r.key))
+          : filtered;
+
       const withPics = pick.filter((r) => !!r.Picture);
+
       if (!withPics.length) {
         message.info("ไม่มีรูปหลักฐานสำหรับดาวน์โหลด");
         return;
       }
+
       const zip = new JSZip();
       const folder = zip.folder(
         `coin_proofs_${new Date().toISOString().slice(0, 10)}`
       )!;
+
       for (const r of withPics) {
         const url = `${apiUrlPicture}${r.Picture}`;
         try {
           const res = await fetch(url);
-          if (!res.ok) throw new Error(`fetch ${url} ${res.status}`);
+          if (!res.ok) throw new Error(`fetch ${url} failed`);
           const blob = await res.blob();
           const base = sanitize(`${r.ID}_${r.CustomerName}_${r.ReferenceNumber}`);
           const ext = blob.type.split("/")[1] || "jpg";
@@ -286,8 +332,10 @@ const PaymentCoinsTable: React.FC = () => {
           console.warn("โหลดรูปไม่ได้:", url, err);
         }
       }
+
       const zipBlob = await zip.generateAsync({ type: "blob" });
       saveAs(zipBlob, `coin_proofs_${Date.now()}.zip`);
+
       message.success("ดาวน์โหลด ZIP สำเร็จ");
     } catch (e) {
       console.error(e);
@@ -297,11 +345,12 @@ const PaymentCoinsTable: React.FC = () => {
     }
   };
 
-  // ✅ Columns
+  /* ======================
+     Table Columns
+  ======================= */
   const columns: ColumnsType<RowType> = [
     {
       title: "#",
-      key: "index",
       width: 60,
       align: "center",
       render: (_: any, __: RowType, index: number) =>
@@ -309,7 +358,6 @@ const PaymentCoinsTable: React.FC = () => {
     },
     {
       title: "User",
-      key: "user",
       render: (_, record) => (
         <Space size="middle">
           <Avatar src={record.CustomerImage} />
@@ -323,15 +371,13 @@ const PaymentCoinsTable: React.FC = () => {
     {
       title: "Date & Time",
       dataIndex: "DateISO",
-      key: "date",
       width: 180,
       render: (v) => formatDateTime(v),
     },
     {
       title: "Coins",
       dataIndex: "Amount",
-      key: "amount",
-      width: 100,
+      width: 120,
       render: (v) => (
         <Tag className="px-2 py-1 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
           {v.toLocaleString()}
@@ -341,7 +387,6 @@ const PaymentCoinsTable: React.FC = () => {
     {
       title: "Reference",
       dataIndex: "ReferenceNumber",
-      key: "ref",
       width: 150,
       render: (v) => (
         <span className="font-mono bg-blue-50 text-blue-800 px-2 py-1 rounded border border-blue-100">
@@ -351,7 +396,6 @@ const PaymentCoinsTable: React.FC = () => {
     },
     {
       title: "Proof",
-      key: "proof",
       width: 100,
       align: "center",
       render: (_, record) =>
@@ -369,17 +413,28 @@ const PaymentCoinsTable: React.FC = () => {
     },
   ];
 
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
-  };
+  /* ======================
+     Row Selection เฉพาะ Admin
+  ======================= */
+  const rowSelection =
+    role === "Admin"
+      ? {
+          selectedRowKeys,
+          onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+        }
+      : undefined;
 
+  /* ======================
+     Render UI
+  ======================= */
   return (
     <div className="rounded-2xl overflow-hidden ring-1 ring-blue-100 bg-white relative">
+      {/* Header */}
       <div className="px-4 sm:px-6 py-3 border-b border-blue-100 bg-blue-50/40 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-[15px] sm:text-base font-semibold text-blue-900">
           Payment Coin History
         </h2>
+
         <div className="flex items-center gap-2 flex-wrap">
           <Input
             allowClear
@@ -390,16 +445,20 @@ const PaymentCoinsTable: React.FC = () => {
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
           />
-          {selectedRowKeys.length > 0 && (
+
+          {/* ปุ่มลบเฉพาะ Admin */}
+          {role === "Admin" && selectedRowKeys.length > 0 && (
             <Button
               danger
               icon={<DeleteOutlined />}
-              onClick={openDeleteModal}
               className="bg-white text-red-600 hover:bg-red-50"
+              onClick={openDeleteModal}
             >
               ลบที่เลือก ({selectedRowKeys.length})
             </Button>
           )}
+
+          {/* Export */}
           <Tooltip title="Export CSV">
             <Button
               icon={<FileExcelOutlined />}
@@ -409,6 +468,7 @@ const PaymentCoinsTable: React.FC = () => {
               Export CSV
             </Button>
           </Tooltip>
+
           <Tooltip title="ดาวน์โหลดหลักฐาน (ZIP)">
             <Button
               icon={<DownloadOutlined />}
@@ -421,6 +481,7 @@ const PaymentCoinsTable: React.FC = () => {
         </div>
       </div>
 
+      {/* Table */}
       <div className="px-2 sm:px-4 py-3">
         {tableLoading ? (
           <div className="flex justify-center items-center h-60">
@@ -431,7 +492,7 @@ const PaymentCoinsTable: React.FC = () => {
             columns={columns}
             dataSource={filtered}
             rowKey="key"
-            rowSelection={rowSelection}
+            rowSelection={rowSelection} // ⭐ ซ่อน checkbox ถ้าไม่ใช่ Admin
             pagination={{
               current: currentPage,
               pageSize,
@@ -450,26 +511,23 @@ const PaymentCoinsTable: React.FC = () => {
         )}
       </div>
 
-      {/* Modal ยืนยันการลบ */}
+      {/* Modal ยืนยันการลบเฉพาะ Admin */}
       <EvModal open={openConfirmModal} onClose={cancelDelete}>
         <div className="p-5 flex flex-col items-center text-center">
           <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
             <Trash2 size={22} className="text-blue-600" />
           </div>
-          <h3 className="text-base font-bold text-slate-900">
-            ยืนยันการลบข้อมูล
-          </h3>
+
+          <h3 className="text-base font-bold text-slate-900">ยืนยันการลบข้อมูล</h3>
+
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            คุณต้องการลบข้อมูล Coin{" "}
-            <span className="font-semibold text-blue-700">
-              {selectedRowKeys.length}
-            </span>{" "}
+            คุณต้องการลบรายการจำนวน{" "}
+            <span className="font-semibold text-blue-700">{selectedRowKeys.length}</span>{" "}
             รายการใช่หรือไม่?
             <br />
-            <span className="text-xs text-slate-500">
-              การดำเนินการนี้ไม่สามารถย้อนกลับได้
-            </span>
+            <span className="text-xs text-slate-500">การดำเนินการนี้ไม่สามารถย้อนกลับได้</span>
           </p>
+
           <div className="mt-4 flex items-center justify-center gap-2">
             <button
               onClick={confirmDelete}
@@ -478,6 +536,7 @@ const PaymentCoinsTable: React.FC = () => {
             >
               {confirmLoading ? "กำลังลบ..." : "ลบ"}
             </button>
+
             <button
               onClick={cancelDelete}
               className="min-w-[96px] h-10 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50"

@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
-import { FaMapMarkerAlt, FaClock } from "react-icons/fa";
+import { FaMapMarkerAlt } from "react-icons/fa";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Modal, Button, message } from "antd";
@@ -109,10 +109,13 @@ const EVMapMobile: React.FC = () => {
   const [userID, setUserID] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
 
-  // ✅ พิกัดเริ่มต้น = มทส.
+  // พิกัดเริ่มต้น = มทส.
   const SUT_CENTER: [number, number] = [14.8820, 102.0170];
 
-  // ✅ โหลด userID จาก JWT (cookie)
+  // ⭐ NEW: Center ของแผนที่ (สำหรับคลิก Card)
+  const [mapCenter, setMapCenter] = useState<[number, number]>(SUT_CENTER);
+
+  /* ========== โหลด user ID ========== */
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -134,7 +137,7 @@ const EVMapMobile: React.FC = () => {
     loadUser();
   }, []);
 
-  // โหลดข้อมูลสถานีจาก backend
+  /* ========== โหลดข้อมูลสถานี ========== */
   useEffect(() => {
     const fetchCabinets = async () => {
       try {
@@ -149,21 +152,15 @@ const EVMapMobile: React.FC = () => {
     fetchCabinets();
   }, []);
 
-  // ✅ เลือก center: ถ้ามีสถานี ลองจับสถานีที่เป็นใน/ใกล้ มทส.; ถ้าไม่พบ ใช้ตัวแรก; ถ้าไม่มีเลย ใช้ SUT
-  const center: [number, number] = useMemo(() => {
-    if (!cabinets || cabinets.length === 0) return SUT_CENTER;
-
-    const sutCab =
-      cabinets.find(
-        (c) =>
-          (c.Name && /sut|สุรนารี|สถาบันเทคโนโลยีสุรนารี/i.test(c.Name)) ||
-          (c.Location && /sut|สุรนารี|สถาบันเทคโนโลยีสุรนารี/i.test(c.Location))
-      ) || cabinets[0];
-
-    return [sutCab.Latitude, sutCab.Longitude];
+  /* ========== หา center เริ่มต้น ========== */
+  useEffect(() => {
+    if (cabinets.length > 0) {
+      const first = cabinets[0];
+      setMapCenter([first.Latitude, first.Longitude]);
+    }
   }, [cabinets]);
 
-  // ✅ ตรวจสอบว่าผู้ใช้มีรถไหม ก่อนกดจอง
+  /* ========== ตรวจสอบว่าผู้ใช้มีรถไหม ก่อนกดจอง ========== */
   const handleBookingClick = async (cabinet: EVCabinetInterface) => {
     if (!userID) {
       message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
@@ -183,7 +180,7 @@ const EVMapMobile: React.FC = () => {
     }
   };
 
-  // ✅ แสดง “ไม่พบข้อมูล” เฉพาะเมื่อโหลดเสร็จแล้วและไม่มีข้อมูล
+  /* ========== ถ้าไม่มีสถานีเลย ========== */
   if (!loading && !cabinets.length) {
     return (
       <div className="relative w-full h-screen bg-gradient-to-b from-blue-50 to-blue-100 overflow-hidden flex flex-col">
@@ -200,19 +197,17 @@ const EVMapMobile: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-blue-50 to-blue-100 overflow-hidden flex flex-col">
-      {/* Header */}
       <HeaderBar title="EV Charging Station Map" onBack={() => navigate(-1)} />
 
       {/* Map */}
       <div className="flex-1 relative">
         <MapContainer
-          center={SUT_CENTER}   /* เริ่มต้นโฟกัสที่ มทส. */
+          center={mapCenter}
           zoom={15}
           style={{ height: "100%", width: "100%" }}
           className="z-10"
         >
-          {/* เมื่อ center คำนวณใหม่ -> setView */}
-          <RecenterOnChange center={center} zoom={15} />
+          <RecenterOnChange center={mapCenter} zoom={15} />
 
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
@@ -222,28 +217,34 @@ const EVMapMobile: React.FC = () => {
               position={[cabinet.Latitude, cabinet.Longitude]}
               icon={createEVIcon(selected === cabinet.ID)}
               eventHandlers={{
-                click: () => setSelected(cabinet.ID),
+                click: () => {
+                  setSelected(cabinet.ID);
+                  setMapCenter([cabinet.Latitude, cabinet.Longitude]);
+                },
               }}
             />
           ))}
         </MapContainer>
 
-        {/* Floating Card Section: แสดงก็ต่อเมื่อมีข้อมูล */}
+        {/* Floating Cards */}
         {cabinets.length > 0 && (
           <div className="absolute bottom-0 left-0 right-0 z-20 px-3 pb-3 bg-gradient-to-t from-blue-100/95 to-transparent">
             <div className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2">
               {cabinets.map((cabinet) => (
                 <div
                   key={cabinet.ID}
-                  onClick={() => setSelected(cabinet.ID)}
-                  className={`snap-center min-w-[210px] bg-white rounded-xl p-2 shadow-md border flex-shrink-0 transition-all duration-300 ${
+                  onClick={() => {
+                    setSelected(cabinet.ID);
+                    setMapCenter([cabinet.Latitude, cabinet.Longitude]); // ⭐ สำคัญที่สุด
+                  }}
+                  className={`snap-center min-w-[200px] bg-white rounded-xl p-2 shadow-md border flex-shrink-0 transition-all duration-300 ${
                     selected === cabinet.ID
                       ? "border-blue-500 shadow-blue-300 scale-105"
                       : "border-gray-100"
                   }`}
                 >
                   {/* Image */}
-                  <div className="relative w-full h-24 rounded-lg overflow-hidden">
+                  <div className="relative w-[200px] h-24 rounded-lg overflow-hidden">
                     <img
                       src={`${apiUrlPicture}${cabinet.Image}`}
                       alt={cabinet.Name}
@@ -267,11 +268,10 @@ const EVMapMobile: React.FC = () => {
                       <FaMapMarkerAlt className="text-blue-500 text-xs" />
                       {cabinet.Location}
                     </p>
-                    <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                      <FaClock className="text-blue-400 text-xs" />{" "}
+                    <p className="text-[11px] text-gray-400 flex items-center gap-1 w-[200px] ml-0.5">
                       {cabinet.Employee
-                        ? `ดูแลโดย ${cabinet.Employee.User?.FirstName || ""}`
-                        : "ไม่มีผู้ดูแล"}
+                        ? `รายละเอียด : ${cabinet.Description || ""}`
+                        : "ไม่มีรายละเอียด"}
                     </p>
                   </div>
 
@@ -293,7 +293,7 @@ const EVMapMobile: React.FC = () => {
         ⚡ EV Smart Charging App © {new Date().getFullYear()}
       </div>
 
-      {/* ✅ EV BLUE MODAL */}
+      {/* Modal */}
       <Modal
         open={showCarModal}
         onCancel={() => setShowCarModal(false)}

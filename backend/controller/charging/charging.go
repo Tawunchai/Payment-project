@@ -6,160 +6,149 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Tawunchai/work-project/config"
 	"github.com/Tawunchai/work-project/entity"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func ListEVData(c *gin.Context) {
-	var evs []entity.EVcharging
+    var evs []entity.EVcharging
+    db := config.DB()
 
-	db := config.DB()
-	results := db.
-		Preload("Employee.User"). 
-		Preload("Employee").      
-		Preload("Status").
-		Preload("Type").
-		Preload("EVCabinet").
-		Find(&evs)
+    result := db.
+        Preload("Employee").
+        Preload("Employee.User").
+        Preload("Status").
+        Preload("Type").
+        Preload("Cabinets"). // ⭐ โหลด cabinets (many-to-many)
+        Find(&evs)
 
-	if results.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": results.Error.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, evs)
+    if result.Error != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, evs)
 }
 
 func UpdateEVByID(c *gin.Context) {
 	id := c.Param("id")
 	var ev entity.EVcharging
+	db := config.DB()
 
-	// ตรวจว่ามีข้อมูล EVcharging หรือไม่
-	if err := config.DB().First(&ev, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบข้อมูล EV Charging ที่ต้องการอัปเดต"})
+	// ตรวจว่า EV มีจริงไหม
+	if err := db.Preload("Cabinets").First(&ev, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบข้อมูล EV Charging"})
 		return
 	}
 
-	// ✅ อัปโหลดรูปภาพใหม่ (ถ้ามี)
+	// อัปโหลดรูปภาพใหม่
 	file, err := c.FormFile("picture")
 	if err == nil && file != nil {
-		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
-		isValid := false
-		for _, t := range validTypes {
-			if file.Header.Get("Content-Type") == t {
-				isValid = true
-				break
-			}
-		}
-		if !isValid {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็น .jpg, .png, .gif เท่านั้น"})
-			return
-		}
-
 		uploadDir := "uploads/evcharging"
-		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างโฟลเดอร์ได้"})
-			return
-		}
+		os.MkdirAll(uploadDir, os.ModePerm)
 
 		ext := filepath.Ext(file.Filename)
-		newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-		filePath := filepath.Join(uploadDir, newFileName)
+		newName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+		filePath := filepath.Join(uploadDir, newName)
 
-		if err := c.SaveUploadedFile(file, filePath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "บันทึกรูปไม่สำเร็จ"})
-			return
-		}
-
-		ev.Picture = filePath
-	}
-
-	// ✅ อัปเดตฟิลด์จากฟอร์ม
-	if name := c.PostForm("name"); name != "" {
-		ev.Name = name
-	}
-	if description := c.PostForm("description"); description != "" {
-		ev.Description = description
-	}
-	if price := c.PostForm("price"); price != "" {
-		if v, err := strconv.ParseFloat(price, 64); err == nil {
-			ev.Price = v
-		}
-	}
-	if statusID := c.PostForm("statusID"); statusID != "" {
-		if v, err := strconv.ParseUint(statusID, 10, 64); err == nil {
-			ev.StatusID = uint(v)
-		}
-	}
-	if typeID := c.PostForm("typeID"); typeID != "" {
-		if v, err := strconv.ParseUint(typeID, 10, 64); err == nil {
-			ev.TypeID = uint(v)
-		}
-	}
-	if employeeID := c.PostForm("employeeID"); employeeID != "" {
-		if v, err := strconv.ParseUint(employeeID, 10, 64); err == nil {
-			temp := uint(v)
-			ev.EmployeeID = &temp
+		if err := c.SaveUploadedFile(file, filePath); err == nil {
+			ev.Picture = filePath
 		}
 	}
 
-	// ✅ เพิ่มส่วนนี้: อัปเดต Cabinet ID
-	if evCabinetID := c.PostForm("evCabinetID"); evCabinetID != "" {
-		if v, err := strconv.ParseUint(evCabinetID, 10, 64); err == nil {
-			ev.EVCabinetID = uint(v)
+	// อัปเดตฟิลด์ปกติ
+	if v := c.PostForm("name"); v != "" {
+		ev.Name = v
+	}
+	if v := c.PostForm("description"); v != "" {
+		ev.Description = v
+	}
+	if v := c.PostForm("price"); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			ev.Price = f
 		}
 	}
+	if v := c.PostForm("statusID"); v != "" {
+		p, _ := strconv.ParseUint(v, 10, 64)
+		ev.StatusID = uint(p)
+	}
+	if v := c.PostForm("typeID"); v != "" {
+		p, _ := strconv.ParseUint(v, 10, 64)
+		ev.TypeID = uint(p)
+	}
+	if v := c.PostForm("employeeID"); v != "" {
+		p, _ := strconv.ParseUint(v, 10, 64)
+		tmp := uint(p)
+		ev.EmployeeID = &tmp
+	}
 
-	// ✅ บันทึกข้อมูล
-	if err := config.DB().Save(&ev).Error; err != nil {
+	// ⭐ อัปเดต Cabinets (รองรับ Many-to-Many)
+	cabinetIDsStr := c.PostForm("cabinetIDs") // เช่น "1,2,3"
+
+	if cabinetIDsStr != "" {
+		var newCabinets []entity.EVCabinet
+		idStrings := strings.Split(cabinetIDsStr, ",")
+
+		for _, s := range idStrings {
+			if id, err := strconv.ParseUint(strings.TrimSpace(s), 10, 64); err == nil {
+				newCabinets = append(newCabinets, entity.EVCabinet{
+					Model: gorm.Model{ID: uint(id)},
+				})
+			}
+		}
+
+		// ⭐ แทนที่ตู้ทั้งหมด (Replace)
+		db.Model(&ev).Association("Cabinets").Replace(newCabinets)
+	}
+
+	// ⭐ Save
+	if err := db.Save(&ev).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "อัปเดตข้อมูลไม่สำเร็จ"})
 		return
 	}
 
-	// ✅ โหลดข้อมูลพร้อมความสัมพันธ์
-	config.DB().
-		Preload("Employee.User").
+	// โหลดข้อมูลกลับ
+	db.Preload("Employee.User").
 		Preload("Status").
 		Preload("Type").
-		Preload("EVCabinet").
+		Preload("Cabinets").
 		First(&ev, id)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "อัปเดตข้อมูล EV Charging สำเร็จ",
-		"data":    ev,
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "อัปเดตข้อมูล EV สำเร็จ", "data": ev})
 }
 
 func CreateEV(c *gin.Context) {
 	file, err := c.FormFile("picture")
 	var filePath string
 
+	// อัปโหลดภาพ
 	if err == nil && file != nil {
 		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
 		isValid := false
 		for _, t := range validTypes {
 			if file.Header.Get("Content-Type") == t {
 				isValid = true
-				break
 			}
 		}
 		if !isValid {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "รูปภาพต้องเป็นไฟล์ .jpg, .png, .gif เท่านั้น"})
 			return
 		}
+
 		uploadDir := "uploads/evcharging"
-		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างโฟลเดอร์เก็บไฟล์ได้"})
-			return
-		}
+		os.MkdirAll(uploadDir, os.ModePerm)
+
 		ext := filepath.Ext(file.Filename)
 		newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 		filePath = filepath.Join(uploadDir, newFileName)
 
 		if err := c.SaveUploadedFile(file, filePath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถบันทึกรูปภาพได้"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "บันทึกรูปภาพไม่สำเร็จ"})
 			return
 		}
 	} else {
@@ -167,51 +156,66 @@ func CreateEV(c *gin.Context) {
 		return
 	}
 
-	// ✅ รับข้อมูลจาก form
+	// รับข้อมูลจากฟอร์ม
 	name := c.PostForm("name")
 	description := c.PostForm("description")
 	price, _ := strconv.ParseFloat(c.PostForm("price"), 64)
 	statusID, _ := strconv.ParseUint(c.PostForm("statusID"), 10, 64)
 	typeID, _ := strconv.ParseUint(c.PostForm("typeID"), 10, 64)
-	evCabinetID, _ := strconv.ParseUint(c.PostForm("evCabinetID"), 10, 64) // ✅ เพิ่มบรรทัดนี้
 
+	// Employee (อาจว่างได้)
 	var employeeID *uint
 	if empStr := c.PostForm("employeeID"); empStr != "" {
-		empParsed, _ := strconv.ParseUint(empStr, 10, 64)
-		temp := uint(empParsed)
-		employeeID = &temp
+		p, _ := strconv.ParseUint(empStr, 10, 64)
+		tmp := uint(p)
+		employeeID = &tmp
 	}
 
-	// ✅ สร้างอ็อบเจกต์ EVcharging พร้อม CabinetID
+	// ⭐ รับ Cabinet IDs แบบ 1,2,3
+	cabinetIDsStr := c.PostForm("cabinetIDs") // "1,2,3"
+	var cabinets []entity.EVCabinet
+
+	if cabinetIDsStr != "" {
+		idStrings := strings.Split(cabinetIDsStr, ",")
+		for _, idStr := range idStrings {
+			id, err := strconv.ParseUint(strings.TrimSpace(idStr), 10, 64)
+			if err == nil {
+				cabinets = append(cabinets, entity.EVCabinet{Model: gorm.Model{ID: uint(id)}})
+			}
+		}
+	}
+
+	// ⭐ สร้าง EVcharging (ยังไม่ผูกตู้ตอนนี้)
 	ev := entity.EVcharging{
-		Name:         name,
-		Description:  description,
-		Price:        price,
-		Picture:      filePath,
-		EmployeeID:   employeeID,
-		StatusID:     uint(statusID),
-		TypeID:       uint(typeID),
-		EVCabinetID:  uint(evCabinetID), // ✅ เพิ่มตรงนี้
+		Name:        name,
+		Description: description,
+		Price:       price,
+		Picture:     filePath,
+		EmployeeID:  employeeID,
+		StatusID:    uint(statusID),
+		TypeID:      uint(typeID),
 	}
 
-	// ✅ บันทึกข้อมูล
-	if err := config.DB().Create(&ev).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถสร้างข้อมูล EV Charging ได้"})
+	db := config.DB()
+
+	if err := db.Create(&ev).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง EV ไม่สำเร็จ"})
 		return
 	}
 
-	// ✅ โหลดข้อมูลสัมพันธ์กลับมา
-	config.DB().
-		Preload("Employee.User").
+	// ⭐ ผูก Many-to-Many
+	if len(cabinets) > 0 {
+		db.Model(&ev).Association("Cabinets").Append(cabinets)
+	}
+
+	// โหลดกลับพร้อม relation
+	db.Preload("Employee.User").
 		Preload("Status").
 		Preload("Type").
-		Preload("EVCabinet").
+		Preload("Cabinets").
 		First(&ev, ev.ID)
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "สร้างข้อมูล EV Charging สำเร็จ",
-		"data":    ev,
-	})
+	c.JSON(http.StatusCreated, gin.H{"message": "สร้างข้อมูล EV สำเร็จ", "data": ev})
 }
 
 func DeleteEVByID(c *gin.Context) {

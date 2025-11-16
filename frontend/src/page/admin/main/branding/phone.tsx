@@ -27,36 +27,47 @@ const PhoneEVOverview = () => {
 
       const todayDate = new Date().toISOString().split("T")[0];
 
-      // ✅ Filter EV Charging ของวันนี้
+      /* =========================================================
+         1) EV Charging Power วันนี้
+      ========================================================= */
       const todayEV = evResponse?.filter((item: any) => {
         const paymentDate = item?.Payment?.Date?.split("T")[0];
         return paymentDate === todayDate;
       });
 
-      // ✅ รวมพลังงานและสถานี
-      let totalQuantity = 0;
+      let totalPower = 0;
       const map: Record<string, number> = {};
+
       todayEV?.forEach((item: any) => {
         const chargerName = item?.EVcharging?.Name || "Unknown";
-        const qty = item?.Quantity || 0;
-        totalQuantity += qty;
-        map[chargerName] = (map[chargerName] || 0) + qty;
+
+        // ⭐ ใช้ Power ไม่ใช่ Quantity
+        const pwr = Number(item?.Power) || 0;
+
+        totalPower += pwr;
+        map[chargerName] = (map[chargerName] || 0) + pwr;
       });
-      setPower(totalQuantity);
+
+      setPower(totalPower);
       setChargerPowerMap(map);
 
-      // ✅ Filter การชำระเงินวันนี้
+      /* =========================================================
+         2) Payment วันนี้
+      ========================================================= */
       const todayPayments = paymentResponse?.filter((item: any) =>
         item.Date?.startsWith(todayDate)
       );
+
       setTodayPaymentCount(todayPayments?.length || 0);
 
-      // ✅ รวมจำนวนเงิน
       const totalAmount =
         todayPayments?.reduce((sum: number, item: any) => sum + (item.Amount || 0), 0) || 0;
+
       setExpense(totalAmount);
 
-      // ✅ วันที่
+      /* =========================================================
+         3) Today Date Display
+      ========================================================= */
       const date = new Date();
       const options: Intl.DateTimeFormatOptions = {
         year: "numeric",
@@ -65,10 +76,13 @@ const PhoneEVOverview = () => {
       };
       setToday(date.toLocaleDateString("en-US", options));
 
-      // ✅ Admin Users
+      /* =========================================================
+         4) Leaders (Admin)
+      ========================================================= */
       const admins = userResponse?.filter(
         (user: any) => user.UserRole?.RoleName === "Admin"
       );
+
       const adminImages = admins?.map((u: any) => u.Profile).filter(Boolean) || [];
       setLeaders(adminImages);
     };
@@ -117,15 +131,17 @@ const PhoneEVOverview = () => {
         <p className="text-sm font-semibold text-blue-900 mb-1 flex items-center gap-2">
           <BsBatteryCharging className="text-blue-600" /> Power Type
         </p>
+
         <div className="flex flex-wrap gap-1.5">
-          {Object.entries(chargerPowerMap).map(([name, qty]) => (
+          {Object.entries(chargerPowerMap).map(([name, pwr]) => (
             <p
               key={name}
               className="text-white py-[2px] px-2.5 rounded-full text-[11px] bg-blue-600 hover:bg-blue-700 transition-all shadow-sm"
             >
-              {name}: {qty.toFixed(2)} kWh
+              {name}: {pwr.toFixed(2)} kWh
             </p>
           ))}
+
           {Object.keys(chargerPowerMap).length === 0 && (
             <p className="text-[11px] text-gray-400">No data available</p>
           )}
@@ -144,6 +160,7 @@ const PhoneEVOverview = () => {
               alt={`Leader ${index}`}
             />
           ))}
+
           {leaders.length === 0 && (
             <p className="text-[11px] text-gray-400">No leaders found</p>
           )}

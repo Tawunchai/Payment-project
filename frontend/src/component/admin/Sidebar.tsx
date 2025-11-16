@@ -1,12 +1,16 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { MdOutlineCancel } from "react-icons/md";
 import { TooltipComponent } from "@syncfusion/ej2-react-popups";
-import { links } from "../../assets/admin/dummy";
+
+import { getLinks } from "../../assets/admin/dummy"; // <- ใช้ฟังก์ชันใหม่
 import { useStateContext } from "../../contexts/ContextProvider";
 
 const Sidebar: React.FC = () => {
   const { currentColor, activeMenu, setActiveMenu, screenSize } =
     useStateContext();
+
+  const [menuLinks, setMenuLinks] = useState<any[]>([]);
 
   const handleCloseSideBar = () => {
     if (activeMenu && screenSize && screenSize <= 900) setActiveMenu(false);
@@ -16,6 +20,16 @@ const Sidebar: React.FC = () => {
     "flex items-center gap-4 px-3 py-2.5 rounded-xl text-white text-[14px] font-semibold shadow-sm ring-1 ring-white/20 bg-white/15";
   const normalLink =
     "flex items-center gap-4 px-3 py-2.5 rounded-xl text-[14px] text-white/90 hover:text-white hover:bg-white/10 transition-colors";
+
+  /* ======================================================
+     โหลดลิงก์ Dynamic (เช็ค Role ด้วย GetProfile)
+     ====================================================== */
+  useEffect(() => {
+    (async () => {
+      const data = await getLinks();
+      setMenuLinks(data ?? []);
+    })();
+  }, []);
 
   if (!activeMenu) return null;
 
@@ -40,11 +54,11 @@ const Sidebar: React.FC = () => {
           className="flex items-center gap-2 select-none"
           aria-label="Go to dashboard"
         >
-          {/* Text logo: EV Station */}
           <div className="flex items-baseline gap-1">
             <span className="text-lg font-extrabold tracking-wide">EV</span>
             <span className="text-lg font-semibold opacity-90">Station</span>
           </div>
+
           <span className="ml-2 inline-flex items-center rounded-md bg-white/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide">
             Admin
           </span>
@@ -59,7 +73,6 @@ const Sidebar: React.FC = () => {
               text-white hover:bg-white/15 active:bg-white/25
               transition-colors
             "
-            aria-label="Close sidebar"
             style={{ color: currentColor || "#fff" }}
           >
             <MdOutlineCancel className="text-xl" />
@@ -69,14 +82,14 @@ const Sidebar: React.FC = () => {
 
       {/* Body */}
       <nav className="px-3 pb-6 overflow-y-auto h-[calc(100vh-64px)]">
-        {links.map((section) => (
+        {menuLinks.map((section: any) => (
           <div key={section.title} className="mb-4">
             <p className="px-2 py-2 text-[11px] tracking-wide uppercase text-white/70">
               {section.title}
             </p>
 
             <div className="space-y-1">
-              {section.links.map((link) => (
+              {section.links.map((link: any) => (
                 <NavLink
                   to={`/admin/${link.name}`}
                   key={link.name}

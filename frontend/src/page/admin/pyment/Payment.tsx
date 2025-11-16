@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import PaymentHistoryTable from "./payment/index";
 import PaymentCoinsTable from "./coin/index";
+import { GetProfile } from "../../../services/httpLogin";
 
 /* ===========================
    BANK CODE MAP
@@ -46,20 +47,33 @@ const TH_BANK_CODE_MAP: Record<string, string> = {
   "073": "ธนาคารแลนด์ แอนด์ เฮ้าส์ จำกัด (มหาชน)",
 };
 
-// ฟังก์ชันแปลงค่าธนาคารให้แสดงชื่อเต็ม
+// ฟังก์ชันแสดงชื่อธนาคาร
 const formatBankingDisplay = (banking: string | undefined | null): string => {
   if (!banking) return "-";
   const trimmed = String(banking).trim();
-  if (TH_BANK_CODE_MAP[trimmed]) return `${TH_BANK_CODE_MAP[trimmed]}`;
-  return trimmed;
+  return TH_BANK_CODE_MAP[trimmed] || trimmed;
 };
 
 const Payment = () => {
+  const [userRole, setUserRole] = useState<string | null>(null); // ⭐ ส่ง role ต่อ
   const [paymentData, setPaymentData] = useState<PaymentsInterface[]>([]);
   const [bankData, setBankData] = useState<BankInterface[]>([]);
   const [editBank, setEditBank] = useState<BankInterface | null>(null);
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(true);
+
+  // ⭐ โหลด role ของผู้ใช้จาก token
+  useEffect(() => {
+    const loadRole = async () => {
+      try {
+        const res = await GetProfile();
+        setUserRole(res.data.role || null);
+      } catch {
+        setUserRole(null);
+      }
+    };
+    loadRole();
+  }, []);
 
   useEffect(() => {
     fetchPayments();
@@ -92,13 +106,16 @@ const Payment = () => {
   const handleBankUpdate = async () => {
     if (!editBank) return;
     setLoading(true);
+
     const ok = await UpdateBank(editBank.ID, {
       promptpay: editBank.PromptPay,
       manager: editBank.Manager,
       banking: editBank.Banking,
       minimum: editBank.Minimum,
     });
+
     setLoading(false);
+
     if (ok) {
       message.success("อัปเดตข้อมูลธนาคารเรียบร้อยแล้ว");
       setEditBank(null);
@@ -116,6 +133,7 @@ const Payment = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-blue-50 via-white to-white mt-14 sm:mt-0">
+
       {/* Header */}
       <header className="sticky top-0 z-10 bg-blue-600 text-white shadow-sm">
         <div className="mx-auto max-w-screen-xl px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -126,6 +144,7 @@ const Payment = () => {
       </header>
 
       <main className="mx-auto max-w-screen-xl px-4 sm:px-6 py-6 space-y-6">
+
         {/* Bank Info */}
         <section className="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/60">
@@ -148,7 +167,9 @@ const Payment = () => {
                       <th>MANAGER</th>
                       <th>BANKING</th>
                       <th>MINIMUM</th>
-                      <th className="text-center">จัดการ</th>
+                      {userRole === "Admin" && (
+                        <th className="text-center">จัดการ</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -158,15 +179,19 @@ const Payment = () => {
                         <td>{bank.Manager}</td>
                         <td>{formatBankingDisplay(bank.Banking)}</td>
                         <td>{bank.Minimum} บาท</td>
-                        <td className="text-center">
-                          <Button
-                            type="primary"
-                            className="bg-blue-600 hover:bg-blue-700 border-blue-600 rounded-lg"
-                            onClick={() => setEditBank(bank)}
-                          >
-                            แก้ไข
-                          </Button>
-                        </td>
+
+                        {/* Admin เท่านั้นที่เห็นปุ่มแก้ไข */}
+                        {userRole === "Admin" && (
+                          <td className="text-center">
+                            <Button
+                              type="primary"
+                              className="bg-blue-600 hover:bg-blue-700 border-blue-600 rounded-lg"
+                              onClick={() => setEditBank(bank)}
+                            >
+                              แก้ไข
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -186,7 +211,7 @@ const Payment = () => {
           {tableLoading ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <PaymentHistoryTable data={paymentData} />
+            <PaymentHistoryTable data={paymentData} role={userRole} />
           )}
         </section>
 
@@ -195,9 +220,10 @@ const Payment = () => {
           {tableLoading ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <PaymentCoinsTable />
+            <PaymentCoinsTable role={userRole} />
           )}
         </section>
+
       </main>
 
       {/* Modal */}
@@ -217,8 +243,9 @@ const Payment = () => {
           },
         }}
       >
-        {editBank && (
+        {editBank && userRole === "Admin" && (
           <div className="px-5 py-6 text-gray-800">
+
             <div className="flex items-center justify-center mb-4 border-b border-gray-100 pb-3">
               <BanknotesIcon className="h-6 w-6 text-blue-600 mr-2" />
               <h2 className="text-base sm:text-lg font-semibold text-blue-700">
@@ -227,7 +254,6 @@ const Payment = () => {
             </div>
 
             <div className="space-y-4">
-              {/* PromptPay */}
               <label className="block">
                 <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
                   <BanknotesIcon className="h-5 w-5 mr-2 text-blue-500" />
@@ -235,15 +261,11 @@ const Payment = () => {
                 </span>
                 <Input
                   value={editBank.PromptPay}
-                  onChange={(e) =>
-                    handleBankChange("PromptPay", e.target.value)
-                  }
-                  className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="เลข PromptPay"
+                  onChange={(e) => handleBankChange("PromptPay", e.target.value)}
+                  className="rounded-lg h-10 border-gray-300"
                 />
               </label>
 
-              {/* Manager */}
               <label className="block">
                 <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
                   <UserIcon className="h-5 w-5 mr-2 text-blue-500" />
@@ -251,57 +273,30 @@ const Payment = () => {
                 </span>
                 <Input
                   value={editBank.Manager}
-                  onChange={(e) =>
-                    handleBankChange("Manager", e.target.value)
-                  }
-                  className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="ชื่อผู้จัดการ"
+                  onChange={(e) => handleBankChange("Manager", e.target.value)}
+                  className="rounded-lg h-10 border-gray-300"
                 />
               </label>
 
-              {/* Custom Select (แทน Antd Select) */}
               <label className="block">
                 <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
                   <CreditCardIcon className="h-5 w-5 mr-2 text-blue-500" />
                   ธนาคาร
                 </span>
-                <div className="relative">
-                  <select
-                    value={selectedBankCode}
-                    onChange={(e) =>
-                      handleBankChange("Banking", e.target.value)
-                    }
-                    className="appearance-none w-full rounded-lg border border-gray-300 h-10 px-3 pr-8 text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer bg-white"
-                  >
-                    <option value="">เลือกธนาคาร</option>
-                    {Object.entries(TH_BANK_CODE_MAP).map(([code, name]) => (
-                      <option key={code} value={code}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-3.5 h-4 w-4 text-gray-400 pointer-events-none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      d="M6 8l4 4 4-4"
-                    />
-                  </svg>
-                </div>
-                {!selectedBankCode && editBank.Banking && (
-                  <p className="mt-1 text-xs text-amber-600">
-                    ค่าที่เก็บเดิม: {String(editBank.Banking)} (ไม่ใช่รหัสธนาคาร
-                    0XX — กรุณาเลือกธนาคารใหม่)
-                  </p>
-                )}
+                <select
+                  value={selectedBankCode}
+                  onChange={(e) => handleBankChange("Banking", e.target.value)}
+                  className="appearance-none w-full rounded-lg border border-gray-300 h-10 px-3 bg-white"
+                >
+                  <option value="">เลือกธนาคาร</option>
+                  {Object.entries(TH_BANK_CODE_MAP).map(([code, name]) => (
+                    <option key={code} value={code}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
               </label>
 
-              {/* Minimum */}
               <label className="block">
                 <span className="text-sm text-gray-700 font-medium flex items-center mb-1">
                   <CreditCardIcon className="h-5 w-5 mr-2 text-blue-500" />
@@ -311,53 +306,37 @@ const Payment = () => {
                   type="number"
                   min={0}
                   value={editBank.Minimum}
-                  onChange={(e) =>
-                    handleBankChange("Minimum", e.target.value)
-                  }
-                  className="rounded-lg h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="จำนวนเงินขั้นต่ำ"
+                  onChange={(e) => handleBankChange("Minimum", e.target.value)}
+                  className="rounded-lg h-10 border-gray-300"
                 />
               </label>
             </div>
 
-            {/* Buttons */}
             <div className="mt-6 flex gap-3">
               <Button
                 onClick={() => setEditBank(null)}
                 block
-                style={{
-                  height: 42,
-                  borderRadius: 10,
-                  fontWeight: 500,
-                  border: "1px solid #d1d5db",
-                  color: "#374151",
-                }}
+                className="h-11 rounded-lg"
               >
                 ยกเลิก
               </Button>
+
               <Button
                 type="primary"
                 loading={loading}
                 block
                 onClick={handleBankUpdate}
-                style={{
-                  height: 42,
-                  borderRadius: 10,
-                  fontWeight: 600,
-                  background:
-                    "linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)",
-                  border: "none",
-                  boxShadow: "0 4px 10px rgba(37,99,235,0.2)",
-                }}
+                className="h-11 rounded-lg bg-blue-600 hover:bg-blue-700"
               >
                 บันทึก
               </Button>
             </div>
+
           </div>
         )}
       </Modal>
 
-      {/* Table style */}
+      {/* Table Style */}
       <style>{`
         .ev-table thead th {
           background: #f9fafb;

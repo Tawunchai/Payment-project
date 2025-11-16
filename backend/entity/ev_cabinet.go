@@ -17,7 +17,8 @@ type EVCabinet struct {
 	Image       string  
 
 
-	EVcharging  []EVcharging `gorm:"foreignKey:EVCabinetID"`  
+	// ⭐ Many-to-Many กลับฝ่าย EVcharging
+    EVchargings []EVcharging `gorm:"many2many:ev_cabinet_ev_chargings;"` 
 	Booking     []Booking    `gorm:"foreignKey:EVCabinetID"`  
 
 	EmployeeID  *uint       

@@ -408,6 +408,9 @@ const EV: React.FC = () => {
   const [confirmCabinetLoading, setConfirmCabinetLoading] = useState(false);
   const selectedCabinetRef = useRef<CabinetType | null>(null);
 
+  const [openCabinetListModal, setOpenCabinetListModal] = useState(false);
+  const [selectedCabinets, setSelectedCabinets] = useState<any[]>([]);
+
   // ✅ Responsive scrollX
   const [scrollX, setScrollX] = useState(960);
 
@@ -446,7 +449,9 @@ const EV: React.FC = () => {
             Status: ev.Status?.Status ?? "-",
 
             // ✅ เปลี่ยน Owner → ชื่อ Cabinet
-            EmployeeName: ev.EVCabinet?.Name ?? "-", // <— แก้ตรงนี้
+            EmployeeName: Array.isArray(ev.Cabinets)
+              ? ev.Cabinets.map((cab: any) => cab.Name).join(", ")
+              : "-",
 
             Picture: ev.Picture ?? "",
             EmployeeID: ev.EmployeeID,
@@ -632,11 +637,31 @@ const EV: React.FC = () => {
     },
     {
       title: "EV Cabinet",
-      dataIndex: "EmployeeName",
-      key: "owner",
-      width: 160,
-      ellipsis: true,
-      responsive: ["md"],
+      key: "cabinets",
+      width: 180,
+      render: (_, record) => {
+        const cabs = record.Raw?.Cabinets || [];
+
+        if (!Array.isArray(cabs) || cabs.length === 0)
+          return <span className="text-gray-400">-</span>;
+
+        // ถ้ามีแค่ 1 ให้โชว์ชื่อเฉยๆ
+        if (cabs.length === 1)
+          return <span className="font-medium text-blue-700">{cabs[0].Name}</span>;
+
+        // ถ้ามีหลายอัน ให้เป็นปุ่ม "x Cabinets"
+        return (
+          <button
+            onClick={() => {
+              setSelectedCabinets(cabs);
+              setOpenCabinetListModal(true);
+            }}
+            className="px-2 py-1 text-blue-600 underline hover:text-blue-800"
+          >
+            {cabs.length} Cabinets
+          </button>
+        );
+      },
     },
     {
       title: "Action",
@@ -928,6 +953,70 @@ const EV: React.FC = () => {
             </div>
           </div>
         </EvModal>
+
+        {openCabinetListModal && (
+          <EvModal open={openCabinetListModal} onClose={() => setOpenCabinetListModal(false)}>
+            <div className="w-[min(92vw,420px)] px-6 py-5">
+
+              <h3 className="text-lg font-bold text-center text-blue-700 mb-4">
+                รายการ EV Cabinets
+              </h3>
+
+              {/* ถ้ามีมากกว่า 2 ให้ scroll */}
+              <div
+                className="space-y-3"
+                style={{
+                  maxHeight: selectedCabinets.length > 2 ? "55vh" : "auto",
+                  overflowY: selectedCabinets.length > 2 ? "auto" : "visible",
+                  WebkitOverflowScrolling: "touch",
+                  paddingRight: selectedCabinets.length > 2 ? "6px" : "0",
+                }}
+              >
+                {selectedCabinets.map((cab) => (
+                  <div
+                    key={cab.ID}
+                    className="p-4 rounded-xl border border-blue-100 shadow-sm bg-white"
+                  >
+                    <img
+                      src={
+                        cab.Image
+                          ? `${apiUrlPicture}${cab.Image}`
+                          : "https://via.placeholder.com/300x180.png?text=EV+Cabinet"
+                      }
+                      className="w-full h-32 object-cover rounded-lg mb-2"
+                    />
+
+                    <div className="font-semibold text-blue-800">{cab.Name}</div>
+                    <div className="text-sm text-gray-500">{cab.Location}</div>
+
+                    <div className="mt-1">
+                      <Tag
+                        color={
+                          cab.Status?.toLowerCase().includes("active")
+                            ? "green"
+                            : cab.Status?.toLowerCase().includes("maintenance")
+                              ? "orange"
+                              : "default"
+                        }
+                      >
+                        {cab.Status}
+                      </Tag>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={() => setOpenCabinetListModal(false)}
+                  className="px-4 h-10 rounded-xl bg-blue-600 text-white"
+                >
+                  ปิด
+                </button>
+              </div>
+            </div>
+          </EvModal>
+        )}
 
         <p className="text-[12px] text-gray-500 text-center mt-8">
           โทนฟ้าสบายตา • มินิมอล • รองรับมือถือ/เดสก์ท็อป
