@@ -12,9 +12,15 @@ import {
 } from "antd";
 import ImgCrop from "antd-img-crop";
 import { EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { UpdateUserProfileByID, apiUrlPicture, ListGenders } from "../../../services";
+import {
+  UpdateUserProfileByID,
+  apiUrlPicture,
+  ListGenders,
+  ListUsers, // ✅ เพิ่มมาใช้งาน
+} from "../../../services";
 import { EmployeeInterface } from "../../../interface/IEmployee";
 import { GendersInterface } from "../../../interface/IGender";
+import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 
 const { Option } = Select;
 
@@ -35,20 +41,48 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
   const [genders, setGenders] = useState<GendersInterface[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [users, setUsers] = useState<any[]>([]); // ✅ users ทั้งระบบ
 
-  // === Detect mobile (<= 768px) ===
-  const isMobile = useMemo(() => window.matchMedia("(max-width: 768px)").matches, []);
+  // Detect mobile
+  const isMobile = useMemo(
+    () => window.matchMedia("(max-width: 768px)").matches,
+    []
+  );
 
+  // Load genders + users
   useEffect(() => {
-    const fetchGenders = async () => {
-      const res = await ListGenders();
-      if (res) setGenders(res);
+    const loadData = async () => {
+      const g = await ListGenders();
+      if (g) setGenders(g);
+
+      const u = await ListUsers();
+      if (u) setUsers(u);
     };
-    fetchGenders();
+    loadData();
   }, []);
 
+  // Load userId from token
   useEffect(() => {
-    if (!show) return;
+    const loadUser = async () => {
+      try {
+        await initUserProfile();
+        const current = getCurrentUser();
+        if (!current || !current.id) {
+          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+          return;
+        }
+        setUserId(current.id);
+      } catch (err) {
+        message.error("เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้");
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Pre-fill form
+  useEffect(() => {
+    if (!show || !initialData) return;
 
     form.setFieldsValue({
       username: initialData?.User?.Username,
@@ -59,7 +93,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       gender: initialData?.User?.Gender?.ID,
     });
 
-    if (initialData?.User?.Profile) {
+    if (initialData.User?.Profile) {
       setFileList([
         {
           uid: "-1",
@@ -73,9 +107,53 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     }
   }, [show, initialData, form]);
 
-  const onChangeUpload = ({ fileList: newList }: any) => setFileList(newList);
+  // Upload
+  const onChangeUpload = ({ fileList: newList }: any) =>
+    setFileList(newList);
 
+  // ============================================================
+  // 🔥 ตรวจสอบค่าซ้ำ (username / email / phone)
+  // ============================================================
+  const isDuplicate = (field: string, value: string) => {
+    if (!value) return false;
+
+    return users.some(
+      (u) =>
+        u.ID !== userId && // ❗ ต้องไม่เทียบกับ user คนปัจจุบัน
+        String(u[field]).trim().toLowerCase() ===
+        value.trim().toLowerCase()
+    );
+  };
+
+  // Submit update
   const onFinish = async (values: any) => {
+    if (!userId) {
+      message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
+      return;
+    }
+
+    // ตรวจสอบค่าซ้ำ
+    const errors: any = {};
+
+    if (isDuplicate("Username", values.username))
+      errors.username = "ชื่อผู้ใช้นี้ถูกใช้แล้ว";
+
+    if (isDuplicate("Email", values.email))
+      errors.email = "อีเมลนี้ถูกใช้แล้ว";
+
+    if (isDuplicate("PhoneNumber", values.phone))
+      errors.phone = "เบอร์โทรนี้ถูกใช้แล้ว";
+
+    if (Object.keys(errors).length > 0) {
+      form.setFields(
+        Object.entries(errors).map(([name, err]) => ({
+          name,
+          errors: [err as string],
+        }))
+      );
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData();
@@ -90,14 +168,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       formData.append("profile", fileList[0].originFileObj);
     }
 
-    const userID = localStorage.getItem("userid");
-    if (!userID) {
-      message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
-      setLoading(false);
-      return;
-    }
-
-    const res = await UpdateUserProfileByID(Number(userID), formData);
+    const res = await UpdateUserProfileByID(userId, formData);
     setLoading(false);
 
     if (res) {
@@ -116,9 +187,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       open={show}
       onCancel={onClose}
       footer={null}
-      // มือถือ: ไม่ centered และเลื่อนลงจากขอบบน 24px
       centered={!isMobile}
-      style={isMobile ? { top: 24, paddingBottom: "env(safe-area-inset-bottom)" } : {}}
+      style={isMobile ? { top: 24 } : {}}
       destroyOnClose
       closable={false}
       width={600}
@@ -128,15 +198,11 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           borderRadius: 16,
           padding: 0,
           overflow: "hidden",
-          // กันชิดขอบแนวข้างบนมือถือ (iOS notch)
-          marginTop: isMobile ?60 : undefined,
-        },
-        body: {
-          padding: 0,
+          marginTop: isMobile ? 60 : undefined,
         },
       }}
     >
-      {/* Header: EV blue minimal + safe-area */}
+      {/* Header */}
       <div
         className="flex items-center justify-center gap-2 text-white"
         style={{
@@ -147,10 +213,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         }}
       >
         <EditOutlined style={{ fontSize: 20 }} />
-        <span style={{ fontWeight: 700, fontSize: 16 }}>แก้ไขโปรไฟล์ผู้ใช้</span>
+        <span style={{ fontWeight: 700, fontSize: 16 }}>
+          แก้ไขโปรไฟล์ผู้ใช้
+        </span>
       </div>
 
-      {/* Form body */}
+      {/* Form */}
       <Form
         layout="vertical"
         form={form}
@@ -159,7 +227,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         style={{
           maxHeight: isMobile ? "70vh" : "75vh",
           overflowY: "auto",
-          WebkitOverflowScrolling: "touch",
         }}
       >
         {/* Upload */}
@@ -171,41 +238,35 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               onChange={onChangeUpload}
               beforeUpload={(file) => {
                 if (!file.type.startsWith("image/")) {
-                  message.error("กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น");
+                  message.error("กรุณาอัปโหลดรูปภาพเท่านั้น");
                   return Upload.LIST_IGNORE;
                 }
                 setFileList([file]);
                 return false;
               }}
               maxCount={1}
-              showUploadList={{ showPreviewIcon: true, showRemoveIcon: true }}
             >
               {fileList.length < 1 && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    color: "#2563eb",
-                  }}
-                >
+                <div className="flex flex-col items-center text-blue-600">
                   <PlusOutlined style={{ fontSize: 28 }} />
-                  <div style={{ marginTop: 6, fontSize: 12 }}>อัปโหลดรูป</div>
+                  <div className="mt-1 text-xs">อัปโหลดรูป</div>
                 </div>
               )}
             </Upload>
           </ImgCrop>
         </div>
 
+        {/* Fields */}
         <Row gutter={[12, 8]}>
           <Col xs={24} md={12}>
             <Form.Item label="ชื่อผู้ใช้ (Username)" name="username">
-              <Input placeholder="กรอกชื่อผู้ใช้" size="large" className="rounded-lg" />
+              <Input size="large" className="rounded-lg" />
             </Form.Item>
           </Col>
+
           <Col xs={24} md={12}>
             <Form.Item label="อีเมล (Email)" name="email">
-              <Input type="email" placeholder="กรอกอีเมล" size="large" className="rounded-lg" />
+              <Input size="large" className="rounded-lg" />
             </Form.Item>
           </Col>
         </Row>
@@ -213,12 +274,13 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         <Row gutter={[12, 8]}>
           <Col xs={24} md={12}>
             <Form.Item label="ชื่อจริง (Firstname)" name="firstname">
-              <Input placeholder="กรอกชื่อจริง" size="large" className="rounded-lg" />
+              <Input size="large" className="rounded-lg" />
             </Form.Item>
           </Col>
+
           <Col xs={24} md={12}>
             <Form.Item label="นามสกุล (Lastname)" name="lastname">
-              <Input placeholder="กรอกนามสกุล" size="large" className="rounded-lg" />
+              <Input size="large" className="rounded-lg" />
             </Form.Item>
           </Col>
         </Row>
@@ -226,9 +288,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         <Row gutter={[12, 8]}>
           <Col xs={24} md={12}>
             <Form.Item label="เบอร์โทรศัพท์ (Phone)" name="phone">
-              <Input placeholder="กรอกเบอร์โทรศัพท์" size="large" className="rounded-lg" />
+              <Input size="large" className="rounded-lg" />
             </Form.Item>
           </Col>
+
           <Col xs={24} md={12}>
             <Form.Item label="เพศ (Gender)" name="gender">
               <Select placeholder="เลือกเพศ" size="large" className="rounded-lg">
@@ -242,6 +305,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           </Col>
         </Row>
 
+        {/* Buttons */}
         <div className="mt-6 flex flex-col md:flex-row justify-end gap-3">
           <Button
             onClick={onClose}
@@ -256,6 +320,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           >
             ยกเลิก
           </Button>
+
           <Button
             type="primary"
             htmlType="submit"
@@ -268,7 +333,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               height: 40,
               borderRadius: 10,
               fontWeight: 700,
-              boxShadow: "0 8px 20px rgba(37,99,235,0.25)",
             }}
           >
             บันทึก

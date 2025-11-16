@@ -27,11 +27,6 @@ const ReportModal = ({ open, onClose }: Props) => {
         if (!current) current = await initUserProfile();
 
         const uid = current?.id;
-        if (!uid) {
-          message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
-          return;
-        }
-
         setUserID(uid);
       } catch (error) {
         console.error("load user error:", error);

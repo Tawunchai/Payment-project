@@ -155,7 +155,7 @@ const Notification: React.FC = () => {
                       border transition
                       ${
                         item.Status === "Pending"
-                          ? "bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100"
+                          ? "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
                           : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
                       }
                     `}

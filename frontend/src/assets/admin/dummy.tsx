@@ -22,9 +22,10 @@ import product6 from './product6.jpg';
 import product7 from './product7.jpg';
 import { AiOutlineUser } from 'react-icons/ai';
 import { apiUrlPicture } from "../../services/index"
+import { GetProfile } from "../../services/httpLogin"
 import { FaCarSide } from "react-icons/fa";
 import { FaChargingStation } from "react-icons/fa";
-import { FaBatteryFull } from "react-icons/fa";
+//import { FaBatteryFull } from "react-icons/fa";
 import { FaSolarPanel } from "react-icons/fa";
 import { JSX } from 'react';
 import { RiCustomerService2Line } from 'react-icons/ri';
@@ -519,77 +520,62 @@ export const employeesGrid = [
 
 
 
-export const links = [
-  {
-    title: 'Dashboard',
-    links: [
-      {
-        name: 'Dashboard',
-        icon: <FiShoppingBag />,
-      },
-      {
-        name: 'Payment',
-        icon: <FiEdit />,
-      },
-    ],
-  },
+export const getLinks = async () => {
+  let role: string | null = null;
 
-  {
-    title: 'Mangement',
-    links: [
-      {
-        name: 'EV Charging',
-        icon: <AiOutlineShoppingCart />,
-      },
-      {
-        name: 'Employees',
-        icon: <IoMdContacts />,
-      },
-      {
-        name: 'Customers',
-        icon: <RiContactsLine />,
-      },
-      {
-        name: 'Car',
-        icon: <FaCarSide />, // ✅ เมนูใหม่
-      },
-    ],
-  },
-  {
-    title: 'WORK',
-    links: [
-      {
-        name: 'Calendar',
-        icon: <AiOutlineCalendar />,
-      },
-      {
-        name: 'Guide',
-        icon: <FiBook />,
-      },
-      {
-        name: 'New',
-        icon: <FiEdit />,
-      },
-    ],
-  },
-  {
-    title: 'Moduls Monitor',
-    links: [
-      {
-        name: 'Solar',
-        icon: <FaSolarPanel />,
-      },
-      {
-        name: 'Battery',
-        icon: <FaBatteryFull />, // 🔋 ใช้ไอคอนแบตเตอรี่
-      },
-      {
-        name: 'EV Cabinet',
-        icon: <FaChargingStation />, // ⚡ ใช้ไอคอนสถานีชาร์จ EV
-      },
-    ],
-  },
-];
+  try {
+    const res = await GetProfile();
+    role = res?.data?.role ?? null;
+  } catch {
+    role = null;
+  }
+
+  const isAdmin = role === "Admin";
+
+  // เมนูหลักร่วมกันทุก Role
+  const baseLinks = [
+    {
+      title: "Dashboard",
+      links: [
+        { name: "Dashboard", icon: <FiShoppingBag /> },
+        { name: "Payment", icon: <FiEdit /> },
+      ],
+    },
+    {
+      title: "Mangement",
+      links: [
+        { name: "EV Charging", icon: <AiOutlineShoppingCart /> },
+        { name: "Car", icon: <FaCarSide /> },
+      ],
+    },
+    {
+      title: "WORK",
+      links: [
+        { name: "Calendar", icon: <AiOutlineCalendar /> },
+        { name: "Guide", icon: <FiBook /> },
+        { name: "New", icon: <FiEdit /> },
+      ],
+    },
+    {
+      title: "Moduls Monitor",
+      links: [
+        { name: "Solar", icon: <FaSolarPanel /> },
+        { name: "EV Cabinet", icon: <FaChargingStation /> },
+      ],
+    },
+  ];
+
+  // Admin เท่านั้นเห็น Employees และ Customers
+  if (isAdmin) {
+    baseLinks[1].links.splice(1, 0, 
+      { name: "Employees", icon: <IoMdContacts /> },
+      { name: "Customers", icon: <RiContactsLine /> },
+    );
+  }
+
+  return baseLinks;
+};
+
 
 export const cartData = [
   {

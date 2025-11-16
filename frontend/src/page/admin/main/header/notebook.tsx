@@ -59,9 +59,6 @@ const index = () => {
         const sales = res.reduce((acc, curr) => acc + curr.Price, 0);
         setSalesTotal(sales);
         setRefundsCount(res.length);
-
-        const uniqueChargerIDs = Array.from(new Set(res.map((item) => item.EVcharging?.ID)));
-        console.log("EVchargingIDs ที่ไม่ซ้ำกัน:", uniqueChargerIDs);
       }
     };
 

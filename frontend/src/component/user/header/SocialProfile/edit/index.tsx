@@ -49,13 +49,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   const [emailError, setEmailError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
-  // ตรวจจับหน้าจอมือถือ
   const isMobile = useMemo(
     () => window.matchMedia("(max-width: 768px)").matches,
     []
   );
 
-  // โหลดข้อมูลเพศ + ผู้ใช้ทั้งหมด
+  // Load genders + all users
   useEffect(() => {
     const fetchData = async () => {
       const [gendersRes, usersRes] = await Promise.all([
@@ -68,7 +67,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     fetchData();
   }, []);
 
-  // ตั้งค่าเริ่มต้น
+  // Prepare initial form
   useEffect(() => {
     if (!show || !initialData) return;
 
@@ -101,18 +100,27 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
   const onChangeUpload = ({ fileList: newList }: any) => setFileList(newList);
 
-  // ✅ ตรวจสอบซ้ำ (ไม่รวม ID ของตัวเอง)
-  const validateUnique = (field: "username" | "email" | "phone", value: string) => {
+  const validateUnique = (
+    field: "username" | "email" | "phone",
+    value: string
+  ) => {
     if (!value) return;
 
+    const trimmed = value.trim();
     const currentID = initialData?.ID;
-    const duplicate = users.find(
-      (u) =>
+
+    const duplicate = users.find((u) => {
+      const username = (u.Username ?? "").trim();
+      const email = (u.Email ?? "").trim();
+      const phone = (u.PhoneNumber ?? "").trim();
+
+      return (
         u.ID !== currentID &&
-        ((field === "username" && u.Username === value) ||
-          (field === "email" && u.Email === value) ||
-          (field === "phone" && u.PhoneNumber === value))
-    );
+        ((field === "username" && username === trimmed) ||
+          (field === "email" && email === trimmed) ||
+          (field === "phone" && phone === trimmed))
+      );
+    });
 
     if (duplicate) {
       if (field === "username") setUsernameError("ชื่อผู้ใช้นี้ถูกใช้แล้ว");
@@ -125,7 +133,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     }
   };
 
-  // ✅ เมื่อบันทึก
+
+  // =====================================
+  // SUBMIT FORM
+  // =====================================
   const onFinish = async (values: any) => {
     if (usernameError || emailError || phoneError) {
       message.warning("กรุณาแก้ไขข้อมูลที่ซ้ำก่อนบันทึก");
@@ -133,21 +144,24 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     }
 
     setLoading(true);
+
     const formData = new FormData();
-    formData.append("username", values.username || "");
-    formData.append("email", values.email || "");
-    formData.append("firstname", values.firstname || "");
-    formData.append("lastname", values.lastname || "");
-    formData.append("phone", values.phone || "");
+    formData.append("username", values.username.trim());
+    formData.append("email", values.email.trim());
+    formData.append("firstname", values.firstname.trim());
+    formData.append("lastname", values.lastname.trim());
+    formData.append("phone", values.phone.trim());
     formData.append("gender", values.gender || "");
 
     if (fileList.length > 0 && fileList[0].originFileObj) {
       formData.append("profile", fileList[0].originFileObj);
     }
 
+    // Get userID from token
     let current = getCurrentUser();
     if (!current) current = await initUserProfile();
     const userID = current?.id;
+
     if (!userID) {
       message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
       setLoading(false);
@@ -193,7 +207,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         body: { padding: 0 },
       }}
     >
-      {/* Header */}
+      {/* HEADER */}
       <div
         className="relative flex items-center justify-center gap-2 text-white"
         style={{
@@ -207,21 +221,16 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           แก้ไขโปรไฟล์ผู้ใช้
         </span>
 
-        {/* ปุ่มกากบาท */}
         <button
           onClick={onClose}
           aria-label="close"
-          className="
-            absolute right-3 top-1/2 -translate-y-1/2
-            text-white hover:text-gray-200 transition
-            rounded-full p-1 hover:bg-white/20
-          "
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-gray-200 transition rounded-full p-1 hover:bg-white/20"
         >
           <CloseOutlined style={{ fontSize: 18 }} />
         </button>
       </div>
 
-      {/* Form */}
+      {/* FORM */}
       <Form
         layout="vertical"
         form={form}
@@ -233,7 +242,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           WebkitOverflowScrolling: "touch",
         }}
       >
-        {/* Upload */}
+        {/* UPLOAD */}
         <div className="flex justify-center mb-6">
           <ImgCrop rotationSlider>
             <Upload
@@ -268,7 +277,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           </ImgCrop>
         </div>
 
-        {/* Fields */}
+        {/* FIELDS */}
         <Row gutter={[12, 8]}>
           <Col xs={24} md={12}>
             <Form.Item
@@ -281,7 +290,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 placeholder="กรอกชื่อผู้ใช้"
                 size="large"
                 className="rounded-lg"
-                onChange={(e) => validateUnique("username", e.target.value)}
+                onChange={(e) =>
+                  validateUnique("username", e.target.value.trim())
+                }
               />
             </Form.Item>
           </Col>
@@ -298,7 +309,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 placeholder="กรอกอีเมล"
                 size="large"
                 className="rounded-lg"
-                onChange={(e) => validateUnique("email", e.target.value)}
+                onChange={(e) => validateUnique("email", e.target.value.trim())}
               />
             </Form.Item>
           </Col>
@@ -338,7 +349,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 placeholder="กรอกเบอร์โทรศัพท์"
                 size="large"
                 className="rounded-lg"
-                onChange={(e) => validateUnique("phone", e.target.value)}
+                onChange={(e) => validateUnique("phone", e.target.value.trim())}
               />
             </Form.Item>
           </Col>
@@ -356,7 +367,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           </Col>
         </Row>
 
-        {/* Buttons */}
+        {/* BUTTONS */}
         <div className="mt-6 flex flex-col md:flex-row justify-end gap-3">
           <Button
             onClick={onClose}

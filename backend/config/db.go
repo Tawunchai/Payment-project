@@ -474,40 +474,52 @@ func seedContent(db *gorm.DB) {
 		IsEmailSent: true,
 	})
 
-	// Status & Type
+	// Status
 	status1 := entity.Status{Status: "Available"}
 	status2 := entity.Status{Status: "Unavailable"}
 	db.FirstOrCreate(&status1, entity.Status{Status: "Available"})
 	db.FirstOrCreate(&status2, entity.Status{Status: "Unavailable"})
 
+	// Type
 	type1 := entity.Type{Type: "AC Charge"}
 	type2 := entity.Type{Type: "DC Charge"}
 	db.FirstOrCreate(&type1, entity.Type{Type: "AC Charge"})
 	db.FirstOrCreate(&type2, entity.Type{Type: "DC Charge"})
 
-	// EVcharging (อ้าง Employee คนแรกถ้ามี)
+	// -----------------------------
+	// ⭐ สร้าง EVcharging (ไม่มี EVCabinetID แล้ว!)
+	// -----------------------------
 	ev1 := entity.EVcharging{
 		Name:        "Solar",
 		Description: "Solar is Good Power",
 		Price:       2,
 		Picture:     "uploads/evcharging/solar.jpg",
-		EVCabinetID: 1,
 		EmployeeID:  empIDPtr,
 		StatusID:    status1.ID,
 		TypeID:      type1.ID,
 	}
+
 	ev2 := entity.EVcharging{
 		Name:        "Grid",
 		Description: "Grid is Bad Power",
 		Price:       5,
 		Picture:     "uploads/evcharging/grid.jpg",
-		EVCabinetID: 1,
 		EmployeeID:  empIDPtr,
 		StatusID:    status1.ID,
 		TypeID:      type1.ID,
 	}
+
+	// Insert ถ้ายังไม่มี
 	db.FirstOrCreate(&ev1, entity.EVcharging{Name: "Solar"})
 	db.FirstOrCreate(&ev2, entity.EVcharging{Name: "Grid"})
+
+	// -----------------------------
+	// ⭐ Many-to-Many Mapping
+	// 1 EVcharging สามารถเป็นของหลายตู้ได้
+	// 1 ตู้ก็มีหลาย EVcharging ได้เช่นกัน
+	// -----------------------------
+	db.Model(&ev1).Association("Cabinets").Append(cabinet1)
+	db.Model(&ev2).Association("Cabinets").Append(cabinet1)
 
 	// Calendar (อ้าง Employee คนแรกถ้ามี)
 	calendar1 := entity.Calendar{
@@ -547,32 +559,18 @@ func seedContent(db *gorm.DB) {
 	db.FirstOrCreate(&payment1, entity.PaymentCoin{ReferenceNumber: "REF2024071401"})
 	db.FirstOrCreate(&payment2, entity.PaymentCoin{ReferenceNumber: "REF2024071402"})
 
-	// Reports (ตัวอย่าง)
-	userID1, userID2, userID3 := uint(1), uint(2), uint(3)
+	// Reports — แนว EV Station
+	userID1 := uint(1)
+
 	report1 := &entity.Report{
-		Picture:     "uploads/reports/avatar1.jpg",
-		Description: "พบว่าสัตว์ในสวนสัตว์มีสุขภาพดีและได้รับการดูแลอย่างดี...",
+		Picture:     "uploads/evcharging/solar.jpg",
+		Description: "หัวชาร์จใช้งานไม่ได้ ขณะเสียบกับตัวรถ กรุณาตรวจสอบอุปกรณ์ด้วยครับ",
 		Status:      "Pending",
 		UserID:      &userID1,
 		EmployeeID:  nil,
 	}
-	report2 := &entity.Report{
-		Picture:     "uploads/reports/avatar2.jpg",
-		Description: "สวนสัตว์สะอาดและปลอดภัย แต่ควรเพิ่มพื้นที่...",
-		Status:      "Pending",
-		UserID:      &userID2,
-		EmployeeID:  nil,
-	}
-	report3 := &entity.Report{
-		Picture:     "uploads/reports/avatar3.png",
-		Description: "สถานที่และอุปกรณ์บางส่วนเริ่มทรุดโทรม...",
-		Status:      "Pending",
-		UserID:      &userID3,
-		EmployeeID:  nil,
-	}
+
 	db.FirstOrCreate(report1, entity.Report{UserID: &userID1})
-	db.FirstOrCreate(report2, entity.Report{UserID: &userID2})
-	db.FirstOrCreate(report3, entity.Report{UserID: &userID3})
 }
 
 // ----------------------------- Seed Payments -----------------------------
@@ -601,7 +599,7 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				Date:            createdAt,
 				Amount:          float64(amount),
 				ReferenceNumber: fmt.Sprintf("REF-%02d%02d", month, day),
-				Picture:         "uploads/payment/1752000665992034400.jpg",
+				Picture:         "uploads/payment/1752001589231877900.jpg",
 				UserID:          &userID,
 				MethodID:        &methodID,
 			}
@@ -626,8 +624,8 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				EVchargingID: 1,
 				PaymentID:    payment.ID,
 				Price:        float64(price1),
-				Power:     quantity1,
-				Percent: 20.00,
+				Power:        quantity1,
+				Percent:      20.00,
 			}
 			if err := db.FirstOrCreate(
 				&evcp1,
@@ -640,8 +638,8 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				EVchargingID: 2,
 				PaymentID:    payment.ID,
 				Price:        float64(price2),
-				Power:     quantity2,
-				Percent: 80.00,
+				Power:        quantity2,
+				Percent:      80.00,
 			}
 			if err := db.FirstOrCreate(
 				&evcp2,

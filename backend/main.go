@@ -230,6 +230,7 @@ func main() {
 
 		// ✅ ตรวจสอบ token
 		public.GET("/token/verify", tokening.VerifyChargingSession)
+		public.GET("/charging-session/:user_id", tokening.GetDataByUserID)
 
 		//OCPP Test
 		public.GET("/ocpp/:chargerID", ocpp.HandleOCPP)

@@ -2,6 +2,7 @@ package tokening
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Tawunchai/work-project/config"
@@ -61,20 +62,64 @@ func PaymentSuccess(c *gin.Context) {
 	})
 }
 
-// ตรวจสอบ token ว่าใช้ได้ไหม
 func VerifyChargingSession(c *gin.Context) {
 	token := c.Query("token")
 	var session entity.ChargingSession
 
+	// 1) ตรวจว่า token มีจริงไหม
 	if err := config.DB().Where("token = ?", token).First(&session).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "invalid token"})
 		return
 	}
 
-	if time.Now().After(session.ExpiresAt) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "token expired"})
+	// 2) ตรวจเฉพาะสถานะ session ต้องเป็น true เท่านั้น
+	if !session.Status {
+		c.JSON(http.StatusForbidden, gin.H{"error": "session not active"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"ok": true})
+	// ✔ ผ่าน — token ใช้ได้ และอยู่ในสถานะ active
+	c.JSON(http.StatusOK, gin.H{
+		"ok":     true,
+		"status": session.Status,
+	})
+}
+
+
+
+// GET /charging-session/:user_id
+func GetDataByUserID(c *gin.Context) {
+
+	// 1) รับ user_id
+	userIDParam := c.Param("user_id")
+
+	// แปลง userID string → uint
+	userID, err := strconv.ParseUint(userIDParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
+		return
+	}
+
+	// 📌 หาเวลาเริ่มวันและสิ้นสุดวัน (Today)
+	now := time.Now()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	// 2) Query DB (เฉพาะของวันนี้)
+	var sessions []entity.ChargingSession
+	db := config.DB()
+
+	if err := db.Where("user_id = ? AND created_at >= ? AND created_at < ?", 
+		uint(userID), startOfDay, endOfDay).
+		Preload("Payment").
+		Find(&sessions).Error; err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 3) ส่งข้อมูลกลับ
+	c.JSON(http.StatusOK, gin.H{
+		"data": sessions,
+	})
 }

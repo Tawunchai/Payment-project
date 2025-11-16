@@ -22,6 +22,7 @@ import { SendEmailInterface } from "../interface/ISendEmail";
 import { BookingInterface,EVCabinetInterface } from "../interface/IBooking";
 import { ModalInterface } from "../interface/ICarCatalog";
 import { BrandInterface } from "../interface/IBrand";
+import { ChargingSessionInterface } from "../interface/IToken";
 
 //const apiUrl = "http://10.0.14.228:8000";
 //export const apiUrlPicture = "http://10.0.14.228:8000/";
@@ -2414,5 +2415,31 @@ export const sendHardwareCommand = (
     console.log("📤 Sent command to Backend:", payload);
   } else {
     console.warn("⚠️ WebSocket not connected — cannot send command.");
+  }
+};
+
+export const GetChargingSessionByUserID = async (
+  userID: number
+): Promise<ChargingSessionInterface[] | null> => {
+  try {
+    const response = await axios.get(
+      `${apiUrl}/charging-session/${userID}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      return response.data.data; // ดึง array charging session ออกมา
+    } else {
+      console.error("Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching charging session:", error);
+    return null;
   }
 };

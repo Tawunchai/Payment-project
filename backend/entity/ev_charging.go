@@ -20,8 +20,8 @@ type EVcharging struct {
 	TypeID uint
 	Type   *Type `gorm:"foreignKey:TypeID"`
 
-	EVCabinetID uint     
-	EVCabinet   *EVCabinet `gorm:"foreignKey:EVCabinetID"`
+	// ⭐ Many-to-Many ผ่านตารางกลาง
+    Cabinets []EVCabinet `gorm:"many2many:ev_cabinet_ev_chargings;"`
 
 	EVChargingPayments []EVChargingPayment `gorm:"foreignKey:EVchargingID"`
 }
