@@ -41,6 +41,7 @@ export interface PaymentCreateInterface {
   method_id: number;
   reference_number: string;
   picture?: File | null;
+  ev_cabinet_id?: number;
 }
 
 export interface PaymentInterface {

@@ -12,7 +12,7 @@ import {
   apiUrlPicture,
   CreateChargingToken,
 } from "../../../services";
-import { connectHardwareSocket, sendHardwareCommand } from "../../../services"; // ✅ เพิ่ม import
+import { connectHardwareSocket, sendHardwareCommand } from "../../../services";
 import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import { UsersInterface } from "../../../interface/IUser";
 import { MethodInterface } from "../../../interface/IMethod";
@@ -63,8 +63,11 @@ const PaymentRadio = memo(({ id, name, checked, onChange, label }: PaymentRadioP
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { chargers } = location.state || { chargers: [] as any[] };
-  console.log(chargers);
+
+  // ⭐⭐⭐ รับค่า cabinet_id
+  const { chargers, cabinet_id } = location.state || { chargers: [], cabinet_id: null };
+  console.log("🟦 CABINET ID:", cabinet_id);
+  console.log("🟩 Chargers:", chargers);
 
   const [paymentMethod, setPaymentMethod] = useState<"qr" | "card">("qr");
   const [user, setUser] = useState<UsersInterface | null>(null);
@@ -75,14 +78,14 @@ const Index: React.FC = () => {
 
   const totalAmount = chargers.reduce((sum: number, item: any) => sum + (item?.total || 0), 0);
 
-  // ✅ โหลดข้อมูลผู้ใช้จาก JWT cookie
+  // โหลดข้อมูลผู้ใช้
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         let current = getCurrentUser();
         if (!current) current = await initUserProfile();
-        const userID = current?.id;
 
+        const userID = current?.id;
         if (!userID) {
           message.error("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่");
           navigate("/login");
@@ -94,8 +97,12 @@ const Index: React.FC = () => {
 
         const methodRes = await ListMethods();
         if (methodRes) {
-          const qr = methodRes.find((m: MethodInterface) => m.Medthod?.toLowerCase().includes("qr"));
-          const coin = methodRes.find((m: MethodInterface) => m.Medthod?.toLowerCase().includes("coin"));
+          const qr = methodRes.find((m: MethodInterface) =>
+            m.Medthod?.toLowerCase().includes("qr")
+          );
+          const coin = methodRes.find((m: MethodInterface) =>
+            m.Medthod?.toLowerCase().includes("coin")
+          );
           setQRMethod(qr || null);
           setCoinMethod(coin || null);
           setPaymentMethod(qr ? "qr" : "card");
@@ -111,74 +118,67 @@ const Index: React.FC = () => {
     fetchUserData();
   }, [navigate]);
 
-  // ✅ ฟังก์ชันส่งข้อมูลไปยัง Hardware
+  // ฟังก์ชันส่งข้อมูลไป Hardware
   const sendToHardware = (solar: number, grid: number) => {
     try {
-      const ws = connectHardwareSocket(() => {
-      });
+      const ws = connectHardwareSocket(() => {});
 
-      // ✅ รอเปิดการเชื่อมต่อก่อนส่ง
       ws.onopen = () => {
-        console.log("✅ Connected to Hardware WebSocket");
+        console.log("Connected to Hardware WebSocket");
         const command = { solar_kwh: solar, grid_kwh: grid };
         sendHardwareCommand(ws, "hardware_001", command);
       };
 
-      ws.onclose = () => console.warn("⚠️ Hardware WebSocket disconnected");
-      ws.onerror = (err) => console.error("❌ Hardware WebSocket error:", err);
+      ws.onclose = () => console.warn("Hardware WebSocket disconnected");
+      ws.onerror = (err) => console.error("Hardware WebSocket error:", err);
     } catch (err) {
-      console.error("❌ Failed to send to hardware:", err);
+      console.error("Failed to send to hardware:", err);
     }
   };
 
-  // ✅ กด "ชำระเงิน"
+  // ================== กดชำระเงิน ==================
   const handlePayment = async () => {
     if (!user) return;
     const selectedMethod = paymentMethod === "qr" ? qrMethod : coinMethod;
 
-    // ✅ QR Payment
+    // =============== QR Payment ===============
     if (paymentMethod === "qr") {
-      if (!selectedMethod?.ID) {
-        message.error("ไม่พบ Method สำหรับ QR");
-        return;
-      }
+      if (!selectedMethod?.ID) return message.error("ไม่พบ Method สำหรับ QR");
+
       navigate("/user/payment-by-qrcode", {
         state: {
           totalAmount: totalAmount.toFixed(2),
           userID: user.ID!,
           chargers,
+          cabinet_id,
           MethodID: selectedMethod.ID,
         },
       });
       return;
     }
 
-    // ✅ Coin Payment
-    if (!coinMethod?.ID) {
-      message.error("ไม่พบ Method สำหรับ Coin");
-      return;
-    }
+    // =============== Coin Payment ===============
+    if (!coinMethod?.ID) return message.error("ไม่พบ Method สำหรับ Coin");
+
     if ((user.Coin || 0) < totalAmount) {
-      message.error("จำนวน Coin ของคุณไม่เพียงพอ กรุณาเติม Coin ก่อน");
-      return;
+      return message.error("จำนวน Coin ของคุณไม่เพียงพอ กรุณาเติม Coin ก่อน");
     }
 
     try {
       setIsProcessing(true);
 
-      // ✅ หัก Coin
+      // หัก coin
       const updatedCoin = (user.Coin || 0) - totalAmount;
       const result = await UpdateCoin({ user_id: user.ID!, coin: updatedCoin });
 
       if (!result) {
-        message.error("การหัก Coin ล้มเหลว");
         setIsProcessing(false);
-        return;
+        return message.error("การหัก Coin ล้มเหลว");
       }
 
       message.success("ชำระเงินด้วย Coin สำเร็จแล้ว");
 
-      // ✅ สร้าง Payment
+      // ⭐ สร้างข้อมูล Payment (เพิ่ม ev_cabinet_id)
       const paymentData = {
         date: new Date().toISOString().split("T")[0],
         amount: Number(totalAmount),
@@ -186,16 +186,17 @@ const Index: React.FC = () => {
         method_id: coinMethod.ID!,
         reference_number: "",
         picture: null,
+        ev_cabinet_id: cabinet_id, // ⭐⭐⭐ ส่ง cabinet_id ไป Backend
       };
+
       const paymentResult = await CreatePayment(paymentData);
 
       if (!paymentResult || !paymentResult.ID) {
-        message.error("สร้าง Payment ล้มเหลว");
         setIsProcessing(false);
-        return;
+        return message.error("สร้าง Payment ล้มเหลว");
       }
 
-      // ✅ ผูก EVChargingPayment
+      // ผูก EVChargingPayment
       if (Array.isArray(chargers)) {
         for (const charger of chargers) {
           const evChargingPaymentData = {
@@ -209,24 +210,35 @@ const Index: React.FC = () => {
         }
       }
 
-      // ✅ สร้าง Token สำหรับ session การชาร์จ
+      // สร้าง Token
       const token = await CreateChargingToken(user.ID!, paymentResult.ID);
       if (!token) {
         setIsProcessing(false);
         return;
       }
 
-      // ✅ ดึงค่าของ Solar และ Grid เพื่อส่งให้ Hardware
-      const solar = chargers.find((c : any) => c.name.toLowerCase().includes("solar"))?.power || 0;
-      const grid = chargers.find((c : any) => c.name.toLowerCase().includes("grid"))?.power || 0;
+      // ส่งข้อมูล solar + grid ไป hardware
+      const solar =
+        chargers.find((c: any) => c.name.toLowerCase().includes("solar"))?.power || 0;
+
+      const grid =
+        chargers.find((c: any) => c.name.toLowerCase().includes("grid"))?.power || 0;
 
       sendToHardware(solar, grid);
 
       localStorage.setItem("charging_token", token);
+
+      // ⭐⭐⭐ ไปหน้าหลังชำระเงิน (ดีเลย์ 2 วิ)
       setTimeout(() => {
-        navigate("/user/after-payment");
-        setIsProcessing(false);
-      }, 800);
+        navigate("/user/after-payment", {
+          state: {
+            paymentID: paymentResult.ID,
+            cabinet_id,
+          },
+        });
+      }, 2000);
+
+      setIsProcessing(false);
     } catch (err) {
       console.error(err);
       message.error("เกิดข้อผิดพลาดระหว่างชำระเงิน");
@@ -237,37 +249,47 @@ const Index: React.FC = () => {
   // ================== UI ==================
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <header
+        className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <div className="w-full px-4 py-3 flex items-center gap-2 justify-start">
           <button
             onClick={() => window.history.back()}
-            aria-label="ย้อนกลับ"
             className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15 transition-colors"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            <svg viewBox="0 0 24 24" className="h-5 w-5">
+              <path
+                d="M15 18l-6-6 6-6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
 
           <div className="flex items-center gap-2">
             <BoltIcon className="h-5 w-5 text-white" />
-            <span className="text-sm md:text-base font-semibold tracking-wide">EV Payments</span>
+            <span className="text-sm md:text-base font-semibold tracking-wide">
+              EV Payments
+            </span>
           </div>
         </div>
       </header>
 
-      {/* Content */}
       <main className="mx-auto max-w-screen-sm px-4 pb-28 pt-4">
         <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-blue-900">ยอดชำระทั้งหมด</span>
-            <span className="text-xl font-bold text-blue-700">฿{totalAmount.toFixed(2)}</span>
+            <span className="text-xl font-bold text-blue-700">
+              ฿{totalAmount.toFixed(2)}
+            </span>
           </div>
           <SmallNote>ตรวจสอบรายการก่อนชำระเงิน</SmallNote>
         </div>
 
+        {/* รายการสั่งซื้อ */}
         <section className="mb-6">
           <SectionTitle>รายการสั่งซื้อ</SectionTitle>
           <div className="mt-3 rounded-2xl border border-gray-100">
@@ -276,11 +298,12 @@ const Index: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <img
                     src={`${apiUrlPicture}${item.picture}`}
-                    alt={item.name}
                     className="h-14 w-14 rounded-lg object-cover"
                   />
                   <div className="flex-1">
-                    <h3 className="text-sm font-medium text-gray-900 line-clamp-1">{item.name}</h3>
+                    <h3 className="text-sm font-medium text-gray-900 line-clamp-1">
+                      {item.name}
+                    </h3>
                     <p className="text-xs text-gray-500">
                       เปอร์เซ็นต์การชาร์จ:{" "}
                       <span className="font-semibold text-blue-700">
@@ -351,13 +374,14 @@ const Index: React.FC = () => {
         </section>
       </main>
 
-      {/* Bottom Pay Bar */}
+      {/* Bottom Bar */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-screen-sm items-center justify-between gap-3 px-4 py-3">
           <div className="flex flex-col leading-tight">
             <span className="text-xs text-gray-500">ยอดสุทธิ</span>
             <span className="text-lg font-bold text-blue-700">฿{totalAmount.toFixed(2)}</span>
           </div>
+
           <button
             onClick={handlePayment}
             disabled={isProcessing || isLoadingMethod || chargers.length === 0}

@@ -1503,7 +1503,12 @@ export const CreatePayment = async (
     formData.append("method_id", paymentData.method_id.toString());
     formData.append("reference_number", paymentData.reference_number || "");
 
-    // ✅ แนบรูปเฉพาะถ้ามี
+    // ⭐⭐ เพิ่มส่ง Cabinet ID
+    if (paymentData.ev_cabinet_id) {
+      formData.append("ev_cabinet_id", paymentData.ev_cabinet_id.toString());
+    }
+
+    // แนบรูปถ้ามี
     if (paymentData.picture instanceof File) {
       formData.append("picture", paymentData.picture);
     }
@@ -1511,7 +1516,6 @@ export const CreatePayment = async (
     const response = await axios.post(`${apiUrl}/create-payments`, formData, {
       headers: {
         ...getAuthHeader(),
-        // ไม่ต้องตั้ง Content-Type
       },
     });
 
@@ -1526,6 +1530,7 @@ export const CreatePayment = async (
     return null;
   }
 };
+
 
 // ฟังก์ชันดึงรายการธนาคาร
 export const ListBank = async (): Promise<BankInterface[] | null> => {
@@ -2440,6 +2445,86 @@ export const GetChargingSessionByUserID = async (
     }
   } catch (error) {
     console.error("Error fetching charging session:", error);
+    return null;
+  }
+};
+
+export const UpdateSessionStatusByPaymentID = async (
+  paymentID: number
+): Promise<boolean> => {
+  try {
+    const response = await axios.put(
+      `${apiUrl}/charging-session/update-status/${paymentID}`,
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      console.log("🔥 อัปเดตสถานะ Charging Session สำเร็จ:", response.data);
+      return true;
+    } else {
+      console.error("❗ Unexpected status:", response.status);
+      return false;
+    }
+  } catch (error: any) {
+    console.error(
+      "❌ Error updating session status:",
+      error.response?.data || error.message
+    );
+    return false;
+  }
+};
+
+export const GetChargingSessionByStatusTrue = async (): Promise<any | null> => {
+  try {
+    const res = await axios.get(`${apiUrl}/charging-session/status/true`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (res.status === 200) {
+      return res.data.data;   // ⭐ object เดียว ไม่ใช่ array
+    }
+
+    return null;
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+};
+
+export const GetChargingSessionByStatusAndUserID = async (
+  userID: number
+): Promise<any> => {
+  try {
+    const response = await axios.get(
+      `${apiUrl}/charging-session/status/${userID}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      console.log("⚡ โหลด Charging Session สำเร็จ:", response.data);
+      return response.data; // any
+    } else {
+      console.error("❗ Unexpected status:", response.status);
+      return null;
+    }
+  } catch (error: any) {
+    console.error(
+      "❌ Error fetching charging session:",
+      error.response?.data || error.message
+    );
     return null;
   }
 };

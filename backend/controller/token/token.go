@@ -85,36 +85,32 @@ func VerifyChargingSession(c *gin.Context) {
 	})
 }
 
-
-
 // GET /charging-session/:user_id
 func GetDataByUserID(c *gin.Context) {
 
-	// 1) รับ user_id
+	// 1) รับ user_id (string)
 	userIDParam := c.Param("user_id")
 
-	// แปลง userID string → uint
+	// แปลงเป็น uint
 	userID, err := strconv.ParseUint(userIDParam, 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
 		return
 	}
 
-	// 📌 หาเวลาเริ่มวันและสิ้นสุดวัน (Today)
-	now := time.Now()
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	endOfDay := startOfDay.Add(24 * time.Hour)
-
-	// 2) Query DB (เฉพาะของวันนี้)
+	// 2) Query DB - เฉพาะ status = true เท่านั้น
 	var sessions []entity.ChargingSession
 	db := config.DB()
 
-	if err := db.Where("user_id = ? AND created_at >= ? AND created_at < ?", 
-		uint(userID), startOfDay, endOfDay).
+	err = db.
+		Where("user_id = ? AND status = ?", uint(userID), true).
 		Preload("Payment").
-		Find(&sessions).Error; err != nil {
+		Find(&sessions).Error
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
@@ -122,4 +118,103 @@ func GetDataByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": sessions,
 	})
+}
+
+
+// ✅ อัปเดต Status = false โดยอ้างอิงจาก PaymentID
+func UpdateStatusByPaymentID(c *gin.Context) {
+
+	// 1) รับค่า payment_id จาก URL
+	paymentIDStr := c.Param("payment_id")
+	paymentID, err := strconv.ParseUint(paymentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PaymentID ไม่ถูกต้อง"})
+		return
+	}
+
+	db := config.DB()
+
+	// 2) หา ChargingSession ที่ PaymentID นี้
+	var sessions []entity.ChargingSession
+	if err := db.Where("payment_id = ?", uint(paymentID)).Find(&sessions).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถค้นหา Session ได้"})
+		return
+	}
+
+	if len(sessions) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบ ChargingSession ของ Payment นี้"})
+		return
+	}
+
+	// 3) อัปเดต Status = false
+	if err := db.Model(&entity.ChargingSession{}).
+		Where("payment_id = ?", uint(paymentID)).
+		Update("status", false).Error; err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "อัปเดตสถานะไม่สำเร็จ"})
+		return
+	}
+
+	// 4) ส่ง Response กลับ
+	c.JSON(http.StatusOK, gin.H{
+		"message":         "อัปเดตสถานะสำเร็จ",
+		"payment_id":      paymentID,
+		"updated_records": len(sessions),
+	})
+}
+
+// GET /charging-session/status/true
+func GetChargingSessionByStatus(c *gin.Context) {
+    var sessions []entity.ChargingSession
+
+    db := config.DB()
+
+    // Query เฉพาะ Status = true
+    if err := db.
+        Where("status = ?", true).
+        Preload("Payment").
+        Preload("Payment.EVCabinet"). // preload ต่อไปยัง Cabinet
+        Find(&sessions).Error; err != nil {
+
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": err.Error(),
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "data": sessions,
+    })
+}
+
+// GET /charging-session/status/:user_id
+func GetChargingSessionByStatusAndUserID(c *gin.Context) {
+
+    // รับ user_id จาก param
+    userIDParam := c.Param("user_id")
+    userID, err := strconv.ParseUint(userIDParam, 10, 32)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
+        return
+    }
+
+    var sessions []entity.ChargingSession
+    db := config.DB()
+
+    // Query: หาเฉพาะ Status = true และ UserID ที่ส่งมา
+    if err := db.
+        Where("status = ? AND user_id = ?", true, uint(userID)).
+        Preload("Payment").
+        Preload("Payment.EVCabinet").
+        Find(&sessions).Error; err != nil {
+
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": err.Error(),
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "data": sessions,
+    })
 }

@@ -123,7 +123,8 @@ func SetupDatabase() {
 	// ตัวอย่าง: seed payments หากยังไม่มี
 	userID := uint(1)
 	methodID := uint(1)
-	if err := SeedPayments(db, userID, methodID); err != nil {
+	cabinetID := uint(1)
+	if err := SeedPayments(db, userID, methodID,cabinetID); err != nil {
 		log.Fatalf("Seed payments failed: %v", err)
 	}
 
@@ -575,7 +576,7 @@ func seedContent(db *gorm.DB) {
 
 // ----------------------------- Seed Payments -----------------------------
 
-func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
+func SeedPayments(db *gorm.DB, userID uint, methodID uint, cabinetID uint) error {
 	var count int64
 	if err := db.Model(&entity.Payment{}).Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to count payments: %w", err)
@@ -602,6 +603,7 @@ func SeedPayments(db *gorm.DB, userID uint, methodID uint) error {
 				Picture:         "uploads/payment/1752001589231877900.jpg",
 				UserID:          &userID,
 				MethodID:        &methodID,
+				EVCabinetID: &cabinetID,
 			}
 
 			if err := db.Create(&payment).Error; err != nil {

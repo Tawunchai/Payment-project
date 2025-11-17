@@ -7,7 +7,7 @@ import { RiNewspaperLine } from "react-icons/ri";
 import { FiUser } from "react-icons/fi";
 
 import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
-import { GetChargingSessionByUserID } from "../../../services";
+import { GetChargingSessionByStatusAndUserID } from "../../../services";
 
 type Tab = {
   key: string;
@@ -22,180 +22,288 @@ const Footer: React.FC = () => {
   const navigate = useNavigate();
 
   const [userID, setUserID] = useState<number | null>(null);
-  const [isChargingActive, setIsChargingActive] = useState(false);
 
+  const [isChargingActive, setIsChargingActive] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [sessions, setSessions] = useState<any[]>([]);
+
+  // ⭐ โหลด user
   useEffect(() => {
     const loadUser = async () => {
       let user = getCurrentUser();
       if (!user) user = await initUserProfile();
 
-      if (user?.id) {
-        setUserID(user.id);
-      }
+      if (user?.id) setUserID(user.id);
     };
     loadUser();
   }, []);
 
+  // ⭐ โหลด session ที่กำลังชาร์จ
   useEffect(() => {
-    const loadSessions = async () => {
+    const loadSession = async () => {
       if (!userID) return;
 
-      const res = await GetChargingSessionByUserID(userID);
-      if (res) {
-        const active = res.some(
-          (session: any) => session.Status === true || session.Status === 1
-        );
-        setIsChargingActive(active);
-      }
+      const res = await GetChargingSessionByStatusAndUserID(userID);
+      const list = res?.data || [];
+
+      const active = list.filter((s: any) => s.Status === true || s.Status === 1);
+
+      setSessions(active);
+      setIsChargingActive(active.length > 0);
     };
-    loadSessions();
+
+    loadSession();
   }, [userID]);
 
+  // ⭐ ไปยังหน้า charging พร้อมส่งค่าไปด้วย
+  const goToCabinet = (session: any) => {
+    navigate("/user/charging", {
+      state: {
+        paymentID: session.PaymentID,
+        cabinet_id: session.Payment?.EVCabinetID,
+      },
+    });
+    setModalOpen(false);
+  };
+
+  // ⭐ ซื้อไฟฟ้าเพิ่ม
+  const goToBuyMore = () => {
+    setModalOpen(false);
+    navigate("/user/evs-selector");
+  };
+
   const tabs: Tab[] = [
-    { key: "home", label: "หน้าหลัก", to: "/", icon: <AiFillHome />, "aria-label": "หน้าหลัก" },
-    { key: "map", label: "แผนที่", to: "/user/map", icon: <HiOutlineMap />, "aria-label": "แผนที่" },
-    { key: "charge", label: "ชาร์จ", to: "/user/evs-selector", icon: <FaBolt />, "aria-label": "เริ่มชาร์จ" },
-    { key: "news", label: "ข่าวสาร", to: "/user/all-news", icon: <RiNewspaperLine />, "aria-label": "ข่าวสาร" },
-    { key: "account", label: "บัญชี", to: "/user/profile", icon: <FiUser />, "aria-label": "บัญชี" },
+    { key: "home", label: "หน้าหลัก", to: "/", icon: <AiFillHome />, "aria-label": "home" },
+    { key: "map", label: "แผนที่", to: "/user/map", icon: <HiOutlineMap />, "aria-label": "map" },
+    { key: "charge", label: "ชาร์จ", to: "/user/evs-selector", icon: <FaBolt />, "aria-label": "charge" },
+    { key: "news", label: "ข่าวสาร", to: "/user/all-news", icon: <RiNewspaperLine />, "aria-label": "news" },
+    { key: "account", label: "บัญชี", to: "/user/profile", icon: <FiUser />, "aria-label": "account" },
   ];
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      aria-label="EV bottom navigation"
-    >
-      <div className="mx-auto max-w-screen-sm px-3">
-        <div
-          className="relative rounded-2xl bg-white/95 backdrop-blur border border-gray-100 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] pb-2 pt-1"
-          style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
-        >
-          <ul className="grid grid-cols-5 items-end">
-            {tabs.map((tab) => {
-              const active = isActive(tab.to);
+    <>
+      {/* FOOTER */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="mx-auto max-w-screen-sm px-3">
+          <div
+            className="relative rounded-2xl bg-white/95 backdrop-blur border border-gray-100 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] pb-2 pt-1"
+            style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
+          >
+            <ul className="grid grid-cols-5 items-end">
+              {tabs.map((tab) => {
+                const active = isActive(tab.to);
 
-              // ⭐ ปุ่มชาร์จ
-              if (tab.key === "charge") {
-                return (
-                  <li key={tab.key} className="flex justify-center">
-                    <button
-                      // ⭐ ถ้ากำลังชาร์จ → ไป /user/charging
-                      // ⭐ ถ้าไม่ได้ชาร์จ → ไปหน้าเลือกเครื่องชาร์จ
-                      onClick={() =>
-                        isChargingActive
-                          ? navigate("/user/charging")
-                          : navigate("/user/evs-selector")
-                      }
-                      aria-label={tab["aria-label"]}
-                      className="-translate-y-2 pb-1 transition-all duration-200 rounded-full shadow-lg focus:outline-none relative"
-                    >
-                      <div
-                        className={
-                          isChargingActive
-                            ? "relative flex h-14 w-14 items-center justify-center rounded-full text-white bg-orange-500 ring-4 ring-white shadow-lg overflow-hidden"
-                            : "relative flex h-14 w-14 items-center justify-center rounded-full text-white bg-gradient-to-b from-blue-500 to-blue-600 ring-4 ring-white"
-                        }
+                // ⭐ ปุ่มชาร์จ
+                if (tab.key === "charge") {
+                  return (
+                    <li key={tab.key} className="flex justify-center">
+                      <button
+                        onClick={() => (isChargingActive ? setModalOpen(true) : navigate("/user/evs-selector"))}
+                        aria-label="charge"
+                        className="-translate-y-2 pb-1 transition-all duration-200 rounded-full shadow-lg relative"
                       >
-                        {/* ⭐ เอฟเฟกต์ฟองลอยตอนกำลังชาร์จ */}
-                        {isChargingActive && (
-                          <>
-                            <span className="bubble bubble1"></span>
-                            <span className="bubble bubble2"></span>
-                            <span className="bubble bubble3"></span>
-                            <span className="bubble bubble4"></span>
-                          </>
-                        )}
-
-                        <FaBolt
+                        <div
                           className={
                             isChargingActive
-                              ? "text-xl animate-[pulseScale_0.8s_ease-in-out_infinite]"
-                              : "text-xl"
+                              ? "relative flex h-14 w-14 items-center justify-center rounded-full text-white bg-orange-500 ring-4 ring-white shadow-lg overflow-hidden"
+                              : "relative flex h-14 w-14 items-center justify-center rounded-full text-white bg-gradient-to-b from-blue-500 to-blue-600 ring-4 ring-white"
                           }
-                          style={{
-                            animation:
-                              isChargingActive
-                                ? "pulseScale 0.8s ease-in-out infinite"
-                                : "none",
-                          }}
-                        />
-                      </div>
+                        >
+                          {isChargingActive && (
+                            <>
+                              <span className="bubble bubble1"></span>
+                              <span className="bubble bubble2"></span>
+                              <span className="bubble bubble3"></span>
+                              <span className="bubble bubble4"></span>
+                            </>
+                          )}
+                          <FaBolt className="text-xl" />
+                        </div>
 
-                      <div
-                        className={
-                          isChargingActive
-                            ? "mt-1 text-center text-[11px] font-semibold text-orange-600"
-                            : "mt-1 text-center text-[11px] font-semibold text-blue-700"
-                        }
+                        <div
+                          className={
+                            isChargingActive
+                              ? "mt-1 text-center text-[11px] font-semibold text-orange-600"
+                              : "mt-1 text-center text-[11px] font-semibold text-blue-700"
+                          }
+                        >
+                          {isChargingActive ? "กำลังชาร์จ" : tab.label}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li key={tab.key} className="flex justify-center">
+                    <NavLink
+                      to={tab.to}
+                      aria-label={tab["aria-label"]}
+                      className="flex flex-col items-center gap-1 py-3 w-full"
+                    >
+                      <span
+                        className={`grid place-items-center h-9 w-9 rounded-xl transition-colors ${active ? "bg-blue-50 text-blue-600" : "text-gray-400"
+                          }`}
                       >
-                        {isChargingActive ? "ชาร์จ" : tab.label}
-                      </div>
-                    </button>
+                        <span className="text-[20px]">{tab.icon}</span>
+                      </span>
+
+                      <span
+                        className={`text-[11px] font-medium transition-colors ${active ? "text-blue-600" : "text-gray-400"
+                          }`}
+                      >
+                        {tab.label}
+                      </span>
+                    </NavLink>
                   </li>
                 );
-              }
-
-              return (
-                <li key={tab.key} className="flex justify-center">
-                  <NavLink
-                    to={tab.to}
-                    aria-label={tab["aria-label"]}
-                    className="flex flex-col items-center gap-1 py-3 w-full"
-                  >
-                    <span
-                      className={`grid place-items-center h-9 w-9 rounded-xl transition-colors ${
-                        active ? "bg-blue-50 text-blue-600" : "text-gray-400"
-                      }`}
-                    >
-                      <span className="text-[20px]">{tab.icon}</span>
-                    </span>
-                    <span
-                      className={`text-[11px] font-medium transition-colors ${
-                        active ? "text-blue-600" : "text-gray-400"
-                      }`}
-                    >
-                      {tab.label}
-                    </span>
-                  </NavLink>
-                </li>
-              );
-            })}
-          </ul>
+              })}
+            </ul>
+          </div>
         </div>
-      </div>
+      </nav>
 
-      {/* ⭐ Animation CSS */}
-      <style>
-        {`
-          @keyframes pulseScale {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.35); }
-          }
+      {/* ⭐ EV Premium Select Cabinet Modal — Blue Gradient */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
 
-          @keyframes bubbleUp {
-            0% { transform: translateY(20px) scale(0.4); opacity: 0.2; }
-            50% { opacity: 0.6; }
-            100% { transform: translateY(-20px) scale(1); opacity: 0; }
-          }
+          {/* BACKDROP */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setModalOpen(false)}
+          />
 
-          .bubble {
-            position: absolute;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.45);
-            border-radius: 50%;
-            animation: bubbleUp 2s infinite ease-in-out;
-          }
+          {/* MODAL */}
+          <div
+            className="
+        relative w-full max-w-[400px]
+        bg-gradient-to-b from-blue-50 to-white
+        rounded-3xl shadow-[0_10px_35px_rgba(0,0,0,0.15)]
+        border border-blue-100
+        overflow-hidden animate-fadeIn
+      "
+          >
 
-          .bubble1 { width: 8px; height: 8px; left: 10px; animation-delay: 0s; }
-          .bubble2 { width: 10px; height: 10px; left: 22px; animation-delay: 0.4s; }
-          .bubble3 { width: 6px; height: 6px; left: 30px; animation-delay: 0.8s; }
-          .bubble4 { width: 9px; height: 9px; left: 18px; animation-delay: 1.2s; }
-        `}
-      </style>
-    </nav>
+            {/* CLOSE (X) */}
+            <button
+              onClick={() => setModalOpen(false)}
+              className="
+          absolute top-3 right-3
+          p-2 rounded-full
+          hover:bg-blue-100 active:scale-90 transition
+        "
+            >
+              <svg
+                className="w-5 h-5 text-blue-600"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M18 6 L6 18" strokeLinecap="round" />
+                <path d="M6 6 L18 18" strokeLinecap="round" />
+              </svg>
+            </button>
+
+            {/* CONTENT */}
+            <div className="px-6 py-9 text-center flex flex-col items-center">
+
+              {/* ICON + HALO */}
+              <div className="relative mb-6">
+                <div className="absolute inset-0 blur-xl bg-blue-300 opacity-40 rounded-full"></div>
+
+                <div
+                  className="
+              relative z-10
+              w-16 h-16 flex items-center justify-center
+              rounded-full
+              bg-gradient-to-b from-blue-100 to-blue-200
+              border border-blue-300 shadow-inner
+            "
+                >
+                  <FaBolt className="w-7 h-7 text-blue-700 drop-shadow-md" />
+                </div>
+              </div>
+
+              {/* TITLE */}
+              <h3 className="text-xl font-bold text-blue-900 tracking-tight">
+                คุณกำลังชาร์จอยู่
+              </h3>
+
+              {/* DESCRIPTION */}
+              <p className="text-sm text-gray-600 mt-2 leading-relaxed max-w-[260px]">
+                เลือกตู้ชาร์จที่คุณต้องการดูสถานะ หรือซื้อไฟฟ้าเพิ่ม
+              </p>
+            </div>
+
+            {/* ⭐ LIST CABINETS */}
+            <div className="px-5 space-y-3 pb-4 max-h-[240px] overflow-y-auto">
+
+              {sessions.map((s: any, i: number) => (
+                <button
+                  key={i}
+                  onClick={() => goToCabinet(s)}
+                  className="
+              w-full flex flex-col items-start text-left
+              bg-white
+              border border-blue-200 
+              rounded-2xl px-4 py-3
+              shadow-sm hover:shadow-md
+              hover:bg-blue-50 active:scale-[0.98]
+              transition-all
+            "
+                >
+                  <div className="font-semibold text-blue-700 text-sm leading-tight">
+                    🔌 {s.Payment?.EVCabinet?.Name || "ไม่พบชื่อตู้"}
+                  </div>
+
+                  <div className="text-xs text-gray-600 mt-1 leading-tight">
+                    📍 {s.Payment?.EVCabinet?.Location || "ไม่พบตำแหน่ง"}
+                  </div>
+                </button>
+              ))}
+
+            </div>
+
+            {/* BUTTON: BUY MORE */}
+            <div className="px-6 pb-7 pt-2">
+              <button
+                onClick={goToBuyMore}
+                className="
+            w-full py-3.5 rounded-xl font-semibold
+            bg-gradient-to-r from-blue-600 to-sky-500
+            text-white shadow-[0_4px_15px_rgba(56,132,255,0.45)]
+            hover:shadow-[0_6px_20px_rgba(56,132,255,0.55)]
+            active:scale-[0.97] transition-all
+          "
+              >
+                ซื้อไฟฟ้าเพิ่ม
+              </button>
+            </div>
+          </div>
+
+          {/* Fade Animation */}
+          <style>
+            {`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(14px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0px) scale(1); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.25s ease-out;
+        }
+      `}
+          </style>
+
+        </div>
+      )}
+    </>
   );
 };
 
