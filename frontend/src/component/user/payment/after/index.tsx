@@ -4,7 +4,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { ListGetStarted, apiUrlPicture } from "../../../../services";
 import { Button, Spin } from "antd";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { GetstartedInterface } from "../../../../interface/IGetstarted";
 
 /* ⚡ EV Icon */
@@ -19,7 +19,14 @@ const GettingStarted: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  /* ✅ โหลดข้อมูลจาก API */
+  // ⭐⭐⭐ รับ paymentID และ cabinet_id จาก after-payment
+  const location = useLocation();
+  const { paymentID, cabinet_id } = location.state || {};
+
+  console.log("📦 PAYMENT ID (User Manual):", paymentID);
+  console.log("🟦 CABINET ID (User Manual):", cabinet_id);
+
+  /* โหลดข้อมูลจาก API */
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,7 +43,7 @@ const GettingStarted: React.FC = () => {
 
   const hasData = data.length > 0;
 
-  /* ✅ ตั้งค่า Slider */
+  /* Slider Settings */
   const settings: Settings = useMemo(() => {
     const n = data.length;
     const baseShow = Math.min(3, n || 1);
@@ -67,7 +74,7 @@ const GettingStarted: React.FC = () => {
     };
   }, [data.length]);
 
-  /* ✅ แสดงตอนโหลด */
+  /* Loading */
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -76,7 +83,7 @@ const GettingStarted: React.FC = () => {
     );
   }
 
-  /* ✅ ไม่มีข้อมูล */
+  /* No Data */
   if (!hasData) {
     return (
       <div className="flex h-[60vh] items-center justify-center text-gray-500">
@@ -87,40 +94,28 @@ const GettingStarted: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ✅ HEADER */}
+      {/* Header */}
       <header className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md">
         <div className="w-full px-4 py-3 flex items-center gap-2">
           <button
             onClick={() => navigate("/user")}
             className="h-9 w-9 flex items-center justify-center rounded-xl active:bg-white/15"
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                d="M15 18l-6-6 6-6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
+
           <div className="flex items-center gap-2">
             <BoltIcon className="h-5 w-5 text-white" />
-            <span className="text-base font-semibold tracking-wide">
-              EV User Manual
-            </span>
+            <span className="text-base font-semibold tracking-wide">EV User Manual</span>
           </div>
         </div>
       </header>
 
-      {/* ✅ CONTENT */}
+      {/* Content */}
       <section className="relative w-full bg-white py-10">
         <div className="mx-auto max-w-screen-lg px-4">
-          {/* Slider */}
           <Slider {...settings}>
             {data.map((item, idx) => {
               const imageSrc = item.Picture
@@ -137,7 +132,7 @@ const GettingStarted: React.FC = () => {
                       min-h-[500px]
                     "
                   >
-                    {/* รูปภาพ */}
+                    {/* Image */}
                     <div className="w-full h-72 md:h-72 overflow-hidden">
                       <img
                         src={imageSrc}
@@ -146,7 +141,7 @@ const GettingStarted: React.FC = () => {
                       />
                     </div>
 
-                    {/* ข้อความด้านล่าง */}
+                    {/* Text */}
                     <div className="p-5 text-center flex-1 flex flex-col justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-blue-700 mb-2">
@@ -163,13 +158,17 @@ const GettingStarted: React.FC = () => {
             })}
           </Slider>
 
-          {/* ปุ่ม Skip - มุมขวาล่าง */}
+          {/* NEXT Button */}
           <div className="fixed right-8 bottom-8 z-50">
             <Button
               type="primary"
               shape="round"
               className="bg-blue-600 hover:bg-blue-700 px-6 py-4 text-base"
-              onClick={() => navigate("/user/charging")}
+              onClick={() =>
+                navigate("/user/charging", {
+                  state: { paymentID, cabinet_id },
+                })
+              }
             >
               NEXT
             </Button>

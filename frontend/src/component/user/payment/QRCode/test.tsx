@@ -11,7 +11,7 @@ import {
   CreateChargingToken,
   connectHardwareSocket,
   sendHardwareCommand,
-} from "../../../../services"; // ✅ เพิ่ม connectHardwareSocket, sendHardwareCommand
+} from "../../../../services";
 import { getCurrentUser, initUserProfile } from "../../../../services/httpLogin";
 import { FileImageOutlined } from "@ant-design/icons";
 import LoadingAnimation from "../../../../component/user/money/LoadingAnimation";
@@ -22,7 +22,13 @@ const PayPalCard: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const location = useLocation();
-  const { totalAmount, chargers, MethodID } = location.state || {};
+
+  // ⭐⭐⭐ รับค่าจากหน้า payment index
+  const { totalAmount, chargers, MethodID, cabinet_id } = location.state || {};
+
+  console.log("📦 CABINET ID (Slip Page):", cabinet_id);
+  console.log("🟩 Chargers:", chargers);
+
   const amountNumber = Number(totalAmount) || 0;
 
   const [userID, setUserID] = useState<number | null>(null);
@@ -30,12 +36,13 @@ const PayPalCard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ โหลด userID จาก JWT cookie
+  // โหลด User จาก JWT
   useEffect(() => {
     const fetchUser = async () => {
       try {
         let current = getCurrentUser();
         if (!current) current = await initUserProfile();
+
         if (current?.id) {
           setUserID(current.id);
         } else {
@@ -51,7 +58,7 @@ const PayPalCard: React.FC = () => {
     fetchUser();
   }, [navigate]);
 
-  // ✅ โหลดเบอร์ PromptPay จากธนาคาร
+  // โหลด PromptPay ของธนาคาร
   useEffect(() => {
     const fetchBankData = async () => {
       try {
@@ -69,7 +76,7 @@ const PayPalCard: React.FC = () => {
     fetchBankData();
   }, []);
 
-  // ✅ สร้าง Payload QR
+  // สร้าง QR Payload
   useEffect(() => {
     if (amountNumber > 0 && phoneNumber) {
       const payload = generatePayload(phoneNumber, { amount: amountNumber });
@@ -79,7 +86,7 @@ const PayPalCard: React.FC = () => {
     }
   }, [amountNumber, phoneNumber]);
 
-  // ✅ ฟังก์ชันส่งข้อมูลไปยัง Hardware
+  // ส่งข้อมูลไป Hardware
   const sendToHardware = (solar: number, grid: number) => {
     try {
       const ws = connectHardwareSocket(() => {});
@@ -96,10 +103,10 @@ const PayPalCard: React.FC = () => {
     }
   };
 
-  // ✅ อัปโหลดไฟล์
+  // อัปโหลด Slip
   const handleUploadClick = () => fileInputRef.current?.click();
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
+    if (event.target.files?.length) {
       const file = event.target.files[0];
       setUploadedFile(file);
     }
@@ -109,7 +116,7 @@ const PayPalCard: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ✅ ส่งหลักฐานและสร้าง Token + ส่งไป Hardware
+  // ส่งหลักฐาน + Create Payment
   const handleSubmit = async () => {
     if (!uploadedFile) {
       message.warning("กรุณาอัปโหลดสลิปก่อนส่ง");
@@ -131,6 +138,7 @@ const PayPalCard: React.FC = () => {
 
       message.success("ส่งหลักฐานการชำระเงินเรียบร้อยแล้ว");
 
+      // ⭐⭐⭐ เพิ่ม cabinet_id เข้า PaymentData
       const paymentData = {
         date: new Date().toISOString().split("T")[0],
         amount: Number(totalAmount),
@@ -138,12 +146,13 @@ const PayPalCard: React.FC = () => {
         method_id: MethodID,
         reference_number: result.data.ref,
         picture: uploadedFile,
+        ev_cabinet_id: cabinet_id, // <<<<<<<<<<<<<<<<<<<<<<⭐ สำคัญมาก
       };
 
       const paymentResult = await CreatePayment(paymentData);
 
       if (paymentResult && paymentResult.ID) {
-        // ✅ สร้าง EVChargingPayment
+        // ผูก EV Charging Payment
         if (Array.isArray(chargers)) {
           for (const charger of chargers) {
             const evChargingPaymentData = {
@@ -157,22 +166,30 @@ const PayPalCard: React.FC = () => {
           }
         }
 
-        // ✅ สร้าง Token
+        // สร้าง Token
         const token = await CreateChargingToken(userID, paymentResult.ID);
         if (!token) {
           setLoading(false);
           return;
         }
 
-        // ✅ ส่งข้อมูลไปยัง Hardware
-        const solar = chargers.find((c: any) => c.name.toLowerCase().includes("solar"))?.power || 0;
-        const grid = chargers.find((c: any) => c.name.toLowerCase().includes("grid"))?.power || 0;
+        // ส่งข้อมูลไป Hardware
+        const solar =
+          chargers.find((c: any) => c.name.toLowerCase().includes("solar"))?.power || 0;
+        const grid =
+          chargers.find((c: any) => c.name.toLowerCase().includes("grid"))?.power || 0;
 
         sendToHardware(solar, grid);
 
         localStorage.setItem("charging_token", token);
+
         setTimeout(() => {
-          navigate("/user/after-payment");
+          navigate("/user/after-payment", {
+            state: {
+              paymentID: paymentResult.ID,
+              cabinet_id,
+            },
+          });
           setLoading(false);
         }, 800);
       } else {
@@ -186,19 +203,19 @@ const PayPalCard: React.FC = () => {
     }
   };
 
-  // ✅ Drag & Drop
+  // Drag & Drop Upload
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+    if (event.dataTransfer.files?.length) {
       const file = event.dataTransfer.files[0];
       setUploadedFile(file);
-      event.dataTransfer.clearData();
     }
   };
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => event.preventDefault();
 
   return (
     <div className="min-h-screen bg-white">
+
       {/* Header */}
       <header className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md overflow-hidden"
         style={{ paddingTop: "env(safe-area-inset-top)" }}>
@@ -216,12 +233,14 @@ const PayPalCard: React.FC = () => {
             <svg viewBox="0 0 24 24" className="h-5 w-5 text-white">
               <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
             </svg>
-            <span className="text-sm md:text-base font-semibold tracking-wide">Scan to Pay / Upload Slip</span>
+            <span className="text-sm md:text-base font-semibold tracking-wide">
+              Scan to Pay / Upload Slip
+            </span>
           </div>
         </div>
       </header>
 
-      {/* Loading overlay */}
+      {/* Loading */}
       {loading && (
         <div className="fixed inset-0 bg-black/60 flex flex-col items-center justify-center z-50">
           <LoadingAnimation />
@@ -241,6 +260,7 @@ const PayPalCard: React.FC = () => {
               <FaPaypal className="text-blue-600 text-2xl" />
               <span className="text-base font-semibold text-gray-800">PromptPay</span>
             </div>
+
             <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100">
               {qrCode ? (
                 <QRCode value={qrCode} size={180} errorLevel="H" />
@@ -255,6 +275,7 @@ const PayPalCard: React.FC = () => {
           {/* Upload Section */}
           <div className="mt-5">
             <h2 className="text-sm font-semibold text-gray-900 mb-2">อัปโหลดสลิปชำระเงิน</h2>
+
             {uploadedFile ? (
               <div className="relative mb-3 flex justify-center border border-gray-200 rounded-xl p-2 bg-white">
                 <Image
@@ -287,14 +308,23 @@ const PayPalCard: React.FC = () => {
                 </p>
               </div>
             )}
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
         </div>
       </main>
 
       {/* Bottom Bar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         <div className="mx-auto flex max-w-screen-sm items-center gap-3 px-4 py-3">
           <button
             onClick={handleUploadClick}

@@ -121,10 +121,11 @@ func ListPaymentByUserID(c *gin.Context) {
 func CreatePayment(c *gin.Context) {
 	var filePath string
 
-	// ตรวจสอบและจัดการรูปภาพ ถ้ามี
+	// ==========================
+	// 📌 ตรวจสอบรูปภาพ ถ้ามี
+	// ==========================
 	file, err := c.FormFile("picture")
 	if err == nil && file != nil {
-		// มีการอัปโหลดรูป
 		validTypes := []string{"image/jpeg", "image/png", "image/gif"}
 		isValid := false
 		for _, t := range validTypes {
@@ -153,18 +154,22 @@ func CreatePayment(c *gin.Context) {
 			return
 		}
 	} else {
-		// ❗ ไม่แนบรูป — ไม่เป็นไร
 		filePath = ""
 	}
 
-	// รับข้อมูลอื่นจาก form
+	// ==========================
+	// 📌 รับข้อมูลจาก Form
+	// ==========================
 	dateStr := c.PostForm("date")
 	amountStr := c.PostForm("amount")
 	userIDStr := c.PostForm("user_id")
 	methodIDStr := c.PostForm("method_id")
 	referenceNumber := c.PostForm("reference_number")
+	cabinetIDStr := c.PostForm("ev_cabinet_id") // ⭐⭐ เพิ่มมาใหม่
 
-	// แปลงค่าที่จำเป็น
+	// ==========================
+	// 📌 แปลงข้อมูล
+	// ==========================
 	date, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "รูปแบบวันที่ไม่ถูกต้อง ต้องเป็น YYYY-MM-DD"})
@@ -191,14 +196,27 @@ func CreatePayment(c *gin.Context) {
 	}
 	methodID := uint(methodID64)
 
-	// สร้างและบันทึกข้อมูล
+	// ⭐⭐ ใหม่ — cabinet_id
+	var cabinetID *uint = nil
+	if cabinetIDStr != "" {
+		cID, err := strconv.ParseUint(cabinetIDStr, 10, 32)
+		if err == nil {
+			tmp := uint(cID)
+			cabinetID = &tmp
+		}
+	}
+
+	// ==========================
+	// 📌 Create Payment
+	// ==========================
 	payment := entity.Payment{
 		Date:            date,
 		Amount:          amount,
 		UserID:          &userID,
 		MethodID:        &methodID,
+		EVCabinetID:     cabinetID, // ⭐⭐ บันทึกตู้ชาร์จ
 		ReferenceNumber: referenceNumber,
-		Picture:         filePath, // อาจเป็นค่าว่างได้ ถ้าไม่มีรูป
+		Picture:         filePath,
 	}
 
 	if err := config.DB().Create(&payment).Error; err != nil {

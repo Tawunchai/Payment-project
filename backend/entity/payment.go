@@ -19,6 +19,9 @@ type Payment struct {
 	MethodID 		*uint
 	Method   		*Method `gorm:"foreignKey:MethodID"`
 
+	EVCabinetID 		*uint
+	EVCabinet   		*EVCabinet `gorm:"foreignKey:EVCabinetID"`
+
 	EVChargingPayments []EVChargingPayment `gorm:"foreignKey:PaymentID"`
 
 	ChargingSessions []ChargingSession `gorm:"foreignKey:PaymentID"`

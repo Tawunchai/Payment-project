@@ -228,6 +228,9 @@ func main() {
 
 		// ✅ สร้าง token หลังชำระเงินสำเร็จ
 		public.POST("/token/payment-success", tokening.PaymentSuccess)
+		public.PUT("/charging-session/update-status/:payment_id", tokening.UpdateStatusByPaymentID)
+		public.GET("/charging-session/status/true", tokening.GetChargingSessionByStatus)
+		public.GET("/charging-session/status/:user_id", tokening.GetChargingSessionByStatusAndUserID)
 
 		// ✅ ตรวจสอบ token
 		public.GET("/token/verify", tokening.VerifyChargingSession)

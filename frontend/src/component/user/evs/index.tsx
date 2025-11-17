@@ -1,4 +1,5 @@
-// src/component/user/ev-selector/index.tsx
+/* ==== FULL FILE: src/component/user/ev-selector/index.tsx ==== */
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -6,20 +7,20 @@ import {
   apiUrlPicture,
   GetCarByUserID,
   ListBank,
+  GetChargingSessionByStatusTrue,
 } from "../../../services";
 import { getCurrentUser, initUserProfile } from "../../../services/httpLogin";
 import { EVchargingInterface } from "../../../interface/IEV";
 import { CarsInterface } from "../../../interface/ICar";
 import { ConfigProvider, Modal, Button, Input, Slider } from "antd";
 
-/* ⚡ EV Icon ---------------------------------------------------- */
+/* EV icon */
 const BoltIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
     <path d="M13.5 2 4 13h6l-1.5 9L20 11h-6l1.5-9Z" fill="currentColor" />
   </svg>
 );
 
-/* Cabinet Type --------------------------------------------------- */
 type CabinetView = {
   id: number;
   name: string;
@@ -29,7 +30,6 @@ type CabinetView = {
   chargers: EVchargingInterface[];
 };
 
-/* Component ------------------------------------------------------- */
 const Index: React.FC = () => {
   const [evChargers, setEvChargers] = useState<EVchargingInterface[]>([]);
   const [percentMap, setPercentMap] = useState<{ [id: number]: number }>({});
@@ -41,14 +41,15 @@ const Index: React.FC = () => {
   const [showCarModal, setShowCarModal] = useState(false);
   const [userID, setUserID] = useState<number | undefined>(undefined);
 
-  // ⭐ LIST ของตู้ทั้งหมดที่รวมมาจาก Many-to-Many
   const [cabinets, setCabinets] = useState<CabinetView[]>([]);
-
   const [selectedCabinetId, setSelectedCabinetId] = useState<number | null>(null);
+
+  // ✅ เก็บ "หลายตู้" ที่กำลังชาร์จอยู่
+  const [activeCabinetIds, setActiveCabinetIds] = useState<number[]>([]);
 
   const navigate = useNavigate();
 
-  /* โหลด user ID -------------------------------------------------- */
+  /* โหลด user */
   useEffect(() => {
     const loadUser = async () => {
       let current = getCurrentUser();
@@ -63,7 +64,7 @@ const Index: React.FC = () => {
     loadUser();
   }, [navigate]);
 
-  /* โหลด minimum จาก Bank ---------------------------------------- */
+  /* โหลด minimum Bank */
   useEffect(() => {
     const fetchBankMin = async () => {
       try {
@@ -75,26 +76,57 @@ const Index: React.FC = () => {
             setMoney(firstBank.Minimum);
           }
         }
-      } catch {}
+      } catch {
+        /* ignore */
+      }
     };
     fetchBankMin();
   }, []);
 
-  /* โหลด EV + GROUP CABINETS (Many-to-Many) ----------------------- */
+  /* โหลดสถานะการชาร์จ (API ส่ง Array) */
+  useEffect(() => {
+    const fetchChargingStatus = async () => {
+      try {
+        const charging = await GetChargingSessionByStatusTrue();
+        console.log("charging:", charging);
+
+        if (Array.isArray(charging) && charging.length > 0) {
+          const activeIds = charging
+            .map((s: any) => s?.Payment?.EVCabinetID as number | undefined)
+            .filter((id): id is number => id !== undefined);
+
+          console.log("🔥 ตู้ที่กำลังชาร์จทั้งหมด:", activeIds);
+
+          setActiveCabinetIds(activeIds);
+        } else {
+          setActiveCabinetIds([]);
+        }
+      } catch (err) {
+        console.error(err);
+        setActiveCabinetIds([]);
+      }
+    };
+
+    fetchChargingStatus();
+  }, []);
+
+  /* โหลด EV + Cabinet */
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const data = await ListEVCharging();
-        if (!Array.isArray(data)) return;
+        if (!Array.isArray(data)) {
+          setCabinets([]);
+          setEvChargers([]);
+          return;
+        }
 
         const group = new Map<number, CabinetView>();
 
         data.forEach((charger) => {
-          // ⚡ Each charger may belong to MULTIPLE cabinets
           charger.Cabinets?.forEach((cab) => {
-            if (!cab) return;
-            if (cab.Status !== "Active") return;
+            if (!cab || cab.Status !== "Active") return;
 
             if (!group.has(cab.ID!)) {
               group.set(cab.ID!, {
@@ -106,7 +138,6 @@ const Index: React.FC = () => {
                 chargers: [],
               });
             }
-
             group.get(cab.ID!)!.chargers.push(charger);
           });
         });
@@ -114,32 +145,43 @@ const Index: React.FC = () => {
         const list = Array.from(group.values());
         setCabinets(list);
 
+        /* ⭐ เลือก auto เป็นตู้แรกที่ “ไม่ได้กำลังชาร์จ” */
         if (list.length > 0) {
-          const firstCab = list[0];
-          const available = firstCab.chargers.filter(
-            (c) => c.Status?.Status !== "Unavailable"
-          );
+          const availableCabinet =
+            list.find((cab) => !activeCabinetIds.includes(cab.id)) || null;
 
-          setEvChargers(available);
+          if (availableCabinet) {
+            setSelectedCabinetId(availableCabinet.id);
 
-          // Initial percent
-          const init: { [id: number]: number } = {};
-          available.forEach((chg, idx) => {
-            init[chg.ID] = idx === 0 ? 100 : 0;
-          });
+            const available = availableCabinet.chargers.filter(
+              (c) => c.Status?.Status !== "Unavailable"
+            );
+            setEvChargers(available);
 
-          setPercentMap(init);
-          setSelectedCabinetId(firstCab.id);
+            const init: { [id: number]: number } = {};
+            available.forEach((chg, idx) => (init[chg.ID] = idx === 0 ? 100 : 0));
+            setPercentMap(init);
+          } else {
+            // ❗ ถ้าทุกตู้กำลังชาร์จ → ไม่มีตู้ให้เลือก
+            setSelectedCabinetId(null);
+            setEvChargers([]);
+            setPercentMap({});
+          }
+        } else {
+          setSelectedCabinetId(null);
+          setEvChargers([]);
+          setPercentMap({});
         }
       } finally {
         setLoading(false);
       }
     };
 
+    // ✅ โหลดใหม่เมื่อ list ของตู้ที่กำลังชาร์จเปลี่ยน
     fetchData();
-  }, []);
+  }, [activeCabinetIds]);
 
-  /* เปลี่ยน Cabinet ------------------------------------------------ */
+  /* เมื่อเลือก Cabinet */
   useEffect(() => {
     if (selectedCabinetId == null) return;
 
@@ -153,29 +195,22 @@ const Index: React.FC = () => {
     setEvChargers(available);
 
     const init: { [id: number]: number } = {};
-    available.forEach((chg, idx) => {
-      init[chg.ID] = idx === 0 ? 100 : 0;
-    });
-
+    available.forEach((chg, idx) => (init[chg.ID] = idx === 0 ? 100 : 0));
     setPercentMap(init);
   }, [selectedCabinetId, cabinets]);
 
-  /* ปรับเปอร์เซนต์ ----------------------------------------------- */
+  /* ปรับเปอร์เซ็นต์ */
   const setPercent = (id: number, value: number) => {
     if (evChargers.length < 2) return;
+
     const other = evChargers.find((c) => c.ID !== id);
     if (!other) return;
 
     const fix = Math.max(0, Math.min(100, value));
-    const otherVal = 100 - fix;
-
-    setPercentMap({
-      [id]: fix,
-      [other.ID]: otherVal,
-    });
+    setPercentMap({ [id]: fix, [other.ID]: 100 - fix });
   };
 
-  /* คำนวณ --------------------------------------------------------- */
+  /* Summary คำนวณยอด */
   const itemsWithCalc = useMemo(() => {
     return evChargers.map((charger) => {
       const percent = percentMap[charger.ID] || 0;
@@ -190,29 +225,21 @@ const Index: React.FC = () => {
     [itemsWithCalc]
   );
 
-  /* ตรวจสอบขั้นต่ำ ------------------------------------------------ */
+  /* เงินขั้นต่ำ */
   const handleMoneyChange = (value: number) => {
-    if (value < minAmount) {
+    if (value < minAmount)
       setErrorMsg(`จำนวนเงินต้องไม่ต่ำกว่า ${minAmount.toFixed(2)} บาท`);
-    } else {
-      setErrorMsg("");
-    }
+    else setErrorMsg("");
 
     setMoney(value);
   };
 
-  /* NEXT ----------------------------------------------------------- */
+  /* NEXT */
   const handleNext = async () => {
-    if (!userID) {
-      navigate("/login");
-      return;
-    }
+    if (!userID) return navigate("/login");
 
     const cars: CarsInterface[] | null = await GetCarByUserID(userID);
-    if (!cars || cars.length === 0) {
-      setShowCarModal(true);
-      return;
-    }
+    if (!cars || cars.length === 0) return setShowCarModal(true);
 
     const payload = itemsWithCalc.map((it) => ({
       id: it.charger.ID,
@@ -225,10 +252,12 @@ const Index: React.FC = () => {
       amount: it.amount,
     }));
 
-    navigate("/user/payment", { state: { chargers: payload } });
+    navigate("/user/payment", {
+      state: { chargers: payload, cabinet_id: selectedCabinetId },
+    });
   };
 
-  /* SUMMARY CABINET ------------------------------------------------ */
+  /* รายการ Cabinet */
   const cabinetSummary = useMemo(() => {
     return cabinets.map((cab) => ({
       id: cab.id,
@@ -247,7 +276,7 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
+      {/* HEADER */}
       <header className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-b-2xl shadow-md">
         <div className="w-full px-4 py-3 flex items-center gap-2">
           <button
@@ -272,7 +301,7 @@ const Index: React.FC = () => {
         </div>
       </header>
 
-      {/* Content */}
+      {/* CONTENT */}
       <main className="mx-auto max-w-screen-sm px-4 pb-28 pt-4">
         {/* เงิน */}
         <div className="mb-5 rounded-xl bg-gradient-to-r from-[#EAF3FF] via-[#F3F8FF] to-[#FFFFFF] border border-blue-100 p-3 shadow-sm">
@@ -320,15 +349,24 @@ const Index: React.FC = () => {
             <div className="flex flex-col gap-2">
               {cabinetSummary.map((cab) => {
                 const isActive = selectedCabinetId === cab.id;
+                const isCharging = activeCabinetIds.includes(cab.id);
+
                 return (
                   <button
                     key={cab.id}
-                    onClick={() => setSelectedCabinetId(cab.id)}
-                    className={`w-full text-left rounded-2xl border px-3 py-2 ${
-                      isActive
-                        ? "border-blue-300 bg-blue-50 ring-1 ring-blue-100"
-                        : "border-gray-200 bg-white hover:bg-gray-50"
-                    }`}
+                    onClick={() => {
+                      if (isCharging) return; // ❗ ห้ามเลือกตู้ที่กำลังชาร์จ
+                      setSelectedCabinetId(cab.id);
+                    }}
+                    disabled={isCharging}
+                    className={`w-full text-left rounded-2xl border px-3 py-2 transition 
+                      ${
+                        isCharging
+                          ? "border-orange-300 bg-orange-50 ring-1 ring-orange-200"
+                          : isActive
+                          ? "border-blue-300 bg-blue-50 ring-1 ring-blue-100"
+                          : "border-gray-200 bg-white hover:bg-gray-50"
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-12 w-16 overflow-hidden rounded-xl bg-blue-50 ring-1 ring-blue-100">
@@ -344,9 +382,14 @@ const Index: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`h-2 w-2 rounded-full ${
-                              isActive ? "bg-blue-600" : "bg-gray-300"
-                            }`}
+                            className={`h-2 w-2 rounded-full 
+                              ${
+                                isCharging
+                                  ? "bg-orange-500"
+                                  : isActive
+                                  ? "bg-blue-600"
+                                  : "bg-gray-300"
+                              }`}
                           />
                           <span className="font-medium">{cab.name}</span>
                         </div>
@@ -367,11 +410,16 @@ const Index: React.FC = () => {
                         </div>
                       </div>
 
-                      {isActive && (
+                      {/* Tag สถานะ */}
+                      {isCharging ? (
+                        <span className="rounded-xl bg-orange-500 px-2 py-1 text-[11px] text-white">
+                          กำลังชาร์จไฟ
+                        </span>
+                      ) : isActive ? (
                         <span className="rounded-xl bg-blue-600 px-2 py-1 text-[11px] text-white">
                           เลือกอยู่
                         </span>
-                      )}
+                      ) : null}
                     </div>
                   </button>
                 );
@@ -380,7 +428,7 @@ const Index: React.FC = () => {
           )}
         </section>
 
-        {/* Charger List */}
+        {/* Chargers */}
         <ConfigProvider
           theme={{
             components: {
@@ -399,7 +447,7 @@ const Index: React.FC = () => {
             </div>
           ) : evChargers.length === 0 ? (
             <div className="rounded-2xl border bg-white px-4 py-6 text-center text-gray-500">
-              — ไม่มีหัวชาร์จที่พร้อมใช้งาน —{" "}
+              — ไม่มีหัวชาร์จที่พร้อมใช้งาน —
             </div>
           ) : (
             evChargers.map((charger) => {

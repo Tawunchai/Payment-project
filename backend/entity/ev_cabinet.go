@@ -19,7 +19,9 @@ type EVCabinet struct {
 
 	// ⭐ Many-to-Many กลับฝ่าย EVcharging
     EVchargings []EVcharging `gorm:"many2many:ev_cabinet_ev_chargings;"` 
-	Booking     []Booking    `gorm:"foreignKey:EVCabinetID"`  
+	Booking     []Booking    `gorm:"foreignKey:EVCabinetID"`
+	
+	Payment     []Payment    `gorm:"foreignKey:EVCabinetID"` 
 
 	EmployeeID  *uint       
 	Employee    Employee     `gorm:"foreignKey:EmployeeID"`
